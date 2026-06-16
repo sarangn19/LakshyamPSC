@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Lakshyam",
+    "slug": "lakshyam",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2563EB"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lakshyam.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1A1A2E"
+      },
+      "package": "com.lakshyam.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-speech",
+      "expo-camera",
+      "expo-image-picker",
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
