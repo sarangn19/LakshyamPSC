@@ -100,27 +100,35 @@ export function RevisionHubScreen({ navigation }: any) {
   };
 
   const handleStartSprint = () => {
-    startSprint();
-    executeSprintDay(1);
+    const perf = usePerformanceStore.getState();
+    perf.startSprint();
+    const fresh = perf.sprint;
+    const plan = fresh.dayPlans[0];
+    const st = plan?.sessionType ?? 'exam_simulation';
+    navigateToSprintDay(st, plan?.day ?? 1, plan);
+    perf.startSprintDay(1);
   };
 
   const handleContinueSprint = () => {
-    executeSprintDay(spr.currentDay);
+    const perf = usePerformanceStore.getState();
+    const day = perf.sprint.currentDay;
+    const plan = perf.sprint.dayPlans[day - 1];
+    const st = plan?.sessionType ?? 'exam_simulation';
+    navigateToSprintDay(st, day, plan);
+    if (!perf.sprint.startedDays.includes(day) && !perf.sprint.completedDays.includes(day)) {
+      perf.startSprintDay(day);
+    }
   };
 
-  const executeSprintDay = (day: number) => {
+  const navigateToSprintDay = (sessionType: string, day: number, sprintPlan: any) => {
     const p = refreshProfile();
-    const sprintPlan = spr.dayPlans.find((d) => d.day === day);
-    const sessionType = sprintPlan?.sessionType ?? 'exam_simulation';
-
     if (sessionType === 'flashcard_review') {
-      if (dueCount > 0) {
+      const dc = useFlashcardStore.getState().getDueCount();
+      const tc = useFlashcardStore.getState().flashcards.length;
+      if (dc > 0 || tc > 0) {
         useFlashcardStore.getState().loadDueCards();
         navigation.navigate('Learn');
-      } else if (totalCards > 0) {
-        navigation.navigate('Learn');
       }
-      completeSprintDay();
     } else if (sessionType === 'exam_simulation') {
       useMCQStore.getState().startOrchestratedSession({
         subjects: p.weakSubjects.length > 0 ? p.weakSubjects : undefined,
@@ -128,15 +136,13 @@ export function RevisionHubScreen({ navigation }: any) {
         count: 20,
         sessionType: 'exam_simulation',
       });
-      completeSprintDay();
       navigation.navigate('MCQ');
     } else if (sessionType === 'knowledge_revisit' || sessionType === 'confusion_repair') {
-      const targetSubject = sprintPlan?.sessionType === 'knowledge_revisit'
+      const targetSubject = sessionType === 'knowledge_revisit'
         ? (p.weakSubjects[0] ?? 'Constitution')
         : (p.weakSubjects[1] ?? 'Kerala History');
       useKnowledgeStore.getState().setSelectedSubject(targetSubject);
       navigation.navigate('Knowledge');
-      completeSprintDay();
     } else {
       useMCQStore.getState().startOrchestratedSession({
         subjects: p.weakSubjects.length > 0 ? p.weakSubjects : undefined,
@@ -144,7 +150,6 @@ export function RevisionHubScreen({ navigation }: any) {
         count: 12,
         sessionType,
       });
-      completeSprintDay();
       navigation.navigate('MCQ');
     }
   };
@@ -217,14 +222,25 @@ export function RevisionHubScreen({ navigation }: any) {
 
       <View style={styles.sprintSection}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>⚡ 7-Day Sprint</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          {spr.isActive
-            ? `${spr.completedCount}/7 days done`
-            : 'Intensive revision plan — daily missions over 7 days'}
-        </Text>
 
-        {spr.isActive ? (
+        {!spr.isActive && sprint.completedDays.length >= 7 ? (
           <>
+            <View style={styles.sprintCompleteBanner}>
+              <Text style={{ fontSize: 40, textAlign: 'center' }}>🎉</Text>
+              <Text style={[typography.h3, { color: colors.text, textAlign: 'center', marginTop: spacing.sm }]}>Sprint Complete!</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
+                All 7 days finished. Great consistency!
+              </Text>
+            </View>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.warning, marginTop: spacing.md }]} onPress={handleStartSprint}>
+              <Text style={[typography.bodyBold, { color: colors.black }]}>Start New Sprint</Text>
+            </TouchableOpacity>
+          </>
+        ) : spr.isActive ? (
+          <>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+              {spr.completedCount}/7 days done
+            </Text>
             <View style={styles.sprintProgressBar}>
               {[1, 2, 3, 4, 5, 6, 7].map((d) => (
                 <View
@@ -232,13 +248,21 @@ export function RevisionHubScreen({ navigation }: any) {
                   style={[
                     styles.sprintDot,
                     sprint.completedDays.includes(d) && styles.sprintDotDone,
-                    d === spr.currentDay && !sprint.completedDays.includes(d) && styles.sprintDotActive,
+                    sprint.startedDays.includes(d) && !sprint.completedDays.includes(d) && styles.sprintDotStarted,
+                    d === spr.currentDay && !sprint.completedDays.includes(d) && !sprint.startedDays.includes(d) && styles.sprintDotActive,
                   ]}
                 />
               ))}
             </View>
             <View style={styles.sprintMissionCard}>
-              <Text style={[typography.h4, { color: colors.primary }]}>Day {spr.currentDay}</Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[typography.h4, { color: colors.primary }]}>Day {spr.currentDay}</Text>
+                {sprint.startedDays.includes(spr.currentDay) && !sprint.completedDays.includes(spr.currentDay) && (
+                  <TouchableOpacity style={styles.completeDayBtn} onPress={completeSprintDay}>
+                    <Text style={[typography.tiny, { color: colors.white }]}>✓ Mark Done</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
               <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.xs }]}>
                 {sprint.dayPlans[spr.currentDay - 1]?.title ?? 'Mission'}
               </Text>
@@ -247,16 +271,24 @@ export function RevisionHubScreen({ navigation }: any) {
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
-              <TouchableOpacity style={[styles.actionBtn, { flex: 1, backgroundColor: colors.primary }]} onPress={handleContinueSprint}>
-                <Text style={[typography.bodyBold, { color: colors.white }]}>Continue →</Text>
+              <TouchableOpacity
+                style={[styles.actionBtn, { flex: 1, backgroundColor: sprint.startedDays.includes(spr.currentDay) ? colors.success : colors.primary }]}
+                onPress={handleContinueSprint}
+              >
+                <Text style={[typography.bodyBold, { color: colors.white }]}>
+                  {sprint.startedDays.includes(spr.currentDay) ? 'Continue →' : 'Start Day →'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.actionBtn, { flex: 1, backgroundColor: colors.bgInput }]} onPress={abandonSprint}>
-                <Text style={[typography.bodyBold, { color: colors.textMuted }]}>Cancel Sprint</Text>
+                <Text style={[typography.bodyBold, { color: colors.textMuted }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </>
         ) : (
           <>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
+              Intensive revision plan — daily missions over 7 days
+            </Text>
             <View style={styles.sprintPreview}>
               {[
                 { day: 1, title: 'Foundation Check' },
@@ -447,4 +479,19 @@ const styles = StyleSheet.create({
   },
   sprintPreview: { gap: spacing.xs },
   sprintPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  sprintDotStarted: { backgroundColor: colors.warning, borderColor: colors.warning },
+  completeDayBtn: {
+    backgroundColor: colors.success,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  sprintCompleteBanner: {
+    backgroundColor: colors.bgCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.success,
+  },
 });

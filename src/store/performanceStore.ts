@@ -85,6 +85,7 @@ export interface SprintData {
   startDate: number;
   currentDay: number;
   completedDays: number[];
+  startedDays: number[];
   dayPlans: SprintDayPlan[];
 }
 
@@ -122,6 +123,7 @@ interface PerformanceState {
   lastProfileBuild: number | null;
   sprint: SprintData;
   startSprint: () => void;
+  startSprintDay: (day: number) => void;
   completeSprintDay: () => void;
   getSprintProgress: () => { currentDay: number; totalDays: number; completedCount: number; isActive: boolean; dayPlans: SprintDayPlan[] };
   abandonSprint: () => void;
@@ -152,7 +154,7 @@ export const usePerformanceStore = create<PerformanceState>()(
       recommendations: [],
       profile: null,
       lastProfileBuild: null,
-      sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], dayPlans: [] },
+      sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] },
 
       addInteractionSignal: (signal) =>
         set((state) => ({
@@ -215,7 +217,13 @@ export const usePerformanceStore = create<PerformanceState>()(
           { day: 6, sessionType: 'exam_simulation', title: 'Full Mock', description: '45min timed exam simulation — all subjects' },
           { day: 7, sessionType: 'flashcard_review', title: 'Consolidation', description: 'Light flashcard review + easy MCQs' },
         ];
-        set({ sprint: { active: true, startDate: Date.now(), currentDay: 1, completedDays: [], dayPlans } });
+        set({ sprint: { active: true, startDate: Date.now(), currentDay: 1, completedDays: [], startedDays: [], dayPlans } });
+      },
+
+      startSprintDay: (day) => {
+        const s = get().sprint;
+        if (!s.active || s.startedDays.includes(day) || s.completedDays.includes(day)) return;
+        set({ sprint: { ...s, startedDays: [...s.startedDays, day] } });
       },
 
       completeSprintDay: () => {
@@ -225,7 +233,7 @@ export const usePerformanceStore = create<PerformanceState>()(
         if (s.currentDay >= 7) {
           set({ sprint: { ...s, active: false, completedDays: newCompleted } });
         } else {
-          set({ sprint: { ...s, completedDays: newCompleted, currentDay: s.currentDay + 1 } });
+          set({ sprint: { ...s, completedDays: newCompleted, startedDays: s.startedDays.filter(d => d !== s.currentDay), currentDay: s.currentDay + 1 } });
         }
       },
 
@@ -235,7 +243,7 @@ export const usePerformanceStore = create<PerformanceState>()(
       },
 
       abandonSprint: () => {
-        set({ sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], dayPlans: [] } });
+        set({ sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] } });
       },
 
       clearSignals: () =>
