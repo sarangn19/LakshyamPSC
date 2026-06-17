@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, StyleSheet, Platform } from 'react-native';
 import { colors } from '../theme';
 
 import { HomeScreen } from '../screens/HomeScreen';
@@ -86,6 +86,7 @@ const screenHeaderStyle = {
   headerTitleStyle: { color: colors.text, fontSize: 17, fontWeight: '600' as const },
   headerShadowVisible: false,
   headerBackTitleVisible: false,
+  ...(Platform.OS === 'web' ? { headerBackImage: () => <Text style={{ fontSize: 22, color: colors.text, paddingLeft: 4 }}>{'‹'}</Text> } : {}),
 };
 
 export function AppNavigator() {
