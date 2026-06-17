@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { useSyncQueue } from './syncQueue';
 import { usePerformanceStore, UserProfile, SessionOutcome, RecommendationRecord, InteractionSignal } from '../store/performanceStore';
+import { useUserStore } from '../store/userStore';
 
 let _profileId: string | null = null;
 

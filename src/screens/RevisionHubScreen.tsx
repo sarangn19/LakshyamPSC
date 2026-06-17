@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
@@ -7,12 +7,19 @@ import { Badge, ProgressBar } from '../components/common/StyledComponents';
 import { refreshProfile } from '../services/profileBuilder';
 import { orchestrateSession, logOrchestratedSessionStart } from '../services/sessionOrchestrator';
 
+const SUBJECTS = ['Kerala History', 'Renaissance', 'Constitution', 'Geography', 'Science', 'Current Affairs', 'Quantitative Aptitude', 'Mental Ability', 'Malayalam'];
+
 export function RevisionHubScreen({ navigation }: any) {
   const getDueCount = useFlashcardStore((s) => s.getDueCount);
   const mistakes = useMCQStore((s) => s.mistakes);
   const flashcards = useFlashcardStore((s) => s.flashcards);
   const profile = usePerformanceStore((s) => s.profile);
   const notes = useKnowledgeStore((s) => s.notes);
+  const startSprint = usePerformanceStore((s) => s.startSprint);
+  const completeSprintDay = usePerformanceStore((s) => s.completeSprintDay);
+  const getSprintProgress = usePerformanceStore((s) => s.getSprintProgress);
+  const abandonSprint = usePerformanceStore((s) => s.abandonSprint);
+  const sprint = usePerformanceStore((s) => s.sprint);
 
   const dueCount = getDueCount();
   const unreviewedMistakes = mistakes.filter((m) => !m.reviewed);
@@ -37,6 +44,27 @@ export function RevisionHubScreen({ navigation }: any) {
   });
 
   const accuracy = profile ? Math.round(profile.averageAccuracy * 100) : 0;
+
+  const spr = useMemo(() => getSprintProgress(), [sprint]);
+
+  const capsuleSubjects = useMemo(() => {
+    const profileWeak = (profile?.weakSubjects ?? []).slice(0, 4);
+    const mistakeSorted = Object.entries(subjectMistakes)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 4)
+      .map(([s]) => s);
+    const combined = [...new Set([...profileWeak, ...mistakeSorted])].slice(0, 4);
+    while (combined.length < 4) {
+      const remaining = SUBJECTS.filter((s) => !combined.includes(s));
+      if (remaining.length === 0) break;
+      combined.push(remaining[Math.floor(Math.random() * remaining.length)]);
+    }
+    return combined.map((subject) => {
+      const subMistakes = subjectMistakes[subject] || 0;
+      const subNotes = notes.filter((n) => n.subject === subject).length;
+      return { subject, mistakeCount: subMistakes, noteCount: subNotes };
+    });
+  }, [profile, subjectMistakes, notes]);
 
   const handleStartRevision = () => {
     const p = refreshProfile();
@@ -72,25 +100,56 @@ export function RevisionHubScreen({ navigation }: any) {
   };
 
   const handleStartSprint = () => {
-    const p = refreshProfile();
-    const plan = orchestrateSession({
-      profile: p,
-      availableMinutes: 45,
-      lastSessionType: null,
-      recentSessionTypes: [],
-    });
-    logOrchestratedSessionStart(plan);
-
-    useMCQStore.getState().startOrchestratedSession({
-      subjects: p.weakSubjects.length > 0 ? p.weakSubjects : undefined,
-      difficulty: 'hard',
-      count: 20,
-      sessionType: 'exam_simulation',
-    });
-    navigation.navigate('MCQ');
+    startSprint();
+    executeSprintDay(1);
   };
 
-  const handleOpenCapsule = (capsule: { title: string; subject: string }) => {
+  const handleContinueSprint = () => {
+    executeSprintDay(spr.currentDay);
+  };
+
+  const executeSprintDay = (day: number) => {
+    const p = refreshProfile();
+    const sprintPlan = spr.dayPlans.find((d) => d.day === day);
+    const sessionType = sprintPlan?.sessionType ?? 'exam_simulation';
+
+    if (sessionType === 'flashcard_review') {
+      if (dueCount > 0) {
+        useFlashcardStore.getState().loadDueCards();
+        navigation.navigate('Learn');
+      } else if (totalCards > 0) {
+        navigation.navigate('Learn');
+      }
+      completeSprintDay();
+    } else if (sessionType === 'exam_simulation') {
+      useMCQStore.getState().startOrchestratedSession({
+        subjects: p.weakSubjects.length > 0 ? p.weakSubjects : undefined,
+        difficulty: 'hard',
+        count: 20,
+        sessionType: 'exam_simulation',
+      });
+      completeSprintDay();
+      navigation.navigate('MCQ');
+    } else if (sessionType === 'knowledge_revisit' || sessionType === 'confusion_repair') {
+      const targetSubject = sprintPlan?.sessionType === 'knowledge_revisit'
+        ? (p.weakSubjects[0] ?? 'Constitution')
+        : (p.weakSubjects[1] ?? 'Kerala History');
+      useKnowledgeStore.getState().setSelectedSubject(targetSubject);
+      navigation.navigate('Knowledge');
+      completeSprintDay();
+    } else {
+      useMCQStore.getState().startOrchestratedSession({
+        subjects: p.weakSubjects.length > 0 ? p.weakSubjects : undefined,
+        difficulty: sessionType === 'weakness_practice' ? 'medium' : 'hard',
+        count: 12,
+        sessionType,
+      });
+      completeSprintDay();
+      navigation.navigate('MCQ');
+    }
+  };
+
+  const handleOpenCapsule = (capsule: { subject: string }) => {
     const subjectNotes = notes.filter((n) => n.subject === capsule.subject);
     if (subjectNotes.length > 0) {
       useKnowledgeStore.getState().setSelectedSubject(capsule.subject);
@@ -159,36 +218,95 @@ export function RevisionHubScreen({ navigation }: any) {
       <View style={styles.sprintSection}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>⚡ 7-Day Sprint</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          Intensive revision plan — 45 min sessions, harder difficulty, exam simulation focus
+          {spr.isActive
+            ? `${spr.completedCount}/7 days done`
+            : 'Intensive revision plan — daily missions over 7 days'}
         </Text>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.warning }]} onPress={handleStartSprint}>
-          <Text style={[typography.bodyBold, { color: colors.black }]}>Start 7-Day Sprint</Text>
-        </TouchableOpacity>
+
+        {spr.isActive ? (
+          <>
+            <View style={styles.sprintProgressBar}>
+              {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                <View
+                  key={d}
+                  style={[
+                    styles.sprintDot,
+                    sprint.completedDays.includes(d) && styles.sprintDotDone,
+                    d === spr.currentDay && !sprint.completedDays.includes(d) && styles.sprintDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+            <View style={styles.sprintMissionCard}>
+              <Text style={[typography.h4, { color: colors.primary }]}>Day {spr.currentDay}</Text>
+              <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.xs }]}>
+                {sprint.dayPlans[spr.currentDay - 1]?.title ?? 'Mission'}
+              </Text>
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+                {sprint.dayPlans[spr.currentDay - 1]?.description ?? ''}
+              </Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+              <TouchableOpacity style={[styles.actionBtn, { flex: 1, backgroundColor: colors.primary }]} onPress={handleContinueSprint}>
+                <Text style={[typography.bodyBold, { color: colors.white }]}>Continue →</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.actionBtn, { flex: 1, backgroundColor: colors.bgInput }]} onPress={abandonSprint}>
+                <Text style={[typography.bodyBold, { color: colors.textMuted }]}>Cancel Sprint</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.sprintPreview}>
+              {[
+                { day: 1, title: 'Foundation Check' },
+                { day: 2, title: 'Memory Reinforcement' },
+                { day: 3, title: 'Mixed Practice' },
+                { day: 4, title: 'Concept Deep-Dive' },
+                { day: 5, title: 'Gap Closure' },
+                { day: 6, title: 'Full Mock' },
+                { day: 7, title: 'Consolidation' },
+              ].map((item) => (
+                <View key={item.day} style={styles.sprintPreviewRow}>
+                  <Text style={[typography.small, { color: colors.textMuted, width: 24 }]}>{item.day}</Text>
+                  <Text style={[typography.caption, { color: colors.text }]}>{item.title}</Text>
+                </View>
+              ))}
+            </View>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.warning, marginTop: spacing.md }]} onPress={handleStartSprint}>
+              <Text style={[typography.bodyBold, { color: colors.black }]}>Start 7-Day Sprint</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       <View style={styles.capsuleSection}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>💊 Last Minute Capsule</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          High-frequency topics and expected areas — tap to review
+          Your weakest subjects — tap to review notes or practice
         </Text>
 
-        {[
-          { title: 'Kerala Renaissance - Top 20 Facts', subject: 'Renaissance', items: '20 facts' },
-          { title: 'Constitution - Key Articles', subject: 'Constitution', items: '15 articles' },
-          { title: 'Kerala Districts - Quick Recap', subject: 'Geography', items: '14 districts' },
-          { title: 'Current Affairs - Monthly Digest', subject: 'Current Affairs', items: 'Top stories' },
-        ].map((capsule) => (
-          <TouchableOpacity key={capsule.title} style={styles.capsuleCard} onPress={() => handleOpenCapsule(capsule)}>
-            <View style={{ flex: 1 }}>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{capsule.title}</Text>
-              <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs }}>
-                <Badge label={capsule.subject} color={colors.primaryLight} />
-                <Text style={[typography.small, { color: colors.textMuted }]}>{capsule.items}</Text>
+        {capsuleSubjects.map((cs) => {
+          const subtitle = cs.mistakeCount > 0 && cs.noteCount > 0
+            ? `${cs.mistakeCount} mistakes · ${cs.noteCount} notes`
+            : cs.mistakeCount > 0
+              ? `${cs.mistakeCount} mistakes to review`
+              : cs.noteCount > 0
+                ? `${cs.noteCount} notes available`
+                : 'No data yet — start a session';
+          return (
+            <TouchableOpacity key={cs.subject} style={styles.capsuleCard} onPress={() => handleOpenCapsule(cs)}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.subject}</Text>
+                <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs }}>
+                  <Badge label={cs.subject} color={cs.mistakeCount > 0 ? colors.warning : colors.primaryLight} />
+                  <Text style={[typography.small, { color: colors.textMuted }]}>{subtitle}</Text>
+                </View>
               </View>
-            </View>
-            <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
-          </TouchableOpacity>
-        ))}
+              <Text style={{ color: colors.textMuted, fontSize: 18 }}>›</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={styles.flashcardPreview}>
@@ -316,4 +434,17 @@ const styles = StyleSheet.create({
     minWidth: 48,
   },
   repDotActive: { backgroundColor: colors.primaryLight },
+  sprintProgressBar: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md, justifyContent: 'center' },
+  sprintDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.bgInput, borderWidth: 2, borderColor: colors.border },
+  sprintDotDone: { backgroundColor: colors.success, borderColor: colors.success },
+  sprintDotActive: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  sprintMissionCard: {
+    backgroundColor: colors.bgInput,
+    borderRadius: borderRadius.md,
+    padding: spacing.lg,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  sprintPreview: { gap: spacing.xs },
+  sprintPreviewRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
 });
