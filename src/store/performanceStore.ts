@@ -280,6 +280,17 @@ export const usePerformanceStore = create<PerformanceState>()(
     {
       name: 'lakshyam-performance',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      migrate: (persisted: any, version) => {
+        if (version < 1) {
+          if (!persisted.sprint) {
+            persisted.sprint = { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] };
+          } else if (!persisted.sprint.startedDays) {
+            persisted.sprint.startedDays = [];
+          }
+        }
+        return persisted as PerformanceState;
+      },
     }
   )
 );

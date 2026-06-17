@@ -115,7 +115,7 @@ export function RevisionHubScreen({ navigation }: any) {
     const plan = perf.sprint.dayPlans[day - 1];
     const st = plan?.sessionType ?? 'exam_simulation';
     navigateToSprintDay(st, day, plan);
-    if (!perf.sprint.startedDays.includes(day) && !perf.sprint.completedDays.includes(day)) {
+    if (!(perf.sprint.startedDays ?? []).includes(day) && !(perf.sprint.completedDays ?? []).includes(day)) {
       perf.startSprintDay(day);
     }
   };
@@ -223,7 +223,7 @@ export function RevisionHubScreen({ navigation }: any) {
       <View style={styles.sprintSection}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>⚡ 7-Day Sprint</Text>
 
-        {!spr.isActive && sprint.completedDays.length >= 7 ? (
+        {!spr.isActive && (sprint.completedDays ?? []).length >= 7 ? (
           <>
             <View style={styles.sprintCompleteBanner}>
               <Text style={{ fontSize: 40, textAlign: 'center' }}>🎉</Text>
@@ -247,9 +247,9 @@ export function RevisionHubScreen({ navigation }: any) {
                   key={d}
                   style={[
                     styles.sprintDot,
-                    sprint.completedDays.includes(d) && styles.sprintDotDone,
-                    sprint.startedDays.includes(d) && !sprint.completedDays.includes(d) && styles.sprintDotStarted,
-                    d === spr.currentDay && !sprint.completedDays.includes(d) && !sprint.startedDays.includes(d) && styles.sprintDotActive,
+                    (sprint.completedDays ?? []).includes(d) && styles.sprintDotDone,
+                    (sprint.startedDays ?? []).includes(d) && !(sprint.completedDays ?? []).includes(d) && styles.sprintDotStarted,
+                    d === spr.currentDay && !(sprint.completedDays ?? []).includes(d) && !(sprint.startedDays ?? []).includes(d) && styles.sprintDotActive,
                   ]}
                 />
               ))}
@@ -257,26 +257,26 @@ export function RevisionHubScreen({ navigation }: any) {
             <View style={styles.sprintMissionCard}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[typography.h4, { color: colors.primary }]}>Day {spr.currentDay}</Text>
-                {sprint.startedDays.includes(spr.currentDay) && !sprint.completedDays.includes(spr.currentDay) && (
+                {(sprint.startedDays ?? []).includes(spr.currentDay) && !(sprint.completedDays ?? []).includes(spr.currentDay) && (
                   <TouchableOpacity style={styles.completeDayBtn} onPress={completeSprintDay}>
                     <Text style={[typography.tiny, { color: colors.white }]}>✓ Mark Done</Text>
                   </TouchableOpacity>
                 )}
               </View>
               <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.xs }]}>
-                {sprint.dayPlans[spr.currentDay - 1]?.title ?? 'Mission'}
+                {(sprint.dayPlans ?? [])[spr.currentDay - 1]?.title ?? 'Mission'}
               </Text>
               <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-                {sprint.dayPlans[spr.currentDay - 1]?.description ?? ''}
+                {(sprint.dayPlans ?? [])[spr.currentDay - 1]?.description ?? ''}
               </Text>
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
               <TouchableOpacity
-                style={[styles.actionBtn, { flex: 1, backgroundColor: sprint.startedDays.includes(spr.currentDay) ? colors.success : colors.primary }]}
+                style={[styles.actionBtn, { flex: 1, backgroundColor: (sprint.startedDays ?? []).includes(spr.currentDay) ? colors.success : colors.primary }]}
                 onPress={handleContinueSprint}
               >
                 <Text style={[typography.bodyBold, { color: colors.white }]}>
-                  {sprint.startedDays.includes(spr.currentDay) ? 'Continue →' : 'Start Day →'}
+                  {(sprint.startedDays ?? []).includes(spr.currentDay) ? 'Continue →' : 'Start Day →'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.actionBtn, { flex: 1, backgroundColor: colors.bgInput }]} onPress={abandonSprint}>
