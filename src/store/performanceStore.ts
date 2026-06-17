@@ -73,22 +73,6 @@ export interface SessionOutcome {
   difficultyMix: { easy: number; medium: number; hard: number };
 }
 
-export interface SprintDayPlan {
-  day: number;
-  sessionType: string;
-  title: string;
-  description: string;
-}
-
-export interface SprintData {
-  active: boolean;
-  startDate: number;
-  currentDay: number;
-  completedDays: number[];
-  startedDays: number[];
-  dayPlans: SprintDayPlan[];
-}
-
 export interface RecommendationRecord {
   id: string;
   sessionType: string;
@@ -121,12 +105,6 @@ interface PerformanceState {
   recommendations: RecommendationRecord[];
   profile: UserProfile | null;
   lastProfileBuild: number | null;
-  sprint: SprintData;
-  startSprint: () => void;
-  startSprintDay: (day: number) => void;
-  completeSprintDay: () => void;
-  getSprintProgress: () => { currentDay: number; totalDays: number; completedCount: number; isActive: boolean; dayPlans: SprintDayPlan[] };
-  abandonSprint: () => void;
   addInteractionSignal: (signal: Omit<InteractionSignal, 'id'>) => void;
   addFlashcardSignal: (signal: Omit<FlashcardSignal, 'id'>) => void;
   addSessionSignal: (signal: Omit<SessionSignal, 'id'>) => void;
@@ -154,7 +132,6 @@ export const usePerformanceStore = create<PerformanceState>()(
       recommendations: [],
       profile: null,
       lastProfileBuild: null,
-      sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] },
 
       addInteractionSignal: (signal) =>
         set((state) => ({
@@ -207,45 +184,6 @@ export const usePerformanceStore = create<PerformanceState>()(
 
       setLastProfileBuild: (timestamp) => set({ lastProfileBuild: timestamp }),
 
-      startSprint: () => {
-        const dayPlans: SprintDayPlan[] = [
-          { day: 1, sessionType: 'weakness_practice', title: 'Foundation Check', description: 'Medium-difficulty MCQs on weak subjects' },
-          { day: 2, sessionType: 'flashcard_review', title: 'Memory Reinforcement', description: 'All due flashcards + light MCQs' },
-          { day: 3, sessionType: 'revision_reinforcement', title: 'Mixed Practice', description: 'Medium-hard MCQs across subjects' },
-          { day: 4, sessionType: 'knowledge_revisit', title: 'Concept Deep-Dive', description: 'Review notes and key topics' },
-          { day: 5, sessionType: 'confusion_repair', title: 'Gap Closure', description: 'Target confusion pairs and hesitation topics' },
-          { day: 6, sessionType: 'exam_simulation', title: 'Full Mock', description: '45min timed exam simulation — all subjects' },
-          { day: 7, sessionType: 'flashcard_review', title: 'Consolidation', description: 'Light flashcard review + easy MCQs' },
-        ];
-        set({ sprint: { active: true, startDate: Date.now(), currentDay: 1, completedDays: [], startedDays: [], dayPlans } });
-      },
-
-      startSprintDay: (day) => {
-        const s = get().sprint;
-        if (!s.active || s.startedDays.includes(day) || s.completedDays.includes(day)) return;
-        set({ sprint: { ...s, startedDays: [...s.startedDays, day] } });
-      },
-
-      completeSprintDay: () => {
-        const s = get().sprint;
-        if (!s.active) return;
-        const newCompleted = [...s.completedDays, s.currentDay];
-        if (s.currentDay >= 7) {
-          set({ sprint: { ...s, active: false, completedDays: newCompleted } });
-        } else {
-          set({ sprint: { ...s, completedDays: newCompleted, startedDays: s.startedDays.filter(d => d !== s.currentDay), currentDay: s.currentDay + 1 } });
-        }
-      },
-
-      getSprintProgress: () => {
-        const s = get().sprint;
-        return { currentDay: s.currentDay, totalDays: 7, completedCount: s.completedDays.length, isActive: s.active, dayPlans: s.dayPlans };
-      },
-
-      abandonSprint: () => {
-        set({ sprint: { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] } });
-      },
-
       clearSignals: () =>
         set({ interactionSignals: [], flashcardSignals: [], sessionSignals: [], profile: null, lastProfileBuild: null }),
 
@@ -280,17 +218,6 @@ export const usePerformanceStore = create<PerformanceState>()(
     {
       name: 'lakshyam-performance',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
-      migrate: (persisted: any, version) => {
-        if (version < 1) {
-          if (!persisted.sprint) {
-            persisted.sprint = { active: false, startDate: 0, currentDay: 1, completedDays: [], startedDays: [], dayPlans: [] };
-          } else if (!persisted.sprint.startedDays) {
-            persisted.sprint.startedDays = [];
-          }
-        }
-        return persisted as PerformanceState;
-      },
     }
   )
 );
