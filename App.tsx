@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { SetupScreen } from './src/screens/SetupScreen';
 import { useUserStore } from './src/store';
@@ -20,6 +21,12 @@ function LoadingScreen() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    'Inter-Regular': Inter_400Regular,
+    'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
+  });
   const [hydrated, setHydrated] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -48,7 +55,7 @@ export default function App() {
     setSetupDone(true);
   };
 
-  if (checking) {
+  if (!fontsLoaded || checking) {
     return <LoadingScreen />;
   }
 
@@ -56,7 +63,7 @@ export default function App() {
     return (
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <SetupScreen onComplete={handleSetupComplete} />
         </SafeAreaProvider>
       </GestureHandlerRootView>
