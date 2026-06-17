@@ -9,6 +9,8 @@ import { SetupScreen } from './src/screens/SetupScreen';
 import { useUserStore } from './src/store';
 import { colors, spacing } from './src/theme';
 import { typography } from './src/theme/typography';
+import { useSyncSubscriptions, useOfflineQueueFlush } from './src/services/syncSubscriptions';
+import { restoreFromRemote, startPeriodicSync } from './src/services/syncService';
 
 function LoadingScreen() {
   return (
@@ -30,7 +32,11 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [restored, setRestored] = useState(false);
   const initDone = useRef(false);
+
+  useSyncSubscriptions();
+  useOfflineQueueFlush();
 
   useEffect(() => {
     if (initDone.current) return;
@@ -54,6 +60,14 @@ export default function App() {
   const handleSetupComplete = () => {
     setSetupDone(true);
   };
+
+  useEffect(() => {
+    if (setupDone && hydrated && !restored) {
+      setRestored(true);
+      restoreFromRemote();
+      startPeriodicSync();
+    }
+  }, [setupDone, hydrated, restored]);
 
   if (!fontsLoaded || checking) {
     return <LoadingScreen />;
