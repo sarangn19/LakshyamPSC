@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore, useFlashcardStore } from '../store';
@@ -57,6 +58,15 @@ const ROADMAP_BY_EXAM: Record<string, { phase: string; duration: string; topics:
 };
 
 export function GoalTrackerScreen() {
+  const { t } = useTranslation();
+  const phaseLabels: Record<string, string> = {
+    Foundation: t('goals.foundation'),
+    Building: t('goals.building'),
+    Speed: t('goals.speed'),
+    Advanced: t('goals.advanced'),
+    'Mains Focus': t('goals.mainsFocus'),
+    Revision: t('goals.revision'),
+  };
   const {
     targetExams, primaryExam, examDate, streak, masteredTopics,
     accuracyImprovement, dailyTargetMCQs, dailyTargetFlashcards, examReadiness,
@@ -69,13 +79,13 @@ export function GoalTrackerScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>Goal Tracker</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>Your PSC journey, structured</Text>
+      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>{t('goals.title')}</Text>
+      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>{t('goals.subtitle')}</Text>
 
       <View style={styles.targetCard}>
-        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>🎯 Select Your Posts (multi-select)</Text>
+        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>{t('goals.selectPosts')}</Text>
         <Text style={[typography.small, { color: colors.textMuted, marginBottom: spacing.md }]}>
-          Most aspirants apply for multiple posts — track them all at once
+          {t('goals.postsHint')}
         </Text>
         <View style={styles.examGrid}>
           {examTypes.map((exam) => {
@@ -101,7 +111,7 @@ export function GoalTrackerScreen() {
                 {readiness && isActive && (
                   <View style={styles.examReadinessRow}>
                     <Text style={[typography.small, { color: readiness.readinessPercent > 70 ? colors.accentGreen : readiness.readinessPercent > 50 ? colors.warning : colors.error }]}>
-                      {readiness.readinessPercent}% ready
+                      {t('goals.percentReady', { pct: readiness.readinessPercent })}
                     </Text>
                     <Text style={[typography.tiny, { color: colors.textMuted }]}>{readiness.predictedDate}</Text>
                   </View>
@@ -111,18 +121,18 @@ export function GoalTrackerScreen() {
           })}
         </View>
         <Text style={[typography.tiny, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.md }]}>
-          Tap to set primary • Long-press to toggle on/off
+          {t('goals.tapToSetPrimary')}
         </Text>
         {targetExams.length > 1 && (
           <View style={styles.primaryBadge}>
-            <Badge label={`Primary: ${primaryExam}`} color={colors.primary} />
+            <Badge label={t('goals.primary', { exam: primaryExam })} color={colors.primary} />
           </View>
         )}
       </View>
 
       {activeReadiness.length > 1 && (
         <View style={styles.comparisonCard}>
-          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>📊 Readiness Comparison</Text>
+          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>{t('goals.readinessComparison')}</Text>
           {activeReadiness
             .sort((a, b) => b.readinessPercent - a.readinessPercent)
             .map((r, i) => {
@@ -150,27 +160,27 @@ export function GoalTrackerScreen() {
       <View style={styles.streakCard}>
         <View style={styles.streakHeader}>
           <View>
-            <Text style={[typography.caption, { color: colors.textMuted }]}>Study Streak</Text>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>{t('goals.studyStreak')}</Text>
             <Text style={[typography.h1, { color: colors.accent, fontSize: 48 }]}>{streak.current}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary }]}>days 🔥</Text>
           </View>
           <View style={styles.streakStats}>
-            <StatCard label="Best Streak" value={`${streak.longest}d`} color={colors.accent} />
-            <StatCard label="Posts" value={`${targetExams.length}`} color={colors.primary} />
-            <StatCard label="Mastered" value={`${masteredTopics.length}`} color={colors.accentGreen} />
-            <StatCard label="Cards" value={`${getMasteredCount()}`} color={colors.info} />
+            <StatCard label={t('goals.bestStreak')} value={`${streak.longest}d`} color={colors.accent} />
+            <StatCard label={t('goals.posts')} value={`${targetExams.length}`} color={colors.primary} />
+            <StatCard label={t('goals.mastered')} value={`${masteredTopics.length}`} color={colors.accentGreen} />
+            <StatCard label={t('goals.cards')} value={`${getMasteredCount()}`} color={colors.info} />
           </View>
         </View>
       </View>
 
       <View style={styles.roadmapCard}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>
-          🗺️ Study Roadmap: <Text style={{ color: colors.primary }}>{primaryExam}</Text>
+          {t('goals.studyRoadmap', { exam: '' })}<Text style={{ color: colors.primary }}>{primaryExam}</Text>
         </Text>
         {(ROADMAP_BY_EXAM[primaryExam] || ROADMAP_BY_EXAM['Secretariat Assistant']).map((phase) => (
           <View key={phase.phase} style={[styles.phaseRow, { borderLeftColor: phase.color }]}>
             <View style={styles.phaseInfo}>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{phase.phase}</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{phaseLabels[phase.phase] || phase.phase}</Text>
               <Text style={[typography.small, { color: colors.textMuted }]}>{phase.duration}</Text>
             </View>
             <Text style={[typography.small, { color: colors.textSecondary }]}>{phase.topics}</Text>
@@ -179,27 +189,27 @@ export function GoalTrackerScreen() {
       </View>
 
       <View style={styles.dailyCard}>
-        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>📊 Daily Targets</Text>
+        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>{t('goals.dailyTargets')}</Text>
         <View style={styles.targetRow}>
           <View style={styles.targetItem}>
-            <Text style={[typography.small, { color: colors.textMuted }]}>MCQs</Text>
+            <Text style={[typography.small, { color: colors.textMuted }]}>{t('goals.mcqs')}</Text>
             <Text style={[typography.h2, { color: colors.primary }]}>{dailyTargetMCQs}</Text>
           </View>
           <View style={styles.targetItem}>
-            <Text style={[typography.small, { color: colors.textMuted }]}>Flashcards</Text>
+            <Text style={[typography.small, { color: colors.textMuted }]}>{t('goals.flashcardsShort')}</Text>
             <Text style={[typography.h2, { color: colors.accent }]}>{dailyTargetFlashcards}</Text>
           </View>
           <View style={styles.targetItem}>
-            <Text style={[typography.small, { color: colors.textMuted }]}>Accuracy ↑</Text>
+            <Text style={[typography.small, { color: colors.textMuted }]}>{t('goals.accuracyUp')}</Text>
             <Text style={[typography.h2, { color: colors.accentGreen }]}>+{accuracyImprovement}%</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.masteredCard}>
-        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>✅ Mastered Topics</Text>
+        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>{t('goals.masteredTopics')}</Text>
         {masteredTopics.length === 0 ? (
-          <Text style={[typography.caption, { color: colors.textMuted }]}>Complete topics to see them here</Text>
+          <Text style={[typography.caption, { color: colors.textMuted }]}>{t('goals.noMasteredTopics')}</Text>
         ) : (
           masteredTopics.map((topic) => (
             <View key={topic} style={styles.masteredRow}>

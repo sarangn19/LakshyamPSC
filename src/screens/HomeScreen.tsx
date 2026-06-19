@@ -1,192 +1,800 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { colors, spacing, borderRadius } from '../theme';
-import { typography } from '../theme/typography';
-import { useUserStore, useFlashcardStore, useMCQStore, usePerformanceStore } from '../store';
-import { refreshProfile } from '../services/profileBuilder';
-import { orchestrateSession, StudySessionPlan } from '../services/sessionOrchestrator';
-import { RecommendationCard } from '../components/RecommendationCard';
-import { ProgressBar, Badge } from '../components/common/StyledComponents';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Image, Modal, TouchableWithoutFeedback, Linking } from 'react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
+import { fontFamily } from '../theme';
+import { useUserStore } from '../store/userStore';
+import { usePerformanceStore } from '../store/performanceStore';
+import { mockCurrentAffairs, CurrentAffair } from '../data/mockData';
+import { syllabus } from '../data/syllabus';
 
-export function HomeScreen({ navigation }: any) {
-  const [plan, setPlan] = useState<StudySessionPlan | null>(null);
-  const [initialized, setInitialized] = useState(false);
+const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
 
-  const mcqSessionActive = useMCQStore((s) => s.sessionActive);
-  const flashcardReviewMode = useFlashcardStore((s) => s.reviewMode);
-  const getDueCount = useFlashcardStore((s) => s.getDueCount);
-  const { targetExams, primaryExam, streak, examReadiness } = useUserStore();
+function getWeekLabels(): string[] {
+  const now = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - (6 - i));
+    return DAY_ABBR[d.getDay()];
+  });
+}
 
-  const prevMcqActive = useRef(mcqSessionActive);
-  const prevFlashcardMode = useRef(flashcardReviewMode);
-  const planRef = useRef<StudySessionPlan | null>(null);
+function statColor(t: number): string {
+  const r = Math.round(247 * t);
+  const g = Math.round(177 * t);
+  const b = Math.round(26 * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+const GRADIENT_COLORS = [
+  "#F7B11A", "#DAA10E", "#BD910C", "#A08109",
+  "#837007", "#666004", "#000000",
+];
+
+function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: number[] }) {
+  const days = getWeekLabels();
+  const barAnims = useRef(weekly.map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
-    const profile = refreshProfile();
-    const availableMinutes = profile.averageSessionMinutes || 20;
-    const sessionPlan = orchestrateSession({
-      profile,
-      availableMinutes,
-      lastSessionType: null,
-      recentSessionTypes: [],
-    });
-    planRef.current = sessionPlan;
-    setPlan(sessionPlan);
-    setInitialized(true);
+    Animated.stagger(80, barAnims.map((anim, i) =>
+      Animated.timing(anim, { toValue: weekly[i], duration: 400, useNativeDriver: false })
+    )).start();
   }, []);
-
-  const reOrchestrate = useCallback(() => {
-    const profile = refreshProfile(true);
-    const availableMinutes = profile.averageSessionMinutes || 20;
-    const lastType = planRef.current?.sessionType || null;
-    const recentTypes = planRef.current ? [planRef.current.sessionType] : [];
-    const sessionPlan = orchestrateSession({ profile, availableMinutes, lastSessionType: lastType, recentSessionTypes: recentTypes });
-    planRef.current = sessionPlan;
-    setPlan(sessionPlan);
-  }, []);
-
-  useEffect(() => {
-    if (prevMcqActive.current && !mcqSessionActive) reOrchestrate();
-    prevMcqActive.current = mcqSessionActive;
-  }, [mcqSessionActive, reOrchestrate]);
-
-  useEffect(() => {
-    if (prevFlashcardMode.current && !flashcardReviewMode) reOrchestrate();
-    prevFlashcardMode.current = flashcardReviewMode;
-  }, [flashcardReviewMode, reOrchestrate]);
-
-  const dueCount = getDueCount();
-  const profile = usePerformanceStore((s) => s.profile);
-  const accuracyPct = profile ? Math.round(profile.averageAccuracy * 100) : 0;
-
-  if (!initialized) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.md }]}>Planning your session...</Text>
-      </View>
-    );
-  }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={[typography.caption, { color: colors.primaryLight }]}>Welcome back</Text>
-          <Text style={[typography.h1, { color: colors.text, marginTop: spacing.xs }]}>Lakshyam</Text>
+    <View style={styles.questionsCard}>
+      <Text style={styles.questionsLabel}>Questions practiced</Text>
+      <Text style={styles.questionsValue}>{total}</Text>
+      <View style={styles.barChartWrapper}>
+        <View style={styles.barChart}>
+          {weekly.map((height, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                styles.bar,
+                { height: barAnims[index], backgroundColor: GRADIENT_COLORS[index] }
+              ]}
+            />
+          ))}
         </View>
-        <View style={styles.headerStats}>
-          {streak.current > 0 && (
-            <View style={styles.statPill}>
-              <Text style={styles.statPillText}>🔥 {streak.current}d</Text>
-            </View>
-          )}
-          {primaryExam && (
-            <View style={styles.statPill}>
-              <Text style={styles.statPillText}>🎯 {primaryExam}</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
-            <Text style={{ fontSize: 20 }}>🧑‍🎓</Text>
-          </TouchableOpacity>
+        <View style={styles.daysRow}>
+          {days.map((day, index) => (
+            <Text key={index} style={styles.dayLabel}>{day}</Text>
+          ))}
         </View>
       </View>
+    </View>
+  );
+}
 
-      {plan && <RecommendationCard plan={plan} navigation={navigation} />}
+function OverallAccuracyCard({ data, overallAccuracy }: { data: number[]; overallAccuracy: number }) {
+  const w = 130;
+  const h = 60;
+  const padding = 4;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const [displayAcc, setDisplayAcc] = useState(0);
+  const accAnim = useRef(new Animated.Value(0)).current;
+  const graphOpacity = useRef(new Animated.Value(0)).current;
 
-      <View style={styles.secondaryRow}>
-        <TouchableOpacity
-          style={[styles.secondaryBtn, dueCount === 0 && { opacity: 0.4 }]}
-          onPress={() => {
-            if (dueCount > 0) {
-              useFlashcardStore.getState().loadDueCards();
-              navigation.navigate('Learn');
-            }
-          }}
-          disabled={dueCount === 0}
-        >
-          <Text style={{ fontSize: 20 }}>🃏</Text>
-          <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-            <Text style={[typography.captionBold, { color: colors.text }]}>Review Flashcards</Text>
-            <Text style={[typography.tiny, { color: dueCount > 0 ? colors.textMuted : colors.textSecondary }]}>
-              {dueCount > 0 ? `${dueCount} card${dueCount > 1 ? 's' : ''} due today` : 'All caught up'}
-            </Text>
-          </View>
-        </TouchableOpacity>
+  useEffect(() => {
+    const listener = accAnim.addListener(({ value }) => setDisplayAcc(Math.round(value)));
+    Animated.parallel([
+      Animated.timing(accAnim, { toValue: overallAccuracy, duration: 800, useNativeDriver: false }),
+      Animated.timing(graphOpacity, { toValue: 1, duration: 600, useNativeDriver: false }),
+    ]).start();
+    return () => accAnim.removeListener(listener);
+  }, []);
 
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => navigation.navigate('Analytics')}>
-          <Text style={{ fontSize: 20 }}>📊</Text>
-          <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-            <Text style={[typography.captionBold, { color: colors.text }]}>View Analytics</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>
-              {accuracyPct > 0 ? `${accuracyPct}% accuracy` : 'Track progress'}
-            </Text>
-          </View>
-        </TouchableOpacity>
+  const points = data.map((v, i) => ({
+    x: padding + (i * (w - 2 * padding)) / (data.length - 1),
+    y: h - padding - ((v - min) / range) * (h - 2 * padding),
+  }));
+
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ');
+
+  return (
+    <View style={styles.accuracyCard}>
+      <View style={styles.accuracyTop}>
+        <Text style={styles.accuracyLabel}>Overall accuracy</Text>
+        <Text style={styles.accuracyValue}>{displayAcc}%</Text>
       </View>
+      <Animated.View style={[styles.graphWrap, { opacity: graphOpacity }]}>
+        <Svg width={w} height={h}>
+          <Path d={linePath} stroke={statColor(0.65)} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <Circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r={3} fill={statColor(overallAccuracy / 100)} />
+        </Svg>
+        <View style={styles.graphDays}>
+          {getWeekLabels().map((d, i) => (
+            <Text key={i} style={styles.graphDayLabel}>{d}</Text>
+          ))}
+        </View>
+      </Animated.View>
+    </View>
+  );
+}
 
-      {examReadiness.filter((r) => targetExams.includes(r.examName)).length > 0 && (
-        <View style={styles.readinessFooter}>
-          <Text style={[typography.tiny, { color: colors.textMuted, marginBottom: spacing.xs }]}>Readiness</Text>
-          <View style={styles.readinessRow}>
-            {examReadiness
-              .filter((r) => targetExams.includes(r.examName))
-              .sort((a, b) => b.readinessPercent - a.readinessPercent)
-              .slice(0, 3)
-              .map((r) => (
-                <View key={r.examName} style={styles.readinessPill}>
-                  <Text style={[typography.tiny, { color: colors.textSecondary }]}>{r.examName}</Text>
-                  <Text style={[typography.small, { color: r.readinessPercent > 70 ? colors.accentGreen : colors.warning, fontWeight: '700' }]}>
-                    {r.readinessPercent}%
-                  </Text>
-                </View>
+export function HomeScreen({ navigation }: any) {
+  const userName = useUserStore((s) => s.userName);
+  const storeCurrentAffairs = useUserStore((s) => s.currentAffairs);
+  const [dbAffairs, setDbAffairs] = useState<CurrentAffair[] | null>(null);
+  const [selectedNews, setSelectedNews] = useState<CurrentAffair | null>(null);
+  const currentAffairs = dbAffairs ?? (storeCurrentAffairs.length > 0 ? storeCurrentAffairs : mockCurrentAffairs);
+
+  useEffect(() => {
+    import('../services/supabase').then(({ supabase }) => {
+      if (!supabase) return;
+      supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data }) => {
+        if (data && data.length > 0) {
+          setDbAffairs(data.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            summary: r.summary,
+            category: r.category,
+            date: r.published_at ? r.published_at.split('T')[0] : '',
+            source: r.source || '',
+            isImportant: false,
+            url: r.url || '',
+            image_url: r.image_url || '',
+          })));
+        }
+      });
+    });
+  }, []);
+
+  const interactionCount = usePerformanceStore((s) => s.interactionSignals.length);
+  const getInteractionAccuracy = usePerformanceStore((s) => s.getInteractionAccuracy);
+  const getSubjectAccuracy = usePerformanceStore((s) => s.getSubjectAccuracy);
+  const recentSessions = usePerformanceStore((s) => s.sessionSignals).filter(
+    (sig) => Date.now() - new Date(sig.date).getTime() < 7 * 86400000,
+  );
+  const sessionOutcomes = usePerformanceStore((s) => s.sessionOutcomes);
+
+  const weeklyQuestions: number[] = (() => {
+    const days: number[] = [0, 0, 0, 0, 0, 0, 0];
+    const now = new Date();
+    for (const sig of recentSessions) {
+      const d = new Date(sig.date);
+      const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+      if (diff >= 0 && diff < 7) {
+        days[6 - diff] += sig.questionsAttempted || 0;
+      }
+    }
+    return days;
+  })();
+
+  const accuracy = Math.round(getInteractionAccuracy() * 100);
+
+  const dailyAccuracy: number[] = (() => {
+    const sums = [0, 0, 0, 0, 0, 0, 0];
+    const counts = [0, 0, 0, 0, 0, 0, 0];
+    const now = new Date();
+    for (const outcome of sessionOutcomes) {
+      const d = new Date(outcome.startTime);
+      const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
+      if (diff >= 0 && diff < 7) {
+        sums[6 - diff] += outcome.accuracy;
+        counts[6 - diff]++;
+      }
+    }
+    return sums.map((sum, i) => (counts[i] > 0 ? Math.round((sum / counts[i]) * 100) : 0));
+  })();
+
+  const subjects = syllabus.map((subj) => {
+    const acc = getSubjectAccuracy(subj.name);
+    return {
+      subject: subj.name,
+      percent: acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0,
+    };
+  });
+
+  const hour = new Date().getHours();
+  const greetingText = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  const displayName = userName || 'there';
+
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Header + Today's Focus */}
+        <View style={styles.headerBlock}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerText}>
+              <Text style={styles.greeting}>{greetingText}, {displayName}</Text>
+              <Text style={styles.subtitle}>Here's what we recommend for today.</Text>
+            </View>
+            <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
+              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <Path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M20 21C20 18.8783 19.1571 16.8434 17.6569 15.3431C16.1566 13.8429 14.1217 13 12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </Svg>
+            </TouchableOpacity>
+          </View>
+
+          {/* Current Affairs */}
+          <View style={styles.caSection}>
+            <Text style={styles.caSectionTitle}>Current Affairs</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.caScroll}>
+              {currentAffairs.map((item) => (
+                <TouchableOpacity key={item.id} style={styles.caCard} onPress={() => setSelectedNews(item)}>
+                  {item.image_url ? (
+                    <Image source={{ uri: item.image_url }} style={styles.caImage} />
+                  ) : (
+                    <View style={styles.caImagePlaceholder}>
+                      <Text style={styles.caImagePlaceholderText}>{item.category[0].toUpperCase()}</Text>
+                    </View>
+                  )}
+                  <Text style={styles.caCategory}>{item.category}</Text>
+                  <Text style={styles.caTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.caSummary} numberOfLines={2}>{item.summary}</Text>
+                  <Text style={styles.caSource}>{item.source} · {item.date}</Text>
+                </TouchableOpacity>
               ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.focusCard}>
+            <View style={styles.focusTag}>
+              <Text style={styles.focusTagText}>Today's Focus</Text>
+            </View>
+            <Text style={styles.focusDescription}>
+              Based on your recent performance, {subjects.reduce((a, b) => a.percent < b.percent ? a : b).subject} is the highest-impact area to review today.
+            </Text>
+
           </View>
         </View>
-      )}
-    </ScrollView>
+
+        {/* This Week Section */}
+        <View style={styles.weekSection}>
+          <Text style={styles.sectionTitle}>This Week</Text>
+          <View style={styles.weekCards}>
+            <QuestionsPracticedCard total={interactionCount} weekly={weeklyQuestions} />
+            <OverallAccuracyCard data={dailyAccuracy} overallAccuracy={accuracy} />
+          </View>
+        </View>
+
+        {/* Subject Accuracy Section */}
+        <View style={styles.subjectSection}>
+          <Text style={styles.sectionTitle}>Subject Accuracy</Text>
+          <View style={styles.subjectCard}>
+            {subjects.map((s, i) => (
+              <React.Fragment key={s.subject}>
+                {i > 0 && <View style={styles.divider} />}
+                <SubjectProgress
+                  name={s.subject}
+                  percentage={s.percent}
+                  color={statColor(s.percent / 100)}
+                />
+              </React.Fragment>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* News Detail Modal */}
+      <Modal visible={!!selectedNews} transparent animationType="slide" onRequestClose={() => setSelectedNews(null)}>
+        <TouchableWithoutFeedback onPress={() => setSelectedNews(null)}>
+          <View style={styles.modalOverlay} />
+        </TouchableWithoutFeedback>
+        {selectedNews && (
+          <View style={styles.modalContent}>
+            {selectedNews.image_url ? (
+              <Image source={{ uri: selectedNews.image_url }} style={styles.modalImage} />
+            ) : (
+              <View style={styles.modalImagePlaceholder}>
+                <Text style={styles.modalImagePlaceholderText}>{selectedNews.category[0].toUpperCase()}</Text>
+              </View>
+            )}
+            <View style={styles.modalBody}>
+              <View style={styles.modalMeta}>
+                <Text style={styles.modalCategory}>{selectedNews.category}</Text>
+                <Text style={styles.modalSource}>{selectedNews.source} · {selectedNews.date}</Text>
+              </View>
+              <Text style={styles.modalTitle}>{selectedNews.title}</Text>
+              <Text style={styles.modalSummary}>{selectedNews.summary}</Text>
+              {selectedNews.url ? (
+                <TouchableOpacity style={styles.modalLink} onPress={() => { Linking.openURL(selectedNews.url!); setSelectedNews(null); }}>
+                  <Text style={styles.modalLinkText}>Read full article</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        )}
+      </Modal>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+          <View style={styles.navIconActive}>
+            <Svg width="16" height="16" viewBox="0 0 16 18" fill="none">
+              <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" fill="black"/>
+            </Svg>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chatbot')}>
+          <View style={styles.navIcon}>
+            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <Path d="M9.5 9H9.51M14.5 9H14.51M18 4C18.7956 4 19.5587 4.31607 20.1213 4.87868C20.6839 5.44129 21 6.20435 21 7V15C21 15.7956 20.6839 16.5587 20.1213 17.1213C19.5587 17.6839 18.7956 18 18 18H13L8 21V18H6C5.20435 18 4.44129 17.6839 3.87868 17.1213C3.31607 16.5587 3 15.7956 3 15V7C3 6.20435 3.31607 5.44129 3.87868 4.87868C4.44129 4.31607 5.20435 4 6 4H18Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <Path d="M9.5 13C9.82588 13.3326 10.2148 13.5968 10.6441 13.7772C11.0734 13.9576 11.5344 14.0505 12 14.0505C12.4656 14.0505 12.9266 13.9576 13.3559 13.7772C13.7852 13.5968 14.1741 13.3326 14.5 13" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </Svg>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Learn')}>
+          <View style={styles.navIcon}>
+            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <Path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3ZM18.82 9L12 12.72L5.18 9L12 5.28L18.82 9ZM17 16L12 18.72L7 16V12.27L12 15L17 12.27V16Z" fill="black"/>
+            </Svg>
+          </View>
+        </TouchableOpacity>
+
+      </View>
+    </View>
+  );
+}
+
+function SubjectProgress({ name, percentage, color }: { name: string; percentage: number; color: string }) {
+  const widthAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(widthAnim, { toValue: percentage, duration: 600, delay: 200, useNativeDriver: false }).start();
+  }, []);
+
+  return (
+    <View style={styles.subjectRow}>
+      <View style={styles.subjectInfo}>
+        <Text style={styles.subjectName}>{name}</Text>
+        <Text style={styles.subjectPct}>{percentage}%</Text>
+      </View>
+      <View style={styles.progressTrack}>
+        <Animated.View style={[styles.progressFill, { width: widthAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), backgroundColor: color }]} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingTop: spacing.huge,
-    paddingBottom: spacing.xl,
+  container: {
+    flex: 1,
+    backgroundColor: '#F9F9F9',
   },
-  headerLeft: {},
-  headerStats: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  statPill: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: colors.border,
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 64,
+    paddingBottom: 170,
+    gap: 40,
   },
-  statPillText: { fontSize: 12, color: colors.textSecondary },
-  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  secondaryRow: { gap: spacing.sm, marginBottom: spacing.xl },
-  secondaryBtn: {
+  headerBlock: {
+    gap: 16,
+    alignSelf: 'stretch',
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: 40,
   },
-  readinessFooter: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.huge,
+  headerText: {
+    flex: 1,
   },
-  readinessRow: { flexDirection: 'row', gap: spacing.md },
-  readinessPill: { flex: 1, alignItems: 'center' },
+  greeting: {
+    fontSize: 24,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 32,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: 'rgba(0, 0, 0, 0.5)',
+    lineHeight: 19,
+    fontFamily: fontFamily.body,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  caSection: {
+    gap: 12,
+    alignSelf: 'stretch',
+  },
+  caSectionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  caScroll: {
+    gap: 12,
+    paddingRight: 24,
+  },
+  caCard: {
+    width: 200,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    padding: 14,
+    gap: 6,
+  },
+  caCategory: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#42526E',
+    textTransform: 'capitalize',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  caTitle: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 18,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  caSummary: {
+    fontSize: 11,
+    fontWeight: '300',
+    color: 'rgba(0, 0, 0, 0.6)',
+    lineHeight: 15,
+    fontFamily: fontFamily.body,
+  },
+  caSource: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: 'rgba(0, 0, 0, 0.35)',
+    fontFamily: fontFamily.body,
+  },
+  caImage: {
+    width: '100%',
+    height: 90,
+    borderRadius: 6,
+    backgroundColor: '#F0F0F0',
+  },
+  caImagePlaceholder: {
+    width: '100%',
+    height: 90,
+    borderRadius: 6,
+    backgroundColor: '#42526E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  caImagePlaceholderText: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  modalContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    maxHeight: '85%',
+  },
+  modalImage: {
+    width: '100%',
+    height: 200,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: '#F0F0F0',
+  },
+  modalImagePlaceholder: {
+    width: '100%',
+    height: 200,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    backgroundColor: '#42526E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImagePlaceholderText: {
+    fontSize: 48,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  modalBody: {
+    padding: 24,
+    gap: 12,
+  },
+  modalMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalCategory: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#42526E',
+    textTransform: 'capitalize',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  modalSource: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: 'rgba(0, 0, 0, 0.35)',
+    fontFamily: fontFamily.body,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 24,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  modalSummary: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: 'rgba(0, 0, 0, 0.7)',
+    lineHeight: 20,
+    fontFamily: fontFamily.body,
+  },
+  modalLink: {
+    backgroundColor: '#42526E',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignSelf: 'flex-start',
+  },
+  modalLinkText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  focusCard: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    padding: 24,
+    gap: 8,
+    alignSelf: 'stretch',
+  },
+  focusTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#42526E',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 22,
+  },
+  focusTagText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#FFFFFF',
+    lineHeight: 14,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  focusDescription: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#000000',
+    lineHeight: 19,
+    fontFamily: fontFamily.body,
+  },
+  weekSection: {
+    gap: 24,
+    alignSelf: 'stretch',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 22,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  weekCards: {
+    flexDirection: 'row',
+    gap: 16,
+    height: 180,
+  },
+  accuracyCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    padding: 16,
+    gap: 10,
+    height: 180,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  accuracyTop: {
+    gap: 8,
+    alignSelf: 'stretch',
+  },
+  accuracyLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
+    lineHeight: 16,
+    fontFamily: fontFamily.body,
+    alignSelf: 'stretch',
+  },
+  accuracyValue: {
+    fontSize: 32,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 43,
+    fontFamily: fontFamily.bodyMedium,
+    alignSelf: 'stretch',
+  },
+  graphWrap: {
+    gap: 4,
+    width: 130,
+  },
+  graphDays: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 130,
+  },
+  graphDayLabel: {
+    width: 16,
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 14,
+    fontFamily: fontFamily.body,
+  },
+  barChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 49,
+  },
+  bar: {
+    width: 16,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  subjectSection: {
+    gap: 16,
+    alignSelf: 'stretch',
+  },
+  subjectCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    gap: 16,
+    alignSelf: 'stretch',
+  },
+  subjectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  subjectInfo: {
+    width: 80,
+    gap: 0,
+  },
+  subjectName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#000000',
+    opacity: 0.8,
+    lineHeight: 16,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  subjectPct: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 19,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 14,
+    backgroundColor: '#D9D9D9',
+  },
+  progressFill: {
+    height: 14,
+    backgroundColor: '#F7B11A',
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    alignSelf: 'stretch',
+  },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 24,
+    left: 24,
+    right: 24,
+    height: 76,
+    backgroundColor: '#F6F6F6',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+    borderRadius: 78,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    boxShadow: '0 0 115px rgba(0,0,0,0.12)',
+    elevation: 5,
+  },
+  navItem: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 86,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navIconActive: {
+    width: 44,
+    height: 44,
+    borderRadius: 86,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+
+  questionsCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    padding: 16,
+    gap: 10,
+    height: 180,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  questionsLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
+    lineHeight: 16,
+    fontFamily: fontFamily.body,
+    alignSelf: 'stretch',
+  },
+  questionsValue: {
+    fontSize: 32,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 43,
+    fontFamily: fontFamily.bodyMedium,
+    alignSelf: 'stretch',
+  },
+  barChartWrapper: {
+    gap: 4,
+    width: 112,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    height: 16,
+    width: 112,
+  },
+  dayLabel: {
+    width: 16,
+    height: 16,
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 14,
+    fontFamily: fontFamily.body,
+  },
 });

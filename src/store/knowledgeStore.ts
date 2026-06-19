@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Note } from '../data/mockData';
+import { saveNote, removeNote as removeNoteFromSync, fetchNotes } from '../services/dataSync';
 
 interface KnowledgeState {
   notes: Note[];
@@ -14,6 +15,7 @@ interface KnowledgeState {
   setSearchQuery: (query: string) => void;
   getNotesBySubject: (subject: string) => Note[];
   getLinkedNotes: (topicId: string) => Note[];
+  loadNotes: () => Promise<void>;
 }
 
 export const useKnowledgeStore = create<KnowledgeState>()(
@@ -22,16 +24,31 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       notes: [],
       selectedSubject: '',
       searchQuery: '',
-      addNote: (note) => set((state) => ({ notes: [note, ...state.notes] })),
-      removeNote: (id) => set((state) => ({ notes: state.notes.filter((n) => n.id !== id) })),
-      updateNote: (id, updates) =>
+      addNote: (note) => {
+        set((state) => ({ notes: [note, ...state.notes] }));
+        saveNote(note);
+      },
+      removeNote: (id) => {
+        set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
+        removeNoteFromSync(id);
+      },
+      updateNote: (id, updates) => {
         set((state) => ({
           notes: state.notes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
-        })),
+        }));
+        const note = get().notes.find((n) => n.id === id);
+        if (note) saveNote(note);
+      },
       setSelectedSubject: (subject) => set({ selectedSubject: subject }),
       setSearchQuery: (query) => set({ searchQuery: query }),
       getNotesBySubject: (subject) => get().notes.filter((n) => n.subject === subject),
       getLinkedNotes: (topicId) => get().notes.filter((n) => n.topicIds.includes(topicId)),
+      loadNotes: async () => {
+        const remote = await fetchNotes();
+        if (remote.length > 0) {
+          set({ notes: remote });
+        }
+      },
     }),
     {
       name: 'lakshyam-knowledge',

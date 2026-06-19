@@ -1,0 +1,249 @@
+import { GeneratedQuestion } from './aiMCQGenerator';
+import { generateAIQuestion } from './aiQuestionGenerator';
+import { computePriorities, TopicPriority, checkPrerequisites } from './revisionEngine';
+import { getSubtopicsForTopic } from './knowledgeEngine';
+import { getScorableTopics } from './infinityScorer';
+import { useBKTStore } from '../store/bktStore';
+import { useUserStore } from '../store/userStore';
+import { InteractionSignal } from '../store/performanceStore';
+import { getUnifiedPriorities } from './cognitiveTwinRecommender';
+
+export interface RecentAnswer {
+  text: string;
+  correct: boolean;
+}
+
+export interface AdaptiveState {
+  currentSubtopic: { subject: string; topic: string; subtopic: string } | null;
+  recentHistory: Record<string, RecentAnswer[]>;
+  usedQuestionIds: string[];
+}
+
+export function makeAdaptiveState(): AdaptiveState {
+  return { currentSubtopic: null, recentHistory: {}, usedQuestionIds: [] };
+}
+
+const RECENCY_PENALTY = 0.3;
+const RECENCY_WINDOW = 3;
+const MAX_RECENT_HISTORY = 4;
+
+function getWeaknessTier(priority: TopicPriority): 'weak' | 'unattempted' | 'strong' | 'default' {
+  if (priority.totalAttempts === 0) return 'unattempted';
+  if (priority.pMastered < 0.4) return 'weak';
+  if (priority.pMastered > 0.8) return 'strong';
+  return 'default';
+}
+
+function difficultyForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default'): 'easy' | 'medium' | 'hard' {
+  switch (tier) {
+    case 'weak': return 'easy';
+    case 'unattempted': return 'medium';
+    case 'strong': return 'hard';
+    default: return 'medium';
+  }
+}
+
+function focusForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default'): string {
+  switch (tier) {
+    case 'weak': return 'Focus on the CORE CONCEPT they are missing';
+    case 'unattempted': return 'Build interest with a clear conceptual question';
+    case 'strong': return 'Test application-level understanding connecting multiple ideas';
+    default: return 'Test foundational understanding';
+  }
+}
+
+function weightedRandomPick(
+  candidates: { subject: string; topic: string; adjustedScore: number }[],
+): { subject: string; topic: string } | null {
+  if (candidates.length === 0) return null;
+  const totalScore = candidates.reduce((s, t) => s + t.adjustedScore, 0);
+  if (totalScore <= 0) return candidates[Math.floor(Math.random() * candidates.length)];
+  let r = Math.random() * totalScore;
+  for (const t of candidates) {
+    r -= t.adjustedScore;
+    if (r <= 0) return { subject: t.subject, topic: t.topic };
+  }
+  return candidates[candidates.length - 1];
+}
+
+function getRecentTopicKeys(signals: InteractionSignal[], n: number): string[] {
+  return signals.slice(-n).map((s) => `${s.subject}::${s.topic}`);
+}
+
+function pickTopic(
+  weakSubjects: string[],
+  sessionCovered: string[],
+  recentSignals: InteractionSignal[],
+): { subject: string; topic: string } | null {
+  const bkt = useBKTStore.getState();
+  const knowledgeMap = bkt.topicMap;
+  const priorities = computePriorities(knowledgeMap, {});
+
+  const recentKeys = getRecentTopicKeys(recentSignals, RECENCY_WINDOW);
+  const coveredSet = new Set(sessionCovered);
+
+  let candidates = priorities
+    .filter((p) => {
+      if (weakSubjects.length === 0) return true;
+      return weakSubjects.includes(p.subject);
+    })
+    .map((p) => {
+      const key = `${p.subject}::${p.topic}`;
+      let adjustedScore = p.priority;
+      if (coveredSet.has(key)) adjustedScore = 0;
+      if (recentKeys.includes(key)) adjustedScore *= RECENCY_PENALTY;
+      const prereqs = checkPrerequisites(p.topic);
+      for (const prereq of prereqs) {
+        if (!knowledgeMap[prereq] || knowledgeMap[prereq].pMastered < 0.8) {
+          adjustedScore *= 0.5;
+        }
+      }
+      return { subject: p.subject, topic: p.topic, adjustedScore };
+    })
+    .filter((c) => c.adjustedScore > 0);
+
+  if (candidates.length === 0) {
+    let fallback = priorities;
+    if (weakSubjects.length > 0) {
+      fallback = priorities.filter((p) => weakSubjects.includes(p.subject));
+    }
+    if (fallback.length === 0) fallback = priorities;
+    candidates = fallback.map((p) => ({
+      subject: p.subject,
+      topic: p.topic,
+      adjustedScore: Math.max(0.01, p.priority),
+    }));
+  }
+
+  return weightedRandomPick(candidates);
+}
+
+function pickWeakestSubtopic(
+  subject: string,
+  topic: string,
+): string {
+  const bkt = useBKTStore.getState();
+  const weakest = bkt.getWeakestSubtopicInTopic(subject, topic);
+  if (weakest) return weakest.subtopic;
+  const subtopics = getSubtopicsForTopic(topic);
+  if (subtopics.length > 0) return subtopics[0];
+  return topic;
+}
+
+export async function generateNextAdaptiveQuestion(
+  weakSubjects: string[],
+  sessionCovered: string[],
+  sessionCorrect: number,
+  sessionTotal: number,
+  currentDifficulty: 'easy' | 'medium' | 'hard',
+  adaptiveState: AdaptiveState,
+  recentSignals: InteractionSignal[],
+  lastAnswerCorrect?: boolean,
+): Promise<{
+  question: GeneratedQuestion | null;
+  adaptiveState: AdaptiveState;
+  aligned: boolean;
+}> {
+  const state = {
+    ...adaptiveState,
+    recentHistory: { ...adaptiveState.recentHistory },
+  };
+
+  // Reinforcement loop: if wrong, stay on same subtopic
+  let topic: { subject: string; topic: string } | null = null;
+  let subtopic: string;
+  if (lastAnswerCorrect === false && state.currentSubtopic) {
+    topic = { subject: state.currentSubtopic.subject, topic: state.currentSubtopic.topic };
+    subtopic = state.currentSubtopic.subtopic;
+  } else {
+    topic = pickTopic(weakSubjects, sessionCovered, recentSignals);
+    if (!topic) {
+      const allTopics = getScorableTopics();
+      if (allTopics.length > 0) {
+        const idx = Math.floor(Math.random() * allTopics.length);
+        topic = allTopics[idx];
+      }
+    }
+    if (!topic) return { question: null, adaptiveState: state, aligned: false };
+    subtopic = pickWeakestSubtopic(topic.subject, topic.topic);
+  }
+
+  state.currentSubtopic = { ...topic, subtopic };
+
+  // Compute priority for this topic
+  const bkt = useBKTStore.getState();
+  const knowledgeMap = bkt.topicMap;
+  const priorities = computePriorities(knowledgeMap, {});
+  const thisPriority = priorities.find((p) => p.subject === topic!.subject && p.topic === topic!.topic);
+  const tier = thisPriority ? getWeaknessTier(thisPriority) : 'default';
+  const difficulty = difficultyForTier(tier);
+  const focusInstruction = focusForTier(tier);
+
+  // Build recent history for this subtopic
+  const historyKey = `${topic.subject}::${topic.topic}::${subtopic}`;
+  const topicHistory = state.recentHistory[historyKey] || [];
+
+  // Syllabus items for this topic (all subtopics the AI can draw from)
+  const syllabusItems = getSubtopicsForTopic(topic.topic);
+
+  // Language: read locale from user store for AI-generated questions
+  const locale = useUserStore.getState().locale;
+
+  console.log('[AUDIT] selectedTopic:', topic.subject + '::' + topic.topic);
+
+  const topicConstraint =
+    `PREFERRED TOPIC: Generate a question about "${topic.topic}" within the subject "${topic.subject}". `
+    + `The question should ideally cover "${topic.topic}" or its subtopics. `
+    + `If you cannot generate for this exact topic, generate for the closest related topic within the same subject. `
+    + `Always generate a question — never return empty.`;
+
+  // AI generation — single attempt, alignment is checked downstream
+  const aiResult = await generateAIQuestion({
+    subject: topic.subject,
+    topic: topic.topic,
+    subtopic,
+    difficulty,
+    focusInstruction,
+    recentHistory: topicHistory,
+    syllabusItems,
+    language: locale,
+    topicConstraint,
+  });
+
+  if (aiResult.question) {
+    const q = aiResult.question;
+    q.subtopic = subtopic;
+    console.log('[AUDIT] generatedQuestionTopic:', q.subject + '::' + q.topic);
+    const aligned = q.topic === topic.topic && q.subject === topic.subject;
+    if (!aligned) {
+      console.log('[ALIGNMENT] MISMATCH — requested:', topic.subject, topic.topic, '| got:', q.subject, q.topic, '| enforcement will handle');
+    }
+    return { question: q, adaptiveState: state, aligned };
+  }
+
+  // No fallback — if AI fails, return null
+  console.log('[AUDIT] generatedQuestionTopic: none (AI failed, no template fallback)');
+  return { question: null, adaptiveState: state, aligned: false };
+}
+
+export function recordAnswer(
+  adaptiveState: AdaptiveState,
+  questionText: string,
+  topic: string,
+  subject: string,
+  correct: boolean,
+  questionId?: string,
+  subtopic?: string,
+): AdaptiveState {
+  const historyKey = `${subject}::${topic}${subtopic ? `::${subtopic}` : ''}`;
+  const history = adaptiveState.recentHistory[historyKey] || [];
+  const updated = [...history, { text: questionText, correct }].slice(-MAX_RECENT_HISTORY);
+  const usedIds = questionId && !adaptiveState.usedQuestionIds.includes(questionId)
+    ? [...adaptiveState.usedQuestionIds, questionId]
+    : adaptiveState.usedQuestionIds;
+  return {
+    ...adaptiveState,
+    recentHistory: { ...adaptiveState.recentHistory, [historyKey]: updated },
+    usedQuestionIds: usedIds,
+  };
+}

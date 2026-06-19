@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
@@ -8,6 +9,7 @@ import { SectionHeader, Badge, StyledCard, EmptyState } from '../components/comm
 const SUBJECT_FILTERS = ['All', 'Renaissance', 'Kerala History', 'Constitution', 'Geography', 'Science', 'Malayalam'];
 
 export function KnowledgeRepositoryScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { notes, selectedSubject, searchQuery, setSelectedSubject, setSearchQuery } = useKnowledgeStore();
   const [showAddMenu, setShowAddMenu] = useState(false);
 
@@ -27,7 +29,7 @@ export function KnowledgeRepositoryScreen({ navigation }: any) {
 
       <TextInput
         style={styles.search}
-        placeholder="Search notes..."
+        placeholder={t('knowledge.search')}
         placeholderTextColor={colors.textMuted}
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -41,7 +43,7 @@ export function KnowledgeRepositoryScreen({ navigation }: any) {
             onPress={() => setSelectedSubject(s === 'All' ? '' : s)}
           >
             <Text style={[typography.small, { color: (selectedSubject === s || (selectedSubject === '' && s === 'All')) ? colors.primary : colors.textSecondary }]}>
-              {s}
+              {s === 'All' ? t('knowledge.all') : s}
             </Text>
           </TouchableOpacity>
         ))}
@@ -51,22 +53,22 @@ export function KnowledgeRepositoryScreen({ navigation }: any) {
         <View style={styles.addMenu}>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={{ fontSize: 20 }}>📝</Text>
-            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>Text Note</Text>
+            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>{t('knowledge.textNote')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={{ fontSize: 20 }}>🎤</Text>
-            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>Voice Note</Text>
+            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>{t('knowledge.voiceNote')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem}>
             <Text style={{ fontSize: 20 }}>📷</Text>
-            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>Scan & OCR</Text>
+            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.md }]}>{t('knowledge.scanOCR')}</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {filteredNotes.length === 0 ? (
-          <EmptyState message="No notes yet. Start adding your knowledge!" icon="📚" />
+          <EmptyState message={t('knowledge.empty')} icon="📚" />
         ) : (
           filteredNotes.map((note) => (
             <TouchableOpacity
@@ -107,11 +109,12 @@ export function KnowledgeRepositoryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg },
   headerBar: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.md },
-  addBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  addBtn: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   search: {
     backgroundColor: colors.bgInput,
     borderRadius: borderRadius.md,
-    padding: spacing.md,
+    height: 48,
+    paddingHorizontal: spacing.md,
     color: colors.text,
     marginBottom: spacing.md,
     borderWidth: 1,

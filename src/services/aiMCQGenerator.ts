@@ -11,6 +11,7 @@ export interface GenerationRequest {
   sourceNotes?: Note[];
   sourceCurrentAffairs?: CurrentAffair[];
   avoidQuestionIds?: string[];
+  language?: 'en' | 'ml';
 }
 
 export interface GeneratedQuestion {
@@ -24,21 +25,23 @@ export interface GeneratedQuestion {
   explanation: string;
   examType: string[];
   confidence: number;
-  source: 'syllabus' | 'notes' | 'current_affairs' | 'previous_paper';
+  source: 'syllabus' | 'notes' | 'current_affairs' | 'previous_paper' | 'ai_generated';
   generatedAt: string;
+  subtopic?: string;
 }
 
 interface QuestionTemplate {
   subject: string;
   topic: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  language: 'en' | 'ml';
   build: () => { text: string; options: string[]; correctAnswer: number; explanation: string };
 }
 
 const TEMPLATES: QuestionTemplate[] = [];
 
-function register(subject: string, topic: string, difficulty: 'easy' | 'medium' | 'hard', build: () => { text: string; options: string[]; correctAnswer: number; explanation: string }) {
-  TEMPLATES.push({ subject, topic, difficulty, build });
+function register(subject: string, topic: string, difficulty: 'easy' | 'medium' | 'hard', build: () => { text: string; options: string[]; correctAnswer: number; explanation: string }, language: 'en' | 'ml' = 'en') {
+  TEMPLATES.push({ subject, topic, difficulty, language, build });
 }
 
 function shuffleOpts(correct: string, wrong: string[], correctIdx: number): { options: string[]; correctAnswer: number } {
@@ -268,6 +271,84 @@ register('Quantitative Aptitude', 'Percentages', 'medium', () => {
   return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
 });
 
+// ─── MALAYALAM TEMPLATE QUESTIONS ───
+
+register('Kerala History', 'Ancient Kerala', 'easy', () => {
+  const qs = [
+    { t: 'പുരാതന കേരളത്തിന്റെ "സുവർണ്ണ കാലഘട്ടം" എന്നറിയപ്പെടുന്നത് ഏത് സംഘകാലമാണ്?', o: ['സംഘ കാലഘട്ടം', 'പ്രീ-സംഘം', 'പോസ്റ്റ്-സംഘം', 'മധ്യകാല'], c: 0, e: 'സംഘകാലം (ക്രി.മു. 300 – ക്രി.ശേ. 300) വ്യാപാരത്തിന്റെയും സാഹിത്യത്തിന്റെയും അഭിവൃദ്ധിയോടെ പുരാതന കേരളത്തിന്റെ സുവർണ്ണ കാലഘട്ടമായി കണക്കാക്കപ്പെടുന്നു.' },
+    { t: 'ചേര രാജവംശത്തിന്റെ ചിഹ്നം എന്തായിരുന്നു?', o: ['വില്ലും അമ്പും', 'മത്സ്യം', 'കടുവ', 'ആന'], c: 0, e: 'ചേരന്മാർ അവരുടെ രാജകീയ ചിഹ്നമായി വില്ലും അമ്പും ഉപയോഗിച്ചു, അവരുടെ നാണയങ്ങളിൽ കാണപ്പെടുന്നു.' },
+    { t: 'സംഘകാലത്ത് കേരളത്തിലെ പ്രധാന റോമൻ വ്യാപാര കേന്ദ്രം ഏതായിരുന്നു?', o: ['മുസിരിസ്', 'കോഴിക്കോട്', 'കൊല്ലം', 'കൊച്ചി'], c: 0, e: 'മുസിരിസ് (ഇന്നത്തെ കൊടുങ്ങല്ലൂർ) കേരളത്തിലെ ഏറ്റവും പ്രധാനപ്പെട്ട റോമൻ വ്യാപാര തുറമുഖമായിരുന്നു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Kerala History', 'Modern Kerala', 'easy', () => {
+  const qs = [
+    { t: 'കേരള സംസ്ഥാനം രൂപീകരിച്ചത് എന്ന്?', o: ['1956 നവംബർ 1', '1947 ഓഗസ്റ്റ് 15', '1950 ജനുവരി 26', '1955 ജൂലൈ 1'], c: 0, e: '1956 നവംബർ 1-ന് സംസ്ഥാന പുനഃസംഘടനാ നിയമപ്രകാരം കേരളം രൂപീകരിക്കപ്പെട്ടു.' },
+    { t: 'കേരളത്തിലെ ആദ്യ മുഖ്യമന്ത്രി ആരായിരുന്നു?', o: ['ഇ.എം.എസ്. നമ്പൂതിരിപ്പാട്', 'പട്ടം എ. താണുപിള്ള', 'ആർ. ശങ്കർ', 'സി. അച്യുതമേനോൻ'], c: 0, e: 'ഇ.എം.എസ്. നമ്പൂതിരിപ്പാട് 1957-ൽ കേരളത്തിലെ ആദ്യ മുഖ്യമന്ത്രിയായി.' },
+    { t: 'ഏത് നിയമമാണ് കേരളത്തിന്റെ രൂപീകരണത്തിലേക്ക് നയിച്ചത്?', o: ['സംസ്ഥാന പുനഃസംഘടനാ നിയമം, 1956', 'ഇന്ത്യൻ സ്വാതന്ത്ര്യ നിയമം, 1947', 'ഇന്ത്യാ ഗവൺമെന്റ് നിയമം, 1935', 'കേരള രൂപീകരണ നിയമം, 1956'], c: 0, e: 'സംസ്ഥാന പുനഃസംഘടനാ നിയമം, 1956 ഭാഷാടിസ്ഥാനത്തിൽ സംസ്ഥാനങ്ങളെ പുനഃസംഘടിപ്പിച്ചു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Constitution', 'Fundamental Rights', 'easy', () => {
+  const qs = [
+    { t: 'ഇന്ത്യൻ ഭരണഘടനയിലെ ആർട്ടിക്കിൾ 21 ഇതുമായി ബന്ധപ്പെട്ടിരിക്കുന്നു?', o: ['ജീവിക്കാനും വ്യക്തിസ്വാതന്ത്ര്യത്തിനുമുള്ള അവകാശം', 'സമത്വത്തിനുള്ള അവകാശം', 'സ്വാതന്ത്ര്യത്തിനുള്ള അവകാശം', 'ചൂഷണത്തിനെതിരായ അവകാശം'], c: 0, e: 'ആർട്ടിക്കിൾ 21 ജീവിക്കാനും വ്യക്തിസ്വാതന്ത്ര്യത്തിനുമുള്ള അവകാശം ഉറപ്പുനൽകുന്നു.' },
+    { t: 'ഇന്ത്യൻ ഭരണഘടനയിൽ എത്ര മൗലികാവകാശങ്ങൾ ഉണ്ടായിരുന്നു?', o: ['ഏഴ്', 'ആറ്', 'എട്ട്', 'ഒൻപത്'], c: 0, e: 'തുടക്കത്തിൽ ഏഴ് മൗലികാവകാശങ്ങൾ ഉണ്ടായിരുന്നു (ആർട്ടിക്കിൾ 12-35).' },
+    { t: 'വിദ്യാഭ്യാസ അവകാശം (ആർട്ടിക്കിൾ 21A) ഏത് ഭേദഗതിയിലൂടെയാണ് ചേർത്തത്?', o: ['86-ാം ഭേദഗതി, 2002', '93-ാം ഭേദഗതി, 2005', '42-ാം ഭേദഗതി, 1976', '44-ാം ഭേദഗതി, 1978'], c: 0, e: '86-ാം ഭേദഗതി (2002) 6-14 വയസ്സുള്ള കുട്ടികൾക്ക് വിദ്യാഭ്യാസത്തെ മൗലികാവകാശമാക്കി.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Geography', 'Districts', 'easy', () => {
+  const qs = [
+    { t: 'കേരളത്തിൽ എത്ര ജില്ലകളുണ്ട്?', o: ['14', '12', '16', '13'], c: 0, e: '2026 ലെ കണക്കനുസരിച്ച് കേരളത്തിൽ 14 ജില്ലകളുണ്ട്.' },
+    { t: 'വിസ്തീർണ്ണത്തിൽ ഏറ്റവും വലിയ കേരള ജില്ല ഏത്?', o: ['പാലക്കാട്', 'കാസർഗോഡ്', 'വയനാട്', 'ഇടുക്കി'], c: 0, e: 'പാലക്കാട് ജില്ലയാണ് വിസ്തീർണ്ണത്തിൽ ഏറ്റവും വലുത് (4,480 ച.കി.മീ).' },
+    { t: 'ഏറ്റവും ചെറിയ കേരള ജില്ല ഏത്?', o: ['ആലപ്പുഴ', 'കാസർഗോഡ്', 'തിരുവനന്തപുരം', 'കൊച്ചി'], c: 0, e: 'ആലപ്പുഴയാണ് ഏറ്റവും ചെറിയ ജില്ല (1,414 ച.കി.മീ).' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Renaissance', 'Sree Narayana Guru', 'easy', () => {
+  const qs = [
+    { t: 'ശ്രീ നാരായണ ഗുരു ജനിച്ച വർഷം ഏത്?', o: ['1855', '1856', '1854', '1860'], c: 0, e: 'ശ്രീ നാരായണ ഗുരു 1855-ൽ തിരുവനന്തപുരം ചെമ്പഴന്തിയിലാണ് ജനിച്ചത്.' },
+    { t: 'ശ്രീ നാരായണ ഗുരുവിന്റെ പ്രശസ്തമായ മുദ്രാവാക്യം ഏത്?', o: ['ഒരു ജാതി, ഒരു മതം, ഒരു ദൈവം മനുഷ്യന്', 'അദ്ധ്വാനമാണ് ആരാധന', 'അറിവാണ് ശക്തി', 'മനുഷ്യ സേവയാണ് മാധവ സേവ'], c: 0, e: 'അദ്ദേഹത്തിന്റെ "ഒരു ജാതി, ഒരു മതം, ഒരു ദൈവം മനുഷ്യന്" എന്ന മുദ്രാവാക്യം സാർവത്രിക സാഹോദര്യം പ്രോത്സാഹിപ്പിച്ചു.' },
+    { t: 'ശ്രീ നാരായണ ഗുരുവും ഡോ. പൽപ്പുവും ചേർന്ന് സ്ഥാപിച്ച സംഘടന ഏത്?', o: ['ശ്രീ നാരായണ ധർമ്മ പരിപാലന യോഗം (എസ്.എൻ.ഡി.പി)', 'ശിവഗിരി മഠം', 'അരുവിപ്പുറം ക്ഷേത്രം', 'അദ്വൈതാശ്രമം'], c: 0, e: 'എസ്.എൻ.ഡി.പി. യോഗം 1903-ൽ ശ്രീ നാരായണ ഗുരുവും ഡോ. പത്മനാഭൻ പൽപ്പുവും ചേർന്ന് സ്ഥാപിച്ചു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Science', 'Chemistry', 'easy', () => {
+  const qs = [
+    { t: 'ഭൂമിയുടെ അന്തരീക്ഷത്തിൽ ഏറ്റവും കൂടുതലുള്ള വാതകം ഏത്?', o: ['നൈട്രജൻ', 'ഓക്സിജൻ', 'കാർബൺ ഡൈ ഓക്സൈഡ്', 'ആർഗോൺ'], c: 0, e: 'നൈട്രജൻ (78%) ഭൂമിയുടെ അന്തരീക്ഷത്തിലെ ഏറ്റവും സമൃദ്ധമായ വാതകമാണ്.' },
+    { t: 'സ്വർണ്ണത്തിന്റെ രാസ ചിഹ്നം ഏത്?', o: ['Au', 'Ag', 'Fe', 'Cu'], c: 0, e: 'Au (ലാറ്റിൻ "Aurum" ൽ നിന്ന്) സ്വർണ്ണത്തിന്റെ രാസ ചിഹ്നമാണ്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Renaissance', 'Temple Entry Movement', 'easy', () => {
+  const qs = [
+    { t: 'ക്ഷേത്രപ്രവേശന വിളംബരം പുറപ്പെടുവിച്ച വർഷം ഏത്?', o: ['1936', '1924', '1947', '1931'], c: 0, e: '1936 നവംബർ 12-ന് ശ്രീ ചിത്തിര തിരുനാൾ മഹാരാജാവാണ് ഇത് പുറപ്പെടുവിച്ചത്.' },
+    { t: 'വൈക്കം സത്യാഗ്രഹം നടന്നത് ഏത് ജില്ലയിൽ?', o: ['കോട്ടയം', 'എറണാകുളം', 'ആലപ്പുഴ', 'തൃശ്ശൂർ'], c: 0, e: 'വൈക്കം സത്യാഗ്രഹം (1924-25) കോട്ടയം ജില്ലയിലെ വൈക്കം മഹാദേവ ക്ഷേത്രത്തിലാണ് നടന്നത്.' },
+    { t: 'വൈക്കം സത്യാഗ്രഹത്തിന് നേതൃത്വം നൽകിയത് ആര്?', o: ['കെ. കേളപ്പൻ', 'മഹാത്മാഗാന്ധി', 'ശ്രീ നാരായണ ഗുരു', 'അയ്യങ്കാളി'], c: 0, e: '"കേരള ഗാന്ധി" എന്നറിയപ്പെടുന്ന കെ. കേളപ്പനാണ് വൈക്കം സത്യാഗ്രഹത്തിന് നേതൃത്വം നൽകിയത്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
 // ─── MENTAL ABILITY ───
 
 register('Mental Ability', 'Analogies', 'easy', () => {
@@ -305,7 +386,7 @@ register('Renaissance', 'Social Reform Movements', 'hard', () => {
 
 // ─── NOTE-BASED GENERATION ───
 
-function generateFromNote(note: Note): GeneratedQuestion | null {
+export function generateFromNote(note: Note, language?: 'en' | 'ml'): GeneratedQuestion | null {
   if (!note.content || note.content.length < 20) return null;
 
   const words = note.content.split(/\s+/);
@@ -317,15 +398,20 @@ function generateFromNote(note: Note): GeneratedQuestion | null {
   while (wrongOptions.length < 3) wrongOptions.push('Other');
 
   const s = shuffleOpts(term, wrongOptions.slice(0, 3), 0);
+  const isML = language === 'ml';
   return {
     id: `gen_note_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    text: `Based on your notes: Which of the following is mentioned in "${note.title}"?`,
+    text: isML
+      ? `നിങ്ങളുടെ കുറിപ്പുകളെ അടിസ്ഥാനമാക്കി: "${note.title}" എന്നതിൽ പരാമർശിച്ചിരിക്കുന്നത് ഇനിപ്പറയുന്നവയിൽ ഏത്?`
+      : `Based on your notes: Which of the following is mentioned in "${note.title}"?`,
     options: s.options,
     correctAnswer: s.correctAnswer,
     subject: note.subject,
     topic: note.tags[0] || 'General',
     difficulty: 'medium',
-    explanation: `From your note "${note.title}": "${note.content.substring(0, 120)}..."`,
+    explanation: isML
+      ? `"${note.title}" എന്ന നിങ്ങളുടെ കുറിപ്പിൽ നിന്ന്: "${note.content.substring(0, 120)}..."`
+      : `From your note "${note.title}": "${note.content.substring(0, 120)}..."`,
     examType: ['LDC', 'Secretariat Assistant', 'Degree Level'],
     confidence: 60,
     source: 'notes',
@@ -335,7 +421,7 @@ function generateFromNote(note: Note): GeneratedQuestion | null {
 
 // ─── CURRENT AFFAIRS GENERATION ───
 
-function generateFromCurrentAffair(ca: CurrentAffair): GeneratedQuestion {
+function generateFromCurrentAffair(ca: CurrentAffair, language?: 'en' | 'ml'): GeneratedQuestion {
   const options = [
     ca.title,
     `New ${ca.category} policy announced`,
@@ -343,9 +429,12 @@ function generateFromCurrentAffair(ca: CurrentAffair): GeneratedQuestion {
     `Budget allocation for ${ca.category}`,
   ];
   const s = shuffleOpts(ca.title, options.filter((_, i) => i !== 0).slice(0, 3), 0);
+  const isML = language === 'ml';
   return {
     id: `gen_ca_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    text: `Current Affairs: Which of the following is a recent development in Kerala?`,
+    text: isML
+      ? `കറന്റ് അഫയേഴ്സ്: ഇനിപ്പറയുന്നവയിൽ ഏതാണ് കേരളത്തിലെ സമീപകാല വികസനം?`
+      : `Current Affairs: Which of the following is a recent development in Kerala?`,
     options: s.options,
     correctAnswer: s.correctAnswer,
     subject: 'Current Affairs',
@@ -358,6 +447,129 @@ function generateFromCurrentAffair(ca: CurrentAffair): GeneratedQuestion {
     generatedAt: new Date().toISOString(),
   };
 }
+
+// ─── MORE MALAYALAM TEMPLATES ───
+
+register('Kerala History', 'Medieval Kerala', 'easy', () => {
+  const qs = [
+    { t: 'സാമൂതിരിമാർ ഏത് നഗരത്തിൽ നിന്നാണ് ഭരിച്ചത്?', o: ['കോഴിക്കോട്', 'കൊച്ചി', 'കൊല്ലം', 'കണ്ണൂർ'], c: 0, e: 'സാമൂതിരിമാർ കോഴിക്കോട് നിന്ന് ഭരിച്ചു, ഇത് ഒരു പ്രധാന വ്യാപാര കേന്ദ്രമായിരുന്നു.' },
+    { t: 'പോർച്ചുഗീസുകാരുടെ വരവിന് മുമ്പ് കൊച്ചി രാജ്യം ഏത് സാമ്രാജ്യത്തിന്റെ കീഴിലായിരുന്നു?', o: ['വിജയനഗര സാമ്രാജ്യം', 'സാമൂതിരി', 'ചോള സാമ്രാജ്യം', 'പാണ്ഡ്യ സാമ്രാജ്യം'], c: 0, e: 'പോർച്ചുഗീസ് വരവിന് മുമ്പ് കൊച്ചി വിജയനഗര സാമ്രാജ്യത്തിന്റെ കീഴിലായിരുന്നു.' },
+    { t: 'വേണാട് പിന്നീട് ഏത് നാട്ടുരാജ്യമായി അറിയപ്പെട്ടു?', o: ['തിരുവിതാംകൂർ', 'കൊച്ചി', 'മലബാർ', 'മദ്രാസ് പ്രസിഡൻസി'], c: 0, e: 'വേണാട് രാജ്യം തിരുവിതാംകൂർ നാട്ടുരാജ്യമായി പരിണമിച്ചു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Renaissance', 'Social Reform Movements', 'easy', () => {
+  const qs = [
+    { t: 'ചട്ടമ്പി സ്വാമികളുടെ യഥാർത്ഥ പേര് എന്ത്?', o: ['അയ്യപ്പൻ', 'കുമാരൻ ആശാൻ', 'ശ്രീനാരായണൻ', 'കുഞ്ഞൻ പിള്ള'], c: 0, e: 'ചട്ടമ്പി സ്വാമികളുടെ യഥാർത്ഥ പേര് അയ്യപ്പൻ എന്നായിരുന്നു.' },
+    { t: 'എസ്.എൻ.ഡി.പി. യോഗം എന്ന സംഘടന സ്ഥാപിച്ച വർഷം ഏത്?', o: ['1903', '1888', '1895', '1915'], c: 0, e: 'എസ്.എൻ.ഡി.പി. യോഗം 1903-ൽ ശ്രീ നാരായണ ഗുരുവും ഡോ. പൽപ്പുവും ചേർന്ന് സ്ഥാപിച്ചു.' },
+    { t: 'അയ്യങ്കാളി ഏത് സമുദായത്തിന്റെ ഉന്നമനത്തിനായി പ്രവർത്തിച്ചു?', o: ['ദളിത്', 'ഈഴവ', 'മുസ്ലീം', 'ക്രിസ്ത്യൻ'], c: 0, e: 'അയ്യങ്കാളി ദളിത് സമുദായത്തിന്റെ ഉന്നമനത്തിനായി പ്രവർത്തിച്ച സാമൂഹിക പരിഷ്കർത്താവായിരുന്നു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Constitution', 'Directive Principles', 'easy', () => {
+  const qs = [
+    { t: 'ഇന്ത്യൻ ഭരണഘടനയിലെ നിർദ്ദേശക തത്വങ്ങൾ ഏത് രാജ്യത്തിൽ നിന്ന് കടമെടുത്തതാണ്?', o: ['അയർലണ്ട്', 'ബ്രിട്ടൻ', 'യു.എസ്.എ.', 'കാനഡ'], c: 0, e: 'നിർദ്ദേശക തത്വങ്ങൾ അയർലണ്ട് ഭരണഘടനയിൽ നിന്ന് കടമെടുത്തതാണ്.' },
+    { t: 'ഇന്ത്യൻ ഭരണഘടനയിലെ ഏത് ഭാഗത്താണ് നിർദ്ദേശക തത്വങ്ങൾ ഉൾപ്പെടുത്തിയിരിക്കുന്നത്?', o: ['ഭാഗം IV', 'ഭാഗം III', 'ഭാഗം V', 'ഭാഗം II'], c: 0, e: 'ആർട്ടിക്കിൾ 36-51-ൽ ഉൾപ്പെടുന്ന ഭാഗം IV-ലാണ് നിർദ്ദേശക തത്വങ്ങൾ.' },
+    { t: 'തുല്യ ജോലിക്ക് തുല്യ വേതനം ഏത് ആർട്ടിക്കിളിൽ പറയുന്നു?', o: ['ആർട്ടിക്കിൾ 39', 'ആർട്ടിക്കിൾ 41', 'ആർട്ടിക്കിൾ 45', 'ആർട്ടിക്കിൾ 48'], c: 0, e: 'ആർട്ടിക്കിൾ 39(ഡി) പുരുഷന്മാർക്കും സ്ത്രീകൾക്കും തുല്യ ജോലിക്ക് തുല്യ വേതനം വകുപ്പ് ചെയ്യുന്നു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Constitution', 'Union Executive', 'easy', () => {
+  const qs = [
+    { t: 'ഇന്ത്യൻ രാഷ്ട്രപതിയുടെ ഔദ്യോഗിക വസതി ഏത്?', o: ['രാഷ്ട്രപതി ഭവൻ', 'ലോക് കല്യാൺ മാർഗ്', 'സൗത്ത് ബ്ലോക്ക്', 'നോർത്ത് ബ്ലോക്ക്'], c: 0, e: 'രാഷ്ട്രപതി ഭവൻ ഡൽഹിയിൽ സ്ഥിതി ചെയ്യുന്ന ഇന്ത്യൻ രാഷ്ട്രപതിയുടെ ഔദ്യോഗിക വസതിയാണ്.' },
+    { t: 'ഇന്ത്യയിലെ ആദ്യ രാഷ്ട്രപതി ആരായിരുന്നു?', o: ['ഡോ. രാജേന്ദ്ര പ്രസാദ്', 'ഡോ. എസ്. രാധാകൃഷ്ണൻ', 'ഡോ. ബി.ആർ. അംബേദ്കർ', 'ജവഹർലാൽ നെഹ്റു'], c: 0, e: 'ഡോ. രാജേന്ദ്ര പ്രസാദ് 1950 മുതൽ 1962 വരെ ഇന്ത്യയുടെ ആദ്യ രാഷ്ട്രപതിയായിരുന്നു.' },
+    { t: 'ഇന്ത്യൻ രാഷ്ട്രപതിയെ തിരഞ്ഞെടുക്കുന്നത് ആര്?', o: ['ഇലക്ടറൽ കോളേജ്', 'പാർലമെന്റ്', 'രാജ്യസഭ', 'ജനങ്ങൾ'], c: 0, e: 'രാഷ്ട്രപതിയെ ഇലക്ടറൽ കോളേജ് വഴിയാണ് തിരഞ്ഞെടുക്കുന്നത്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Science', 'Physics', 'easy', () => {
+  const qs = [
+    { t: 'പ്രകാശത്തിന്റെ വേഗത ഏകദേശം എത്ര?', o: ['3×10⁸ m/s', '3×10⁶ m/s', '3×10¹⁰ m/s', '3×10⁵ m/s'], c: 0, e: 'ശൂന്യതയിൽ പ്രകാശത്തിന്റെ വേഗത ഏകദേശം 3×10⁸ m/s (സെക്കൻഡിൽ 300,000 കി.മീ) ആണ്.' },
+    { t: 'ഏത് ഉപകരണമാണ് വൈദ്യുത പ്രവാഹം അളക്കുന്നത്?', o: ['അമ്മീറ്റർ', 'വോൾട്ട്മീറ്റർ', 'ഗാൽവനോമീറ്റർ', 'ഓഹ്മീറ്റർ'], c: 0, e: 'അമ്മീറ്റർ ഒരു സർക്യൂട്ടിലെ വൈദ്യുത പ്രവാഹം അളക്കുന്നു.' },
+    { t: 'ന്യൂട്ടന്റെ ചലനത്തിന്റെ രണ്ടാം നിയമം ഇതുമായി ബന്ധപ്പെട്ടിരിക്കുന്നു?', o: ['ബലവും ത്വരണവും', 'ജഡത്വം', 'പ്രവർത്തനവും പ്രതിപ്രവർത്തനവും', 'ഊർജ്ജ സംരക്ഷണം'], c: 0, e: 'ന്യൂട്ടന്റെ രണ്ടാം നിയമം F=ma, ബലവും ത്വരണവും തമ്മിലുള്ള ബന്ധം വിവരിക്കുന്നു.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Science', 'Biology', 'easy', () => {
+  const qs = [
+    { t: 'മനുഷ്യ ശരീരത്തിലെ ഏറ്റവും വലിയ അവയവം ഏത്?', o: ['ചർമ്മം', 'കരൾ', 'ഹൃദയം', 'മസ്തിഷ്കം'], c: 0, e: 'ചർമ്മം മനുഷ്യ ശരീരത്തിലെ ഏറ്റവും വലിയ അവയവമാണ്, ഏകദേശം 1.5-2 m² വിസ്തീർണ്ണമുണ്ട്.' },
+    { t: 'ഹൃദയത്തിൽ എത്ര അറകളുണ്ട്?', o: ['4', '2', '3', '5'], c: 0, e: 'മനുഷ്യ ഹൃദയത്തിൽ 4 അറകളുണ്ട്: 2 ഏട്രിയയും 2 വെൻട്രിക്കിളുകളും.' },
+    { t: 'പ്രകാശസംശ്ലേഷണത്തിന് ആവശ്യമായ പ്രധാന വാതകം ഏത്?', o: ['കാർബൺ ഡൈ ഓക്സൈഡ്', 'ഓക്സിജൻ', 'നൈട്രജൻ', 'ഹൈഡ്രജൻ'], c: 0, e: 'പ്രകാശസംശ്ലേഷണത്തിന് സസ്യങ്ങൾക്ക് കാർബൺ ഡൈ ഓക്സൈഡ് ആവശ്യമാണ്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Mental Ability', 'Logical Reasoning', 'easy', () => {
+  const qs = [
+    { t: 'സീരീസ് പൂർത്തിയാക്കുക: 2, 6, 12, 20, ?', o: ['30', '28', '32', '24'], c: 0, e: 'ക്രമം: 1×2, 2×3, 3×4, 4×5, അതിനാൽ അടുത്തത് 5×6=30.' },
+    { t: '14, 21, 28, 35 എന്ന സീരീസിലെ അടുത്ത സംഖ്യ ഏത്?', o: ['42', '40', '45', '38'], c: 0, e: 'ഓരോ സംഖ്യയും 7 കൊണ്ട് വർദ്ധിക്കുന്നു, അതിനാൽ 35+7=42.' },
+    { t: 'കോഡ് ബ്രേക്ക് ചെയ്യുക: APPLE എന്നത് DNROH ആണെങ്കിൽ, MANGO എന്നത് എന്ത്?', o: ['PDQJR', 'PBQIR', 'NANJQ', 'QERKT'], c: 0, e: 'ഓരോ അക്ഷരവും 3 സ്ഥാനം മുന്നോട്ട് നീക്കുന്നു: M→P, A→D, N→Q, G→J, O→R.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Geography', 'Physical Geography', 'easy', () => {
+  const qs = [
+    { t: 'ഭൂമിയുടെ ഏറ്റവും അടുത്തുള്ള അന്തരീക്ഷ പാളി ഏത്?', o: ['ട്രോപോസ്ഫിയർ', 'സ്ട്രാറ്റോസ്ഫിയർ', 'മെസോസ്ഫിയർ', 'തെർമോസ്ഫിയർ'], c: 0, e: 'ട്രോപോസ്ഫിയർ ഭൂമിയോട് ഏറ്റവും അടുത്തുള്ള പാളിയാണ് (8-15 കി.മീ ഉയരം).' },
+    { t: 'പസിഫിക് മഹാസമുദ്രത്തിലെ ഏറ്റവും ആഴമേറിയ ഭാഗം ഏത്?', o: ['മരിയാന ട്രെഞ്ച്', 'പ്യൂർട്ടോ റിക്കോ ട്രെഞ്ച്', 'ടോംഗ ട്രെഞ്ച്', 'ജാവ ട്രെഞ്ച്'], c: 0, e: 'മരിയാന ട്രെഞ്ച് (ഏക. 11,034 മീ) ലോകത്തിലെ ഏറ്റവും ആഴമേറിയ ഭാഗമാണ്.' },
+    { t: 'ഏത് നദിയാണ് ഏറ്റവും നീളമുള്ളത്?', o: ['നൈൽ', 'ആമസോൺ', 'മിസിസിപ്പി', 'യാങ്സി'], c: 0, e: 'നൈൽ നദി (ഏക. 6,650 കി.മീ) ലോകത്തിലെ ഏറ്റവും നീളമുള്ള നദിയാണ്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Kerala History', 'Kerala Geography', 'easy', () => {
+  const qs = [
+    { t: 'കേരളത്തിലെ ഏറ്റവും ഉയരമുള്ള കൊടുമുടി ഏത്?', o: ['ആനമുടി', 'അഗസ്ത്യകൂടം', 'ഇലവിഴ പൂഞ്ചിറ', 'പൊന്മുടി'], c: 0, e: 'ആനമുടി (2,695 മീറ്റർ) കേരളത്തിലെ ഏറ്റവും ഉയരമുള്ള കൊടുമുടിയാണ്.' },
+    { t: 'കേരളത്തിലെ ഏറ്റവും നീളമുള്ള നദി ഏത്?', o: ['പെരിയാർ', 'ഭാരതപ്പുഴ', 'പമ്പാ', 'ചാലിയാർ'], c: 0, e: 'പെരിയാർ (244 കി.മീ) കേരളത്തിലെ ഏറ്റവും നീളമുള്ള നദിയാണ്.' },
+    { t: 'കേരളത്തിന് എത്ര കി.മീ തീരപ്രദേശമുണ്ട്?', o: ['580 കി.മീ', '450 കി.മീ', '600 കി.മീ', '500 കി.മീ'], c: 0, e: 'കേരളത്തിന് ഏകദേശം 580 കി.മീ തീരപ്രദേശമുണ്ട്.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Quantitative Aptitude', 'Arithmetic', 'easy', () => {
+  const qs = [
+    { t: '12-ന്റെയും 18-ന്റെയും ല.സാ.ഗു. എത്ര?', o: ['36', '24', '72', '48'], c: 0, e: '12, 18 എന്നിവയുടെ ല.സാ.ഗു. 36 ആണ് (12=2²×3, 18=2×3², LCM=2²×3²=36).' },
+    { t: 'ഒരു കടയുടമ 20% ലാഭത്തിൽ ഒരു വസ്തു ₹600-ന് വിൽക്കുന്നു. വാങ്ങിയ വില എത്ര?', o: ['₹500', '₹480', '₹520', '₹550'], c: 0, e: 'CP=SP/(1+20/100)=600/1.20=500.' },
+    { t: 'ഒരു ട്രെയിൻ 60 km/h വേഗതയിൽ 2 മണിക്കൂർ സഞ്ചരിച്ചാൽ എത്ര ദൂരം?', o: ['120 കി.മീ', '100 കി.മീ', '140 കി.മീ', '80 കി.മീ'], c: 0, e: 'ദൂരം = വേഗത × സമയം = 60 × 2 = 120 കി.മീ.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
+
+register('Malayalam', 'Grammar', 'easy', () => {
+  const qs = [
+    { t: 'മലയാളത്തിലെ ആദ്യ വ്യാകരണ ഗ്രന്ഥം ഏത്?', o: ['കേരളപാണിനീയം', 'ലീലാതിലകം', 'വ്യാകരണമാലിക', 'കേരള വ്യാകരണം'], c: 0, e: 'കേരളപാണിനീയം - എ.ആർ. രാജരാജവർമ്മ രചിച്ച മലയാളത്തിലെ ആദ്യ വ്യാകരണ ഗ്രന്ഥം.' },
+    { t: 'കേരളപാണിനീയത്തിന്റെ കർത്താവ് ആര്?', o: ['എ.ആർ. രാജരാജവർമ്മ', 'ഹെർമൻ ഗുണ്ടർട്ട്', 'വി. നാഗം അയ്യ', 'സി.പി. അച്യുതമേനോൻ'], c: 0, e: 'എ.ആർ. രാജരാജവർമ്മയാണ് കേരളപാണിനീയത്തിന്റെ കർത്താവ്.' },
+    { t: 'മലയാള അക്ഷരമാലയിൽ എത്ര അക്ഷരങ്ങളുണ്ട്?', o: ['51', '45', '56', '48'], c: 0, e: 'മലയാള അക്ഷരമാലയിൽ 51 അക്ഷരങ്ങളുണ്ട് (13 സ്വരങ്ങളും 38 വ്യഞ്ജനങ്ങളും).' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+}, 'ml');
 
 // ─── MAIN GENERATOR ───
 
@@ -377,6 +589,10 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
     if (topicFilter.length > 0) {
       pool = pool.filter((t) => topicFilter.includes(t.topic));
     }
+
+    // Language filter: prefer requested language, fall back to English
+    const langFiltered = request.language === 'ml' ? pool.filter((t) => t.language === 'ml') : [];
+    if (langFiltered.length > 0) pool = langFiltered;
 
     const depths = request.difficulty === 'easy'
       ? ['easy']
@@ -418,7 +634,7 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
   if (request.sourceNotes && results.length < request.count) {
     for (const note of request.sourceNotes) {
       if (results.length >= request.count) break;
-      const q = generateFromNote(note);
+      const q = generateFromNote(note, request.language);
       if (q && !request.avoidQuestionIds?.includes(q.id)) {
         results.push(q);
       }
@@ -429,7 +645,7 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
   if (request.sourceCurrentAffairs && results.length < request.count) {
     for (const ca of request.sourceCurrentAffairs) {
       if (results.length >= request.count) break;
-      const q = generateFromCurrentAffair(ca);
+      const q = generateFromCurrentAffair(ca, request.language);
       if (!request.avoidQuestionIds?.includes(q.id)) {
         results.push(q);
       }

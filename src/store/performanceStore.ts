@@ -71,6 +71,9 @@ export interface SessionOutcome {
   weakestSubject: string;
   strongestSubject: string;
   difficultyMix: { easy: number; medium: number; hard: number };
+  alignmentScore?: number;
+  recommendedSubject?: string;
+  recommendedTopic?: string;
 }
 
 export interface RecommendationRecord {

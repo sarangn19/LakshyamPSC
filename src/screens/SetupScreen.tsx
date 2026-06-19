@@ -4,6 +4,7 @@ import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore } from '../store';
 import { examTypes } from '../data/questions';
+import { useTranslation } from '../i18n/useTranslation';
 
 const EXAM_ICONS: Record<string, string> = {
   'LDC': '📋',
@@ -13,18 +14,19 @@ const EXAM_ICONS: Record<string, string> = {
   'Degree Level': '📚',
 };
 
-const EXAM_DESCRIPTIONS: Record<string, string> = {
-  'LDC': '10th Level • Easy',
-  'Secretariat Assistant': '12th Level • Easy-Medium',
-  'University Assistant': 'Degree Level • All Difficulties',
-  'Police Constable': '10th Level + Law • Easy-Medium',
-  'Degree Level': 'Deep Conceptual • All Difficulties',
+const EXAM_DESC_KEYS: Record<string, string> = {
+  'LDC': 'examDescLDC',
+  'Secretariat Assistant': 'examDescSecretariat',
+  'University Assistant': 'examDescUniversity',
+  'Police Constable': 'examDescPolice',
+  'Degree Level': 'examDescDegree',
 };
 
 export function SetupScreen({ onComplete }: { onComplete: () => void }) {
   const { targetExams, primaryExam, examDate, toggleTargetExam, setPrimaryExam, setExamDate, completeSetup, setUserName } = useUserStore();
   const [name, setName] = useState('');
   const [step, setStep] = useState<'welcome' | 'exams' | 'primary' | 'date'>('welcome');
+  const { t } = useTranslation();
 
   const canContinueExams = targetExams.length > 0;
   const canContinuePrimary = primaryExam !== '';
@@ -43,13 +45,12 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
       <View style={styles.container}>
         <View style={styles.centerContent}>
           <Text style={{ fontSize: 64, textAlign: 'center' }}>🎯</Text>
-          <Text style={[typography.h1, { color: colors.text, textAlign: 'center', marginTop: spacing.xl }]}>Lakshyam</Text>
+          <Text style={[typography.h1, { color: colors.text, textAlign: 'center', marginTop: spacing.xl }]}>{t('setup.title')}</Text>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md, paddingHorizontal: spacing.xl }]}>
-            Your personal AI-powered learning assistant for Kerala PSC exams.
-            Let's set up your study plan in 3 steps.
+            {t('setup.subtitle')}
           </Text>
           <TouchableOpacity style={[styles.primaryBtn, { marginTop: spacing.huge }]} onPress={() => setStep('exams')}>
-            <Text style={[typography.bodyBold, { color: '#fff' }]}>Get Started →</Text>
+            <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('setup.getStarted')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -60,9 +61,9 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <Text style={{ fontSize: 32 }}>🎯</Text>
-        <Text style={[typography.h2, { color: colors.text, marginTop: spacing.sm }]}>Set Up Lakshyam</Text>
+        <Text style={[typography.h2, { color: colors.text, marginTop: spacing.sm }]}>{t('setup.setupTitle')}</Text>
         <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
-          Step {step === 'exams' ? '1' : step === 'primary' ? '2' : '3'} of 3
+          {step === 'exams' ? t('setup.step1of3') : step === 'primary' ? t('setup.step2of3') : t('setup.step3of3')}
         </Text>
       </View>
 
@@ -72,8 +73,8 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
 
       {step === 'exams' && (
         <>
-          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>What exams are you preparing for?</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>Select one or more target posts</Text>
+          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>{t('setup.examsQuestion')}</Text>
+          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>{t('setup.examsHint')}</Text>
 
           {examTypes.map((exam) => {
             const selected = targetExams.includes(exam.name);
@@ -92,7 +93,7 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
                     {EXAM_ICONS[exam.name] || '📌'} {exam.name}
                   </Text>
                   <Text style={[typography.small, { color: colors.textMuted, marginTop: 2 }]}>
-                    {EXAM_DESCRIPTIONS[exam.name] || 'Mixed difficulty'}
+                    {t(`setup.${EXAM_DESC_KEYS[exam.name] || 'mixedDifficulty'}`)}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -110,7 +111,7 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
                 setStep('primary');
               }}
             >
-              <Text style={[typography.bodyBold, { color: '#fff' }]}>Continue →</Text>
+              <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('common.continue')}</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -118,8 +119,8 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
 
       {step === 'primary' && (
         <>
-          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>Which is your primary exam?</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>This will set the default difficulty tier</Text>
+          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>{t('setup.primaryQuestion')}</Text>
+          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>{t('setup.primaryHint')}</Text>
 
           {targetExams.map((exam) => (
             <TouchableOpacity
@@ -132,7 +133,7 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
               <View style={{ flex: 1, marginLeft: spacing.md }}>
                 <Text style={[typography.body, { color: colors.text }]}>{exam}</Text>
                 <Text style={[typography.small, { color: colors.textMuted, marginTop: 2 }]}>
-                  {EXAM_DESCRIPTIONS[exam] || ''}
+                  {EXAM_DESC_KEYS[exam] ? t(`setup.${EXAM_DESC_KEYS[exam]}`) : ''}
                 </Text>
               </View>
               {primaryExam === exam && (
@@ -143,14 +144,14 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
 
           <View style={styles.stepActions}>
             <TouchableOpacity style={styles.secondaryBtn} onPress={() => setStep('exams')}>
-              <Text style={[typography.body, { color: colors.textSecondary }]}>← Back</Text>
+              <Text style={[typography.body, { color: colors.textSecondary }]}>{t('common.back')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryBtn, !canContinuePrimary && styles.btnDisabled]}
               disabled={!canContinuePrimary}
               onPress={() => setStep('date')}
             >
-              <Text style={[typography.bodyBold, { color: '#fff' }]}>Continue →</Text>
+              <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('common.continue')}</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -158,43 +159,43 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
 
       {step === 'date' && (
         <>
-          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>Almost done!</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>Set your preferences</Text>
+          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.sm }]}>{t('setup.almostDone')}</Text>
+          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: spacing.lg }]}>{t('setup.preferencesHint')}</Text>
 
-          <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm }]}>Your name (optional)</Text>
+          <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm }]}>{t('setup.nameLabel')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter your name"
+            placeholder={t('setup.namePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={name}
             onChangeText={setName}
           />
 
-          <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm, marginTop: spacing.lg }]}>Target exam date (optional)</Text>
+          <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm, marginTop: spacing.lg }]}>{t('setup.examDateLabel')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="YYYY-MM-DD (e.g. 2026-09-15)"
+            placeholder={t('setup.examDatePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={examDate}
             onChangeText={setExamDate}
           />
           <Text style={[typography.tiny, { color: colors.textMuted, marginTop: spacing.xs }]}>
-            Used to calculate study timeline and practice intensity
+            {t('setup.dateHint')}
           </Text>
 
           <View style={styles.summaryCard}>
-            <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm }]}>Your Setup</Text>
+            <Text style={[typography.captionBold, { color: colors.text, marginBottom: spacing.sm }]}>{t('setup.yourSetup')}</Text>
             <View style={styles.summaryRow}>
-              <Text style={[typography.small, { color: colors.textMuted }]}>Target exams:</Text>
+              <Text style={[typography.small, { color: colors.textMuted }]}>{t('setup.targetExams')}</Text>
               <Text style={[typography.small, { color: colors.primaryLight }]}>{targetExams.join(', ')}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={[typography.small, { color: colors.textMuted }]}>Primary exam:</Text>
+              <Text style={[typography.small, { color: colors.textMuted }]}>{t('setup.primaryExam')}</Text>
               <Text style={[typography.small, { color: colors.primaryLight }]}>{primaryExam}</Text>
             </View>
             {examDate && (
               <View style={styles.summaryRow}>
-                <Text style={[typography.small, { color: colors.textMuted }]}>Exam date:</Text>
+                <Text style={[typography.small, { color: colors.textMuted }]}>{t('setup.examDate')}</Text>
                 <Text style={[typography.small, { color: colors.primaryLight }]}>{examDate}</Text>
               </View>
             )}
@@ -202,14 +203,14 @@ export function SetupScreen({ onComplete }: { onComplete: () => void }) {
 
           <View style={styles.stepActions}>
             <TouchableOpacity style={styles.secondaryBtn} onPress={() => setStep('primary')}>
-              <Text style={[typography.body, { color: colors.textSecondary }]}>← Back</Text>
+              <Text style={[typography.body, { color: colors.textSecondary }]}>{t('common.back')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.primaryBtn, !allDone && styles.btnDisabled]}
               disabled={!allDone}
               onPress={handleFinish}
             >
-              <Text style={[typography.bodyBold, { color: '#fff' }]}>Start Learning 🚀</Text>
+              <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('setup.startLearning')}</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -269,7 +270,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.lg,
+    height: 48,
+    paddingHorizontal: spacing.lg,
     color: colors.text,
     fontSize: 16,
   },
@@ -295,17 +297,19 @@ const styles = StyleSheet.create({
   },
   primaryBtn: {
     backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
+    height: 48,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.md,
+    justifyContent: 'center',
     alignItems: 'center',
     minWidth: 140,
   },
   btnDisabled: { opacity: 0.4 },
   secondaryBtn: {
-    paddingVertical: spacing.md,
+    height: 48,
     paddingHorizontal: spacing.xl,
     borderRadius: borderRadius.md,
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../i18n/useTranslation';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
@@ -15,6 +16,7 @@ const CATEGORIES = [
 ];
 
 export function CurrentAffairsScreen() {
+  const { t } = useTranslation();
   const { currentAffairs } = useUserStore();
   const [activeCategory, setActiveCategory] = useState('all');
 
@@ -24,8 +26,8 @@ export function CurrentAffairsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>Current Affairs</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>Kerala-focused daily updates</Text>
+      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>{t('currentAffairs.title')}</Text>
+      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>{t('currentAffairs.subtitle')}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catRow}>
         {CATEGORIES.map((cat) => (
@@ -36,7 +38,7 @@ export function CurrentAffairsScreen() {
           >
             <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
             <Text style={[typography.caption, { color: activeCategory === cat.key ? colors.primary : colors.textSecondary, marginLeft: spacing.xs }]}>
-              {cat.label}
+              {t(`currentAffairs.category${cat.key.charAt(0).toUpperCase() + cat.key.slice(1)}`)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -59,17 +61,11 @@ export function CurrentAffairsScreen() {
             </View>
             <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.sm }]}>{item.title}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>{item.summary}</Text>
-            <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>Source: {item.source}</Text>
+            <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>{t('currentAffairs.source', { source: item.source })}</Text>
 
             <View style={styles.newsActions}>
               <TouchableOpacity style={styles.actionChip}>
-                <Text style={[typography.small, { color: colors.primary }]}>Generate MCQ</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionChip}>
-                <Text style={[typography.small, { color: colors.primary }]}>Add to Flashcards</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionChip}>
-                <Text style={[typography.small, { color: colors.primary }]}>Save Note</Text>
+                <Text style={[typography.small, { color: colors.primary }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

@@ -9,7 +9,8 @@ export interface Question {
   explanation: string;
   examType: string[];
   confidence?: number;
-  source?: 'syllabus' | 'notes' | 'current_affairs' | 'previous_paper';
+  source?: 'syllabus' | 'notes' | 'current_affairs' | 'previous_paper' | 'ai_generated';
+  subtopic?: string;
 }
 
 export const examTypes = [

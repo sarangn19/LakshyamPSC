@@ -82,6 +82,8 @@ export interface CurrentAffair {
   date: string;
   source: string;
   isImportant: boolean;
+  url?: string;
+  image_url?: string;
 }
 
 export const mockNotes: Note[] = [

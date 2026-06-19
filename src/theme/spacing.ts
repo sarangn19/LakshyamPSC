@@ -6,7 +6,7 @@ export const spacing = {
   xl: 32,
   xxl: 40,
   xxxl: 48,
-  huge: 48,
+  huge: 64,
 };
 
 export const radius = {
@@ -14,6 +14,7 @@ export const radius = {
   md: 12,
   lg: 16,
   xl: 20,
+  xxl: 24,
   full: 999,
 };
 
@@ -22,21 +23,18 @@ export const borderRadius = {
   md: 12,
   lg: 16,
   xl: 20,
+  xxl: 24,
   round: 999,
 };
 
 export const elevation = {
   card: {
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+    elevation: 1,
   },
   floating: {
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+    elevation: 3,
   },
 };
 

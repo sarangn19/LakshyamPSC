@@ -49,7 +49,7 @@ export async function getProfile() {
   if (!supabase) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from('profiles').select('*').eq('auth_user_id', user.id).single();
+  const { data } = await supabase.from('profiles').select('*').eq('auth_user_id', user.id).maybeSingle();
   return data;
 }
 
@@ -57,5 +57,5 @@ export async function upsertProfile(profile: Record<string, unknown>) {
   if (!supabase) throw new Error('Supabase not configured');
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
-  return supabase.from('profiles').upsert({ ...profile, auth_user_id: user.id }).select().single();
+  return supabase.from('profiles').upsert({ ...profile, auth_user_id: user.id }).select().maybeSingle();
 }

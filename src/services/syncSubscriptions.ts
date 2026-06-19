@@ -1,32 +1,48 @@
 import { useEffect, useRef } from 'react';
-import { usePerformanceStore, SessionOutcome } from '../store/performanceStore';
+import { usePerformanceStore, SessionOutcome, FlashcardSignal } from '../store/performanceStore';
+import { useUserStore } from '../store/userStore';
+import { useMCQStore } from '../store/mcqStore';
+import { useCognitiveTwinStore } from '../store/cognitiveTwinStore';
 import {
   queueSignalBatch,
   syncSessionOutcome,
   syncRecommendation,
   syncRecommendationStatus,
   syncProfile,
+  syncStudyStreak,
+  syncSubjectProgress,
+  syncGoals,
+  enqueueFlashcardSignal,
+  syncCognitiveTwin,
   flushOfflineQueue,
 } from './syncService';
 
 let profileSyncDebounce: ReturnType<typeof setTimeout> | null = null;
+let twinSyncDebounce: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * Subscribe to performance store changes and sync to Supabase.
- * Call once in App.tsx after authentication.
- */
 export function useSyncSubscriptions(): void {
   const prevRef = useRef<{
     signalCount: number;
     outcomeCount: number;
     recCount: number;
-  }>({ signalCount: 0, outcomeCount: 0, recCount: 0 });
+    flashcardCount: number;
+    streakKey: string;
+    goalKey: string;
+    twinKey: string;
+  }>({
+    signalCount: 0,
+    outcomeCount: 0,
+    recCount: 0,
+    flashcardCount: 0,
+    streakKey: '',
+    goalKey: '',
+    twinKey: '',
+  });
 
   useEffect(() => {
-    const unsub = usePerformanceStore.subscribe((state, prevState) => {
+    const unsubPerf = usePerformanceStore.subscribe((state, prevState) => {
       const prev = prevRef.current;
 
-      // 1. Sync new interaction signals (batched)
       if (state.interactionSignals.length > prev.signalCount) {
         const newSignals = state.interactionSignals.slice(prev.signalCount);
         for (const s of newSignals) {
@@ -35,7 +51,6 @@ export function useSyncSubscriptions(): void {
         prevRef.current.signalCount = state.interactionSignals.length;
       }
 
-      // 2. Sync new session outcomes
       if (state.sessionOutcomes.length > prev.outcomeCount) {
         const newOutcomes = state.sessionOutcomes.slice(prev.outcomeCount);
         for (const o of newOutcomes) {
@@ -44,7 +59,6 @@ export function useSyncSubscriptions(): void {
         prevRef.current.outcomeCount = state.sessionOutcomes.length;
       }
 
-      // 3. Sync new recommendations
       if (state.recommendations.length > prev.recCount) {
         const newRecs = state.recommendations.slice(prev.recCount);
         for (const r of newRecs) {
@@ -53,7 +67,14 @@ export function useSyncSubscriptions(): void {
         prevRef.current.recCount = state.recommendations.length;
       }
 
-      // 4. Sync profile on changes (debounced)
+      if (state.flashcardSignals.length > prev.flashcardCount) {
+        const newSignals = state.flashcardSignals.slice(prev.flashcardCount);
+        for (const s of newSignals) {
+          enqueueFlashcardSignal(s);
+        }
+        prevRef.current.flashcardCount = state.flashcardSignals.length;
+      }
+
       if (state.profile !== prevState.profile || state.lastProfileBuild !== prevState.lastProfileBuild) {
         if (profileSyncDebounce) clearTimeout(profileSyncDebounce);
         profileSyncDebounce = setTimeout(() => {
@@ -61,7 +82,6 @@ export function useSyncSubscriptions(): void {
         }, 3000);
       }
 
-      // 5. Sync recommendation status changes
       for (const rec of state.recommendations) {
         const prevRec = prevState.recommendations.find((r) => r.id === rec.id);
         if (prevRec && prevRec.status !== rec.status) {
@@ -70,16 +90,50 @@ export function useSyncSubscriptions(): void {
       }
     });
 
+    const unsubUser = useUserStore.subscribe((state, prevState) => {
+      const streakKey = `${state.streak.current}-${state.streak.longest}-${state.streak.lastStudyDate}`;
+      if (streakKey !== prevRef.current.streakKey) {
+        prevRef.current.streakKey = streakKey;
+        syncStudyStreak();
+      }
+
+      const goalKey = state.dailyGoal
+        ? `${state.dailyGoal.completedMCQs}/${state.dailyGoal.targetMCQs}`
+        : 'null';
+      if (goalKey !== prevRef.current.goalKey) {
+        prevRef.current.goalKey = goalKey;
+        syncGoals();
+      }
+    });
+
+    const unsubMCQ = useMCQStore.subscribe((state, prevState) => {
+      if (state.subjectProgress !== prevState.subjectProgress) {
+        syncSubjectProgress();
+      }
+    });
+
+    const unsubTwin = useCognitiveTwinStore.subscribe((state) => {
+      const twinKey = `${state.gapRecords.length}-${state.masteryMap.size}`;
+      if (twinKey !== prevRef.current.twinKey) {
+        prevRef.current.twinKey = twinKey;
+        if (twinSyncDebounce) clearTimeout(twinSyncDebounce);
+        twinSyncDebounce = setTimeout(() => {
+          syncCognitiveTwin();
+        }, 5000);
+      }
+    });
+
     return () => {
-      unsub();
+      unsubPerf();
+      unsubUser();
+      unsubMCQ();
+      unsubTwin();
       if (profileSyncDebounce) clearTimeout(profileSyncDebounce);
+      if (twinSyncDebounce) clearTimeout(twinSyncDebounce);
     };
   }, []);
 }
 
-/**
- * Periodically flush the offline queue.
- */
 export function useOfflineQueueFlush(intervalMs = 30000): void {
   useEffect(() => {
     const timer = setInterval(() => {

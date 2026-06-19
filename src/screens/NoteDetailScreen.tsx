@@ -1,36 +1,39 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { useKnowledgeStore, useMCQStore, useFlashcardStore } from '../store';
 import { generateFlashcardsFromNote } from '../services/aiFlashcardGenerator';
 
 export function NoteDetailScreen({ route, navigation }: any) {
+  const { t } = useTranslation();
   const { noteId } = route.params;
   const note = useKnowledgeStore((s) => s.notes.find((n) => n.id === noteId));
 
   if (!note) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>Note not found</Text>
+        <Text style={[typography.caption, { color: colors.textMuted }]}>{t('noteDetail.notFound')}</Text>
       </View>
     );
   }
 
-  const handleGenerateMCQs = () => {
-    useMCQStore.getState().startOrchestratedSession({
+  const handleGenerateMCQs = async () => {
+    await useMCQStore.getState().startPracticeSession({
       subjects: [note.subject],
       difficulty: 'medium',
       count: 10,
-      sessionType: 'weakness_practice',
+      sourceType: 'note',
+      noteId: note.id,
     });
     navigation.navigate('MCQ');
   };
 
-  const handleGenerateFlashcards = () => {
-    const cards = generateFlashcardsFromNote(note, 5);
+  const handleGenerateFlashcards = async () => {
+    const cards = await generateFlashcardsFromNote(note, 5);
     if (cards.length === 0) {
-      Alert.alert('No flashcards', 'Could not extract flashcards from this note. Try a longer note.');
+      Alert.alert(t('noteDetail.noFlashcardsTitle'), t('noteDetail.noFlashcardsMsg'));
       return;
     }
     useFlashcardStore.getState().addFlashcards(cards);
@@ -64,21 +67,21 @@ export function NoteDetailScreen({ route, navigation }: any) {
 
       <View style={styles.divider} />
 
-      <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.md }]}>Generate from this note</Text>
+      <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.md }]}>{t('noteDetail.generateFromNote')}</Text>
 
       <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.accentGreen + '20', borderColor: colors.accentGreen }]} onPress={handleGenerateMCQs}>
         <Text style={{ fontSize: 20, marginRight: spacing.sm }}>🎯</Text>
         <View style={{ flex: 1 }}>
-          <Text style={[typography.captionBold, { color: colors.accentGreen }]}>Generate MCQs</Text>
-          <Text style={[typography.tiny, { color: colors.textMuted }]}>10 questions on {note.subject}</Text>
+          <Text style={[typography.captionBold, { color: colors.accentGreen }]}>{t('noteDetail.generateMCQs')}</Text>
+          <Text style={[typography.tiny, { color: colors.textMuted }]}>{t('noteDetail.mcqSubtitle', { subject: note.subject })}</Text>
         </View>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.accentTeal + '20', borderColor: colors.accentTeal, marginTop: spacing.sm }]} onPress={handleGenerateFlashcards}>
         <Text style={{ fontSize: 20, marginRight: spacing.sm }}>🃏</Text>
         <View style={{ flex: 1 }}>
-          <Text style={[typography.captionBold, { color: colors.accentTeal }]}>Generate Flashcards</Text>
-          <Text style={[typography.tiny, { color: colors.textMuted }]}>5 cards from this note</Text>
+          <Text style={[typography.captionBold, { color: colors.accentTeal }]}>{t('noteDetail.generateFlashcards')}</Text>
+          <Text style={[typography.tiny, { color: colors.textMuted }]}>{t('noteDetail.flashcardSubtitle')}</Text>
         </View>
       </TouchableOpacity>
 

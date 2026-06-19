@@ -1,13 +1,14 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, borderRadius } from '../theme';
+import { useTranslation } from '../i18n/useTranslation';
+import { colors, spacing, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useFlashcardStore, useMCQStore, usePerformanceStore } from '../store';
-import { Badge, ProgressBar } from '../components/common/StyledComponents';
 import { refreshProfile } from '../services/profileBuilder';
 import { orchestrateSession, logOrchestratedSessionStart } from '../services/sessionOrchestrator';
 
 export function RevisionHubScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const getDueCount = useFlashcardStore((s) => s.getDueCount);
   const mistakes = useMCQStore((s) => s.mistakes);
   const flashcards = useFlashcardStore((s) => s.flashcards);
@@ -15,27 +16,15 @@ export function RevisionHubScreen({ navigation }: any) {
 
   const dueCount = getDueCount();
   const unreviewedMistakes = mistakes.filter((m) => !m.reviewed);
+  const totalCards = flashcards.length;
+  const masteredCount = useFlashcardStore((s) => s.getMasteredCount)();
+  const accuracy = profile ? Math.round(profile.averageAccuracy * 100) : 0;
 
   const subjectMistakes: Record<string, number> = {};
   unreviewedMistakes.forEach((m) => { subjectMistakes[m.subject] = (subjectMistakes[m.subject] || 0) + 1; });
   const weakSubjects = Object.entries(subjectMistakes)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 4);
-  const maxMistakeCount = Math.max(1, ...Object.values(subjectMistakes));
-
-  const masteredCount = useFlashcardStore((s) => s.getMasteredCount);
-  const totalCards = flashcards.length;
-
-  const now = new Date();
-  const intervals = [1, 3, 7, 15, 30];
-  const dueDistribution = intervals.map((days) => {
-    const cutoff = new Date(now.getTime() + days * 86400000);
-    return flashcards.filter(
-      (c) => !c.mastered && new Date(c.nextReviewDate) <= cutoff && new Date(c.nextReviewDate) > now,
-    ).length;
-  });
-
-  const accuracy = profile ? Math.round(profile.averageAccuracy * 100) : 0;
+    .slice(0, 5);
 
   const handleStartRevision = () => {
     const p = refreshProfile();
@@ -46,16 +35,13 @@ export function RevisionHubScreen({ navigation }: any) {
       recentSessionTypes: [],
     });
     logOrchestratedSessionStart(plan);
-
     usePerformanceStore.getState().addRecommendation({
       sessionType: plan.sessionType,
       title: plan.title,
       reasonFactors: plan.reasoning,
     });
-
     const mcqActivities = plan.activities.filter((a) => a.type === 'mcq');
     const flashcardActivities = plan.activities.filter((a) => a.type === 'flashcard');
-
     if (flashcardActivities.length > 0 && dueCount > 0) {
       useFlashcardStore.getState().loadDueCards();
       navigation.navigate('Learn');
@@ -70,168 +56,129 @@ export function RevisionHubScreen({ navigation }: any) {
     }
   };
 
-  const revisionItems = [
-    { label: 'Flashcards Due', value: dueCount, icon: '🃏', color: colors.info },
-    { label: 'Mistakes to Review', value: unreviewedMistakes.length, icon: '📓', color: colors.secondary },
-    { label: 'Weak Topics', value: weakSubjects.length, icon: '🎯', color: colors.warning },
-  ];
+  const primaryCount = dueCount > 0 ? dueCount : unreviewedMistakes.length;
+  const primaryLabel = dueCount > 0 ? 'card(s) ready for review' : 'mistake(s) to revisit';
+  const startLabel = dueCount > 0 ? 'Start Review' : 'Review Mistakes';
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.huge }]}>Revision Hub</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>Based on your forgetting curve</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <Text style={[typography.displayL, { color: colors.text }]}>Review</Text>
 
-      <View style={styles.todaySection}>
-        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>📅 Today's Revision Plan</Text>
-        <View style={styles.planRow}>
-          {revisionItems.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[styles.planCard, { borderLeftColor: item.color }]}
-              onPress={() => {
-                if (item.label === 'Flashcards Due' && dueCount > 0) {
-                  useFlashcardStore.getState().loadDueCards();
-                  navigation.navigate('Learn');
-                } else if (item.label === 'Mistakes to Review' && unreviewedMistakes.length > 0) {
-                  navigation.navigate('Analytics');
-                } else if (item.label === 'Weak Topics' && weakSubjects.length > 0) {
-                  navigation.navigate('Analytics');
-                }
-              }}
-            >
-              <Text style={{ fontSize: 28 }}>{item.icon}</Text>
-              <Text style={[typography.h2, { color: item.color, marginTop: spacing.sm }]}>{item.value}</Text>
-              <Text style={[typography.small, { color: colors.textSecondary, textAlign: 'center' }]}>{item.label}</Text>
-            </TouchableOpacity>
-          ))}
+      <View style={styles.reviewCard}>
+        <View style={styles.reviewCountArea}>
+          <Text style={styles.reviewCount}>{primaryCount}</Text>
+          <Text style={styles.reviewLabel}>{primaryLabel}</Text>
         </View>
 
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary }]} onPress={handleStartRevision}>
-          <Text style={[typography.bodyBold, { color: colors.white }]}>Start Today's Revision →</Text>
-        </TouchableOpacity>
+        <Text style={styles.reviewDesc}>
+          {dueCount > 0
+            ? `You have ${dueCount} flashcards ready for spaced repetition. Reviewing now will strengthen long-term retention.`
+            : unreviewedMistakes.length > 0
+              ? `You have ${unreviewedMistakes.length} mistakes to revisit. Addressing them will solidify your understanding.`
+              : 'All caught up! Your review queue is clear.'}
+        </Text>
+
+        {(dueCount > 0 || unreviewedMistakes.length > 0) && (
+          <TouchableOpacity style={styles.startBtn} onPress={handleStartRevision} activeOpacity={0.9}>
+            <Text style={styles.startBtnText}>{startLabel}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
+      {totalCards > 0 && (
+        <View style={styles.statsCard}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{masteredCount}</Text>
+            <Text style={styles.statLabel}>Mastered</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{totalCards}</Text>
+            <Text style={styles.statLabel}>Total cards</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{accuracy}%</Text>
+            <Text style={styles.statLabel}>Accuracy</Text>
+          </View>
+        </View>
+      )}
+
       {weakSubjects.length > 0 && (
-        <View style={styles.weakSection}>
-          <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>🎯 Topics Needing Attention</Text>
+        <View style={styles.weakListCard}>
+          <Text style={styles.weakListTitle}>Topics with mistakes</Text>
           {weakSubjects.map(([subject, count]) => (
             <View key={subject} style={styles.weakRow}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
-                <Badge label={subject} color={colors.warning} />
-                <Text style={[typography.caption, { color: colors.textMuted }]}>{count} mistakes</Text>
-              </View>
-              <ProgressBar percent={(count / maxMistakeCount) * 100} color={colors.error} height={6} />
+              <Text style={styles.weakSubject}>{subject}</Text>
+              <Text style={styles.weakCount}>{count} mistake{count > 1 ? 's' : ''}</Text>
             </View>
           ))}
         </View>
       )}
 
-
-
-      <View style={styles.flashcardPreview}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
-          <Text style={[typography.h4, { color: colors.text }]}>🃏 Spaced Repetition</Text>
-          <Badge label={`${dueCount} due`} color={colors.info} />
-        </View>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.md }]}>
-          {totalCards > 0
-            ? `${masteredCount()} of ${totalCards} cards mastered · ${accuracy}% accuracy`
-            : 'No cards yet — start a session to generate flashcards'}
-        </Text>
-        <View style={styles.repRow}>
-          {intervals.map((days, i) => (
-            <TouchableOpacity
-              key={days}
-              style={[styles.repDot, dueDistribution[i] > 0 && styles.repDotActive]}
-              onPress={() => {
-                if (dueCount > 0) {
-                  useFlashcardStore.getState().loadDueCards();
-                  navigation.navigate('Learn');
-                }
-              }}
-            >
-              <Text style={[typography.tiny, { color: dueDistribution[i] > 0 ? colors.primary : colors.textMuted }]}>
-                {days}d
-              </Text>
-              {dueDistribution[i] > 0 && (
-                <Text style={[typography.tiny, { color: colors.primary, fontWeight: '700' }]}>
-                  {dueDistribution[i]}
-                </Text>
-              )}
-            </TouchableOpacity>
-          ))}
-        </View>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: colors.primary, marginTop: spacing.md }]}
-          onPress={() => {
-            if (dueCount > 0) {
-              useFlashcardStore.getState().loadDueCards();
-              navigation.navigate('Learn');
-            } else if (totalCards > 0) {
-              useFlashcardStore.getState().loadDueCards();
-              navigation.navigate('Learn');
-            }
-          }}
-        >
-          <Text style={[typography.bodyBold, { color: colors.white }]}>
-            {dueCount > 0 ? `Review ${dueCount} Due Cards →` : totalCards > 0 ? 'All reviewed! View cards →' : 'Generate Flashcards →'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <View style={{ height: spacing.huge }} />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg },
-  todaySection: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
+  container: { flex: 1, backgroundColor: colors.background },
+  content: { padding: spacing.xl, paddingTop: spacing.huge + spacing.lg, paddingBottom: spacing.huge },
+
+  pageTitle: { fontSize: 26, fontWeight: '700', color: colors.text, letterSpacing: -0.5, fontFamily: fontFamily.bodyBold },
+
+  reviewCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 24,
     padding: spacing.xl,
     marginTop: spacing.xl,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  planRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  planCard: {
-    flex: 1,
-    backgroundColor: colors.bgInput,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+  reviewCountArea: { alignItems: 'center', paddingVertical: spacing.md },
+  reviewCount: { fontSize: 52, fontWeight: '700', color: colors.primary, letterSpacing: -2, fontFamily: fontFamily.bodyBold },
+  reviewLabel: { fontSize: 15, color: colors.textSecondary, marginTop: spacing.xs },
+  reviewDesc: { fontSize: 14, color: colors.textSecondary, lineHeight: 22, marginTop: spacing.lg, textAlign: 'center' },
+
+  startBtn: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: 16,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderLeftWidth: 3,
   },
-  actionBtn: {
+  startBtnText: { fontSize: 15, fontWeight: '700', color: colors.white, fontFamily: fontFamily.bodyBold },
+
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    borderRadius: 20,
     padding: spacing.lg,
-    borderRadius: borderRadius.md,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 17, fontWeight: '700', color: colors.text, fontFamily: fontFamily.bodyBold },
+  statLabel: { fontSize: 11, color: colors.textTertiary, fontWeight: '500', marginTop: spacing.xs, fontFamily: fontFamily.body },
+  statDivider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
+
+  weakListCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    padding: spacing.xl,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  weakListTitle: { fontSize: 13, fontWeight: '700', color: colors.textTertiary, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: spacing.md, fontFamily: fontFamily.bodyBold },
+  weakRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  weakSection: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  weakRow: { marginBottom: spacing.md },
-  flashcardPreview: {
-    backgroundColor: colors.bgCard,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
-    marginTop: spacing.lg,
-    marginBottom: spacing.huge,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  repRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  repDot: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: borderRadius.round,
-    backgroundColor: colors.bgInput,
-    alignItems: 'center',
-    minWidth: 48,
   },
-  repDotActive: { backgroundColor: colors.primaryLight },
+  weakSubject: { fontSize: 14, fontWeight: '600', color: colors.text, fontFamily: fontFamily.bodyMedium },
+  weakCount: { fontSize: 12, color: colors.textTertiary, fontWeight: '500', fontFamily: fontFamily.body },
 });

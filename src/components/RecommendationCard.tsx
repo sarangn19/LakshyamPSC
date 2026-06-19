@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { StudySessionPlan, SessionType } from '../services/sessionOrchestrator';
@@ -45,6 +46,7 @@ interface Props {
 }
 
 export function RecommendationCard({ plan, navigation, onSessionStart }: Props) {
+  const { t } = useTranslation();
   const actions = SESSION_ACTIONS[plan.sessionType];
 
   const handleReviewNotes = () => {
@@ -97,14 +99,14 @@ export function RecommendationCard({ plan, navigation, onSessionStart }: Props) 
         <View style={{ marginLeft: spacing.md, flex: 1 }}>
           <Text style={[typography.h3, { color: colors.text }]}>{plan.title}</Text>
           <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-            {plan.estimatedDuration} min
+            {t('recommendation.minutes', { min: plan.estimatedDuration })}
             {plan.focusSubjects.length > 0 ? ` \u00B7 ${plan.focusSubjects.slice(0, 2).join(', ')}` : ''}
           </Text>
         </View>
       </View>
 
       <View style={styles.reasoningSection}>
-        <Text style={[typography.captionBold, { color: color, marginBottom: spacing.xs }]}>Why this?</Text>
+        <Text style={[typography.captionBold, { color: color, marginBottom: spacing.xs }]}>{t('recommendation.whyThis')}</Text>
         {plan.reasoning.map((r, i) => (
           <Text key={i} style={[typography.small, { color: colors.textMuted, lineHeight: 18, marginBottom: 2 }]}>
             {i + 1}. {r}
@@ -114,34 +116,34 @@ export function RecommendationCard({ plan, navigation, onSessionStart }: Props) 
 
       {isExam ? (
         <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: color }]} onPress={handleMockExam}>
-          <Text style={[typography.bodyBold, { color: '#fff' }]}>🎯 Start Mock Exam</Text>
+          <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('recommendation.startMockExam')}</Text>
         </TouchableOpacity>
       ) : isFlashcard ? (
         <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: color }]} onPress={handleReviewFlashcards}>
-          <Text style={[typography.bodyBold, { color: '#fff' }]}>🃏 Review Due Cards</Text>
+          <Text style={[typography.bodyBold, { color: '#fff' }]}>{t('recommendation.reviewDueCards')}</Text>
         </TouchableOpacity>
       ) : (
         <>
           <Text style={[typography.captionBold, { color: colors.textSecondary, marginBottom: spacing.sm, marginTop: spacing.xs }]}>
-            How to study this:
+            {t('recommendation.howToStudy')}
           </Text>
           <View style={styles.actionRow}>
             {actions.showNotes && (
               <TouchableOpacity style={styles.secondaryBtn} onPress={handleReviewNotes}>
                 <Text style={{ fontSize: 18 }}>📖</Text>
-                <Text style={[typography.captionBold, { color: colors.text, marginTop: 2 }]}>Read Notes</Text>
+                <Text style={[typography.captionBold, { color: colors.text, marginTop: 2 }]}>{t('recommendation.readNotes')}</Text>
               </TouchableOpacity>
             )}
             {actions.showAI && (
               <TouchableOpacity style={styles.secondaryBtn} onPress={handleAskAITutor}>
                 <Text style={{ fontSize: 18 }}>🤖</Text>
-                <Text style={[typography.captionBold, { color: colors.text, marginTop: 2 }]}>Ask AI</Text>
+                <Text style={[typography.captionBold, { color: colors.text, marginTop: 2 }]}>{t('recommendation.askAI')}</Text>
               </TouchableOpacity>
             )}
           </View>
           {actions.showMCQ && (
             <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: color + '30', borderWidth: 1, borderColor: color }]} onPress={handlePracticeMCQs}>
-              <Text style={[typography.bodyBold, { color }]}>🎯 Practice MCQs</Text>
+              <Text style={[typography.bodyBold, { color }]}>{t('recommendation.practiceMCQs')}</Text>
             </TouchableOpacity>
           )}
         </>
@@ -176,17 +178,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bgInput,
     borderRadius: borderRadius.md,
-    paddingVertical: spacing.md,
+    height: 48,
     paddingHorizontal: spacing.md,
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
   },
   primaryBtn: {
-    paddingVertical: spacing.md,
+    height: 48,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginTop: spacing.xs,
   },
 });

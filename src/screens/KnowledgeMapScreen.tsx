@@ -1,108 +1,187 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
-import { syllabus, Subject } from '../data/syllabus';
-import { useMCQStore } from '../store';
+import { useCognitiveTwinStore, KnowledgeMastery } from '../store/cognitiveTwinStore';
+import { getNodesByLevel, getChildren, KnowledgeNode } from '../data/knowledgeTree';
 import { ProgressBar, Badge } from '../components/common/StyledComponents';
 
-const subjectIcons: Record<string, string> = {
-  'Kerala History': '📜',
-  'Renaissance': '💡',
-  'Constitution': '⚖️',
-  'Geography': '🌍',
-  'Current Affairs': '📰',
-  'Science': '🔬',
-  'Quantitative Aptitude': '🧮',
-  'Mental Ability': '🧠',
-  'Malayalam': '📝',
-};
+type MasteryState = 'strong' | 'improving' | 'weak' | 'at_risk' | 'unknown';
+
+function getMasteryState(mastery?: KnowledgeMastery): MasteryState {
+  if (!mastery || mastery.attempts === 0) return 'unknown';
+  if (mastery.masteryScore >= 75) return 'strong';
+  if (mastery.masteryScore >= 50) return 'improving';
+  if (mastery.masteryScore >= 30) return 'weak';
+  return 'at_risk';
+}
+
+function getStateColor(state: MasteryState): string {
+  switch (state) {
+    case 'strong': return colors.status.strong;
+    case 'improving': return colors.status.improving;
+    case 'weak': return colors.status.needsRevision;
+    case 'at_risk': return colors.status.weakArea;
+    default: return colors.status.notPracticed;
+  }
+}
+
+function getStateLabel(state: MasteryState): string {
+  switch (state) {
+    case 'strong': return 'Strong';
+    case 'improving': return 'Improving';
+    case 'weak': return 'Weak';
+    case 'at_risk': return 'At Risk';
+    default: return 'Not Practiced';
+  }
+}
+
+interface TreeNodeProps {
+  node: KnowledgeNode;
+  mastery: KnowledgeMastery;
+  depth: number;
+  expandedNodes: Set<string>;
+  onToggle: (id: string) => void;
+}
+
+function TreeNode({ node, mastery, depth, expandedNodes, onToggle }: TreeNodeProps) {
+  const hasChildren = getChildren(node.id).length > 0;
+  const isExpanded = expandedNodes.has(node.id);
+  const state = getMasteryState(mastery);
+  const stateColor = getStateColor(state);
+  const indent = depth * 20;
+
+  const masteryText = mastery.attempts > 0
+    ? `${mastery.masteryScore}%`
+    : '—';
+  const attemptText = mastery.attempts > 0 ? `${mastery.attempts}q` : '';
+
+  return (
+    <View>
+      <TouchableOpacity
+        style={[styles.treeNode, { paddingLeft: spacing.lg + indent }]}
+        onPress={() => {
+          if (hasChildren) onToggle(node.id);
+        }}
+        activeOpacity={hasChildren ? 0.7 : 1}
+      >
+        <View style={[styles.stateDot, { backgroundColor: stateColor }]} />
+        <View style={styles.treeContent}>
+          <View style={styles.treeHeader}>
+            <Text style={[typography.bodySmall, {
+              color: mastery.attempts > 0 ? colors.text : colors.textTertiary,
+              fontWeight: '600',
+            }]}>
+              {node.name}
+            </Text>
+            {hasChildren && (
+              <Text style={{ fontSize: 12, color: colors.textMuted, marginLeft: spacing.xs }}>
+                {isExpanded ? '▼' : '▶'}
+              </Text>
+            )}
+          </View>
+          <View style={styles.treeMeta}>
+            <Badge label={getStateLabel(state)} color={stateColor} />
+            <Text style={[typography.tiny, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
+              {masteryText}{attemptText ? ` · ${attemptText}` : ''}
+            </Text>
+          </View>
+          {mastery.attempts >= 2 && (
+            <View style={{ marginTop: spacing.xs }}>
+              <ProgressBar
+                percent={mastery.masteryScore}
+                color={stateColor}
+                height={3}
+              />
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export function KnowledgeMapScreen() {
-  const subjectProgress = useMCQStore((s) => s.subjectProgress);
-  const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+  const { t } = useTranslation();
+  const masteryMap = useCognitiveTwinStore((s) => s.masteryMap);
+  const subjects = getNodesByLevel('subject');
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
-  const getProgress = (name: string) => {
-    const p = subjectProgress.find((s) => s.subjectName === name);
-    return p || { completionPercent: 0, accuracyPercent: 0, confidenceScore: 0, revisionStatus: 'needs_attention' as const };
+  const toggleNode = (id: string) => {
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'good': return colors.accentGreen;
-      case 'needs_attention': return colors.warning;
-      case 'critical': return colors.error;
-      default: return colors.textMuted;
+  const renderTree = (parentId: string, depth: number): React.ReactNode[] => {
+    const children = getChildren(parentId);
+    const nodes: React.ReactNode[] = [];
+
+    for (const child of children) {
+      const mastery = masteryMap[child.id] || {
+        nodeId: child.id, attempts: 0, correct: 0, accuracy: 0,
+        hesitationScore: 0, forgettingScore: 0,
+        masteryScore: 0, lastPracticed: '', trend: 'unknown',
+      };
+      nodes.push(
+        <TreeNode
+          key={child.id}
+          node={child}
+          mastery={mastery}
+          depth={depth}
+          expandedNodes={expandedNodes}
+          onToggle={toggleNode}
+        />
+      );
+      if (expandedNodes.has(child.id)) {
+        nodes.push(...renderTree(child.id, depth + 1));
+      }
     }
+
+    return nodes;
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>Knowledge Map</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>Visual overview of your entire syllabus</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={[typography.h2, { color: colors.text }]}>Knowledge Tree</Text>
+      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+        Expand subjects to see topics and subtopics with mastery levels
+      </Text>
 
-      {syllabus.map((subject) => {
-        const progress = getProgress(subject.name);
-        const isExpanded = expandedSubject === subject.id;
-        const confColor = progress.confidenceScore > 70 ? colors.accentGreen : progress.confidenceScore > 45 ? colors.warning : colors.error;
+      <View style={styles.legendRow}>
+        {(['strong', 'improving', 'weak', 'at_risk', 'unknown'] as MasteryState[]).map((s) => (
+          <View key={s} style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: getStateColor(s) }]} />
+            <Text style={[typography.tiny, { color: colors.textSecondary }]}>{getStateLabel(s)}</Text>
+          </View>
+        ))}
+      </View>
 
-        return (
-          <TouchableOpacity
-            key={subject.id}
-            style={styles.subjectCard}
-            onPress={() => setExpandedSubject(isExpanded ? null : subject.id)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.subjectHeader}>
-              <View style={styles.subjectLeft}>
-                <Text style={{ fontSize: 28, marginRight: spacing.md }}>{subjectIcons[subject.name] || '📘'}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodyBold, { color: colors.text }]}>{subject.name}</Text>
-                  <View style={styles.subjectMeta}>
-                    <ProgressBar percent={progress.completionPercent} color={confColor} height={4} />
-                    <Text style={[typography.tiny, { color: colors.textMuted, marginLeft: spacing.sm }]}>{progress.completionPercent}%</Text>
-                  </View>
-                </View>
-              </View>
-              <View style={styles.subjectStats}>
-                <Text style={[typography.h3, { color: confColor }]}>{progress.confidenceScore}</Text>
-                <Badge label={progress.revisionStatus.replace('_', ' ')} color={statusColor(progress.revisionStatus)} />
-                <Text style={{ fontSize: 16, color: colors.textMuted, marginLeft: spacing.sm }}>{isExpanded ? '▼' : '▶'}</Text>
-              </View>
+      <View style={styles.treeContainer}>
+        {subjects.map((subject) => {
+          const mastery = masteryMap[subject.id] || {
+            nodeId: subject.id, attempts: 0, correct: 0, accuracy: 0,
+            hesitationScore: 0, forgettingScore: 0,
+            masteryScore: 0, lastPracticed: '', trend: 'unknown',
+          };
+          return (
+            <View key={subject.id}>
+              <TreeNode
+                node={subject}
+                mastery={mastery}
+                depth={0}
+                expandedNodes={expandedNodes}
+                onToggle={toggleNode}
+              />
+              {expandedNodes.has(subject.id) && renderTree(subject.id, 1)}
             </View>
-
-            {isExpanded && (
-              <View style={styles.topicsWrap}>
-                {subject.topics.map((topic) => (
-                  <View key={topic.id} style={styles.topicRow}>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>• {topic.name}</Text>
-                    <View style={styles.subtopics}>
-                      {topic.subtopics.map((st) => (
-                        <Badge key={st.id} label={st.name} color={colors.textMuted} />
-                      ))}
-                    </View>
-                  </View>
-                ))}
-
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Text style={[typography.small, { color: colors.textMuted }]}>Accuracy</Text>
-                    <Text style={[typography.h4, { color: progress.accuracyPercent > 70 ? colors.accentGreen : colors.warning }]}>{progress.accuracyPercent}%</Text>
-                  </View>
-                  <View style={styles.statBox}>
-                    <Text style={[typography.small, { color: colors.textMuted }]}>Confidence</Text>
-                    <Text style={[typography.h4, { color: confColor }]}>{progress.confidenceScore}</Text>
-                  </View>
-                  <View style={styles.statBox}>
-                    <Text style={[typography.small, { color: colors.textMuted }]}>Topics</Text>
-                    <Text style={[typography.h4, { color: colors.text }]}>{subject.topics.length}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
+          );
+        })}
+      </View>
 
       <View style={{ height: spacing.huge }} />
     </ScrollView>
@@ -110,28 +189,43 @@ export function KnowledgeMapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg },
-  subjectCard: {
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: spacing.lg, paddingTop: spacing.huge },
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  treeContainer: {
+    marginTop: spacing.lg,
     backgroundColor: colors.bgCard,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginTop: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
+    overflow: 'hidden',
   },
-  subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  subjectLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  subjectMeta: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
-  subjectStats: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  topicsWrap: { marginTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
-  topicRow: { marginBottom: spacing.md },
-  subtopics: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xs },
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
-  statBox: {
-    flex: 1,
-    backgroundColor: colors.bgInput,
-    padding: spacing.md,
-    borderRadius: borderRadius.sm,
-    alignItems: 'center',
+  treeNode: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: spacing.md,
+    paddingRight: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
+  stateDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 5,
+    marginRight: spacing.sm,
+  },
+  treeContent: { flex: 1 },
+  treeHeader: { flexDirection: 'row', alignItems: 'center' },
+  treeMeta: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
 });

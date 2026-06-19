@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DailyGoal, StudyStreak, CurrentAffair, ExamReadiness } from '../data/mockData';
 import { examTypes } from '../data/questions';
+import type { Locale } from '../i18n';
 
 interface UserState {
   userName: string;
@@ -18,10 +19,12 @@ interface UserState {
   dailyGoal: DailyGoal | null;
   examReadiness: ExamReadiness[];
   setupComplete: boolean;
+  locale: Locale;
   setUserName: (name: string) => void;
   toggleTargetExam: (exam: string) => void;
   setPrimaryExam: (exam: string) => void;
   setExamDate: (date: string) => void;
+  setLocale: (locale: Locale) => void;
   completeSetup: () => void;
   updateStreak: () => void;
   markMasteredTopic: (topic: string) => void;
@@ -49,8 +52,10 @@ export const useUserStore = create<UserState>()(
       dailyGoal: null,
       examReadiness: [],
       setupComplete: false,
+      locale: 'en',
 
       setUserName: (name) => set({ userName: name }),
+      setLocale: (locale) => set({ locale }),
 
       toggleTargetExam: (exam) => {
         const state = get();
