@@ -6,7 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { SetupScreen } from './src/screens/SetupScreen';
-import { useUserStore, useKnowledgeStore } from './src/store';
+import { useUserStore, useKnowledgeStore, usePerformanceStore } from './src/store';
 import { useAuthStore } from './src/store/authStore';
 import { colors, spacing } from './src/theme';
 import { typography } from './src/theme/typography';
@@ -57,6 +57,7 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [restoring, setRestoring] = useState(true);
   const [restored, setRestored] = useState(false);
   const initDone = useRef(false);
 
@@ -122,12 +123,16 @@ export default function App() {
   useEffect(() => {
     if (setupDone && hydrated && !restored) {
       setRestored(true);
-      restoreFromRemote();
+      const hasCache = usePerformanceStore.getState().interactionSignals.length > 0;
+      if (hasCache) setRestoring(false);
+      restoreFromRemote().finally(() => setRestoring(false));
       startPeriodicSync();
+      // Notifications: install expo-notifications and uncomment below to enable
+      // requestNotificationPermission().then((granted) => { ... });
     }
   }, [setupDone, hydrated, restored]);
 
-  if (!fontsLoaded || checking) {
+  if (!fontsLoaded || checking || (setupDone && restoring)) {
     return <LoadingScreen />;
   }
 

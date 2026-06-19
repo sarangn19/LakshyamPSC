@@ -18,6 +18,18 @@ interface KnowledgeState {
   loadNotes: () => Promise<void>;
 }
 
+function mergeNotes(local: Note[], remote: Note[]): Note[] {
+  const map = new Map<string, Note>();
+  for (const n of local) map.set(n.id, n);
+  for (const n of remote) {
+    const existing = map.get(n.id);
+    if (!existing || n.updatedAt > existing.updatedAt) {
+      map.set(n.id, n);
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 export const useKnowledgeStore = create<KnowledgeState>()(
   persist(
     (set, get) => ({
@@ -45,8 +57,15 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       getLinkedNotes: (topicId) => get().notes.filter((n) => n.topicIds.includes(topicId)),
       loadNotes: async () => {
         const remote = await fetchNotes();
-        if (remote.length > 0) {
-          set({ notes: remote });
+        const local = get().notes;
+        if (remote.length === 0) return;
+        const merged = mergeNotes(local, remote);
+        set({ notes: merged });
+        const remoteIds = new Set(remote.map((n) => n.id));
+        for (const n of local) {
+          if (!remoteIds.has(n.id)) {
+            saveNote(n);
+          }
         }
       },
     }),

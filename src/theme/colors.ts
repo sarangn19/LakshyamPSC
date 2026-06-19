@@ -6,7 +6,7 @@ export const colors = {
   warning: '#F59E0B',
   error: '#DC2626',
   info: '#0891B2',
-  background: '#FAFAF8',
+  background: '#F4F0EF',
   surface: '#FFFFFF',
   surfaceSecondary: '#F6F6F4',
   border: '#E5E7EB',
@@ -38,7 +38,7 @@ export const colors = {
   accentTeal: '#0891B2',
   primaryDark: '#1D4ED8',
   accent: '#F59E0B',
-  bg: '#FAFAF8',
+  bg: '#F4F0EF',
 };
 
 export const subjectColors: Record<string, string> = {

@@ -2,24 +2,34 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Platform, Text } from 'react-native';
+import { Platform, TouchableOpacity, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { colors, fontFamily } from '../theme';
 import { useTranslation } from '../i18n/useTranslation';
 import { useAuthStore } from '../store/authStore';
 import { useUserStore } from '../store/userStore';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import { supabase } from '../services/supabase';
-import { fetchUserProfile, fetchNotes } from '../services/dataSync';
+import { fetchUserProfile } from '../services/dataSync';
 import type { Role } from '../store/authStore';
+
+const ArrowLeftIcon = () => (
+  <Svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+    <Path d="M15 17L9 11L15 5" stroke={colors.text} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 async function getUserRole(userId: string): Promise<Role> {
   try {
     const { data } = await supabase!
-      .from('user_roles')
-      .select('roles!inner(name)')
+      .from('profiles')
+      .select('role')
       .eq('auth_user_id', userId)
       .maybeSingle();
-    return (data as any)?.roles?.name || 'student';
+    const role = (data as any)?.role;
+    if (role === 'superadmin') return 'superadmin';
+    if (role === 'admin') return 'admin';
+    return 'student';
   } catch {
     return 'student';
   }
@@ -43,6 +53,9 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { PostSessionScreen } from '../screens/PostSessionScreen';
 import { NoteDetailScreen } from '../screens/NoteDetailScreen';
 import { CreateNoteScreen } from '../screens/CreateNoteScreen';
+import { RetentionDashboardScreen } from '../screens/RetentionDashboardScreen';
+import { BookmarkedQuestionsScreen } from '../screens/BookmarkedQuestionsScreen';
+import { BulkUploadScreen } from '../screens/admin/BulkUploadScreen';
 import { AdminNavigator } from './AdminNavigator';
 import { SuperAdminNavigator } from './SuperAdminNavigator';
 
@@ -71,7 +84,7 @@ const screenHeaderStyle = {
   headerTitleStyle: { color: colors.text, fontSize: 17, fontWeight: '600' as const, fontFamily: fontFamily.bodyMedium },
   headerShadowVisible: false,
   headerBackTitleVisible: false,
-  ...(Platform.OS === 'web' ? { headerBackImage: () => <Text style={{ fontSize: 22, color: colors.text, paddingLeft: 4 }}>{'‹'}</Text> } : {}),
+  headerBackImage: () => <View style={{ paddingLeft: Platform.OS === 'web' ? 8 : 0 }}><ArrowLeftIcon /></View>,
 };
 
 export function AppNavigator() {
@@ -81,7 +94,7 @@ export function AppNavigator() {
   useEffect(() => {
     if (!supabase) return;
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user && !isAuthenticated) {
+      if (session?.user) {
         const role = await getUserRole(session.user.id);
         useAuthStore.getState().setRole(role);
         useAuthStore.getState().setAuthenticated(true);
@@ -92,13 +105,11 @@ export function AppNavigator() {
               targetExams: profile.target_exams || [],
               primaryExam: profile.primary_exam || '',
               examDate: profile.exam_date || '',
-              setupComplete: profile.setup_complete || false,
+              ...(profile.setup_complete ? { setupComplete: true } : {}),
             });
           }
         }).catch(() => {});
-        fetchNotes().then((notes) => {
-          if (notes.length > 0) useKnowledgeStore.setState({ notes });
-        }).catch(() => {});
+        useKnowledgeStore.getState().loadNotes().catch(() => {});
       }
     });
   }, []);
@@ -113,16 +124,19 @@ export function AppNavigator() {
           <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
+            <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+            <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
+            <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
+            <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ ...screenHeaderStyle, title: t('noteDetail.notFound'), animation: 'slide_from_right' }} />
+          <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />
           <Stack.Screen name="CreateNote" component={CreateNoteScreen} options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="PostSession" component={PostSessionScreen} options={{ animation: 'slide_from_bottom' }} />
-          <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ headerShown: false, title: 'Admin Portal', animation: 'slide_from_right' }} />
-          <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ headerShown: false, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
+          <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ ...screenHeaderStyle, title: 'Admin Portal', animation: 'slide_from_right' }} />
+          <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ ...screenHeaderStyle, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
+          <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
         </Stack.Navigator>
       </NavigationContainer>
     );
@@ -138,16 +152,19 @@ export function AppNavigator() {
             <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
             <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
             <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+          <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+          <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
+          <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
             <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
             <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
             <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ ...screenHeaderStyle, title: t('noteDetail.notFound'), animation: 'slide_from_right' }} />
+            <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
             <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />
             <Stack.Screen name="CreateNote" component={CreateNoteScreen} options={{ animation: 'slide_from_bottom' }} />
             <Stack.Screen name="PostSession" component={PostSessionScreen} options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ headerShown: false, title: 'Admin Portal', animation: 'slide_from_right' }} />
-            <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ headerShown: false, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
+            <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ ...screenHeaderStyle, title: 'Admin Portal', animation: 'slide_from_right' }} />
+            <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ ...screenHeaderStyle, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
+            <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           </>
         ) : (
           <Stack.Screen name="Login" component={LoginScreen} />

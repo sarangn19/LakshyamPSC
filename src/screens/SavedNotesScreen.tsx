@@ -1,11 +1,46 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Platform } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Platform, Animated } from 'react-native';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { fontFamily, colors } from '../theme';
+import { colors, fontFamily, spacing, radius, typography } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 
-const barHeights = [12.29, 34.47, 28.13, 13.46, 28.13, 15.4, 18.91];
+const SearchIcon = () => (
+  <Svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <Circle cx="7.5" cy="7.5" r="6" stroke={colors.textTertiary} strokeWidth="1.5" />
+    <Path d="M16 16L12 12" stroke={colors.textTertiary} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const TextNoteIcon = () => (
+  <Svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+    <Rect x="1" y="1" width="16" height="20" rx="2" stroke={colors.primary} strokeWidth="1.5" />
+    <Path d="M5 6H13" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M5 10H13" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M5 14H10" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const VoiceIcon = () => (
+  <Svg width="18" height="22" viewBox="0 0 18 22" fill="none">
+    <Rect x="5.5" y="1" width="7" height="13" rx="3.5" stroke={colors.success} strokeWidth="1.5" />
+    <Path d="M1 9.5C1 13.6421 4.35786 17 8.5 17C12.6421 17 16 13.6421 16 9.5" stroke={colors.success} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M8.5 17V21" stroke={colors.success} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const BRAND_YELLOW = '#F7B11A';
+
+const EmptyNotesIcon = () => (
+  <Svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+    <Rect x="10" y="6" width="60" height="68" rx="8" stroke={colors.border} strokeWidth="2" />
+    <Path d="M26 28H54" stroke={colors.border} strokeWidth="2" strokeLinecap="round" />
+    <Path d="M26 36H54" stroke={colors.border} strokeWidth="2" strokeLinecap="round" />
+    <Path d="M26 44H44" stroke={colors.border} strokeWidth="2" strokeLinecap="round" />
+    <Circle cx="56" cy="56" r="18" fill={`${BRAND_YELLOW}15`} />
+    <Path d="M50 56H62M56 50V62" stroke={BRAND_YELLOW} strokeWidth="2" strokeLinecap="round" />
+  </Svg>
+);
 
 export function SavedNotesScreen({ navigation }: any) {
   const notes = useKnowledgeStore((s) => s.notes);
@@ -15,14 +50,28 @@ export function SavedNotesScreen({ navigation }: any) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const recordingRef = useRef<any>(null);
+  const searchRef = useRef<TextInput>(null);
+  const createSlideAnim = useRef(new Animated.Value(300)).current;
 
-  const allTopics = [...new Set(notes.flatMap((n) => n.tags))];
+  const openCreateModal = () => {
+    setShowAddModal(true);
+    createSlideAnim.setValue(300);
+    Animated.timing(createSlideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+  };
+
+  const closeCreateModal = () => {
+    Animated.timing(createSlideAnim, { toValue: 300, duration: 200, useNativeDriver: true }).start(() => {
+      setShowAddModal(false);
+    });
+  };
+
+  const allTopics = [...new Set(notes.flatMap((n) => n.tags).filter(Boolean))];
 
   const filtered = notes.filter((n) => {
     const matchesSearch = searchQuery.trim() === '' ||
       n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       n.content.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTopic = selectedTopic === '' || n.tags.includes(selectedTopic);
+    const matchesTopic = selectedTopic === '' || (n.tags && n.tags.includes(selectedTopic));
     return matchesSearch && matchesTopic;
   });
 
@@ -47,7 +96,7 @@ export function SavedNotesScreen({ navigation }: any) {
       }
       return;
     }
-    setShowAddModal(false);
+    closeCreateModal();
     try {
       const Audio = await import('expo-av').then(m => m.Audio);
       const { granted } = await Audio.requestPermissionsAsync();
@@ -67,72 +116,19 @@ export function SavedNotesScreen({ navigation }: any) {
     }
   };
 
-  const handleImagePick = async () => {
-    setShowAddModal(false);
-    try {
-      const ImagePicker = await import('expo-image-picker');
-      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!granted) {
-        Alert.alert('Permission required', 'Gallery permission is needed to upload images.');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets[0]) {
-        addNote({
-          id: `note-${Date.now()}`,
-          title: `Image note ${new Date().toLocaleString()}`,
-          content: result.assets[0].uri,
-          type: 'ocr',
-          subject: 'General',
-          topicIds: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tags: ['image'],
-        });
-      }
-    } catch {
-      Alert.alert('Not available', 'Image picker is not supported in this environment.');
-    }
-  };
-
-  const handleCaptureImage = async () => {
-    setShowAddModal(false);
-    try {
-      const ImagePicker = await import('expo-image-picker');
-      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-      if (!granted) {
-        Alert.alert('Permission required', 'Camera permission is needed to capture images.');
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets[0]) {
-        addNote({
-          id: `note-${Date.now()}`,
-          title: `Captured image ${new Date().toLocaleString()}`,
-          content: result.assets[0].uri,
-          type: 'ocr',
-          subject: 'General',
-          topicIds: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          tags: ['image'],
-        });
-      }
-    } catch {
-      Alert.alert('Not available', 'Camera is not supported in this environment.');
-    }
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
     <View style={styles.container}>
-      {/* Top Bar */}
       <LinearGradient
         colors={['#FFFFFF', 'rgba(255, 255, 255, 0.317308)', 'rgba(255, 255, 255, 0)']}
         start={{ x: 0, y: 0 }}
@@ -140,79 +136,129 @@ export function SavedNotesScreen({ navigation }: any) {
         style={styles.topBar}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <View style={styles.backArrowWrap}>
-            <Svg width="9" height="17" viewBox="0 0 9 17" fill="none">
-              <Path fillRule="evenodd" clipRule="evenodd" d="M8.99892 15.938L7.95392 17L0.287919 9.21C0.10342 9.0197 0.000244141 8.76505 0.000244141 8.5C0.000244141 8.23495 0.10342 7.9803 0.287919 7.79L7.95392 0L8.99892 1.063L1.68092 8.5L8.99892 15.938Z" fill="black"/>
-            </Svg>
-          </View>
+          <Svg width="9" height="17" viewBox="0 0 9 17" fill="none">
+            <Path fillRule="evenodd" clipRule="evenodd" d="M8.99892 15.938L7.95392 17L0.287919 9.21C0.10342 9.0197 0.000244141 8.76505 0.000244141 8.5C0.000244141 8.23495 0.10342 7.9803 0.287919 7.79L7.95392 0L8.99892 1.063L1.68092 8.5L8.99892 15.938Z" fill="black"/>
+          </Svg>
         </TouchableOpacity>
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.headerTitle}>My Notes</Text>
+          <Text style={styles.headerSub}>{notes.length} note{notes.length !== 1 ? 's' : ''}</Text>
+        </View>
       </LinearGradient>
 
       {isRecording && (
         <View style={styles.recordingBanner}>
-          <Text style={styles.recordingBannerText}>🔴 Recording... tap "Voice note" to stop</Text>
+          <View style={styles.recordingDot} />
+          <Text style={styles.recordingBannerText}>Recording... tap the mic button to stop</Text>
         </View>
       )}
+
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Search + Add */}
         <View style={styles.searchRow}>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search"
-            placeholderTextColor="rgba(0,0,0,0.5)"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
-            <Text style={styles.addBtnText}>+</Text>
+          <TouchableOpacity activeOpacity={1} onPress={() => searchRef.current?.focus()} style={styles.searchInputWrap}>
+            <SearchIcon />
+            <TextInput
+              ref={searchRef}
+              style={styles.searchInput}
+              placeholder="Search notes..."
+              placeholderTextColor={colors.textTertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn}>
+                <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <Path d="M1 1L13 13M13 1L1 13" stroke={colors.textTertiary} strokeWidth="1.5" strokeLinecap="round" />
+                </Svg>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Topic Filter Chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicRow}>
-          {allTopics.map((topic) => {
-            const isActive = topic === selectedTopic;
-            return (
-              <TouchableOpacity
-                key={topic}
-                style={[styles.topicChip, isActive && styles.topicChipActive]}
-                onPress={() => setSelectedTopic(isActive ? '' : topic)}
-              >
-                <Text style={[styles.topicChipText, isActive && styles.topicChipTextActive]}>{topic}</Text>
-                {isActive && <Text style={styles.topicChipCross}>✕</Text>}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Notes Table */}
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, { flex: 3 }]}>Title</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Subject</Text>
-            <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Date</Text>
-          </View>
-          {filtered.map((note) => (
-            <TouchableOpacity key={note.id} style={styles.tableRow} onPress={() => navigation.navigate('NoteDetail', { noteId: note.id })}>
-              <Text style={[styles.tableCell, { flex: 3 }]} numberOfLines={1}>{note.title}</Text>
-              <Text style={[styles.tableCell, { flex: 2 }]} numberOfLines={1}>{note.tags[0] || note.subject}</Text>
-              <Text style={[styles.tableCell, { flex: 1 }]} numberOfLines={1}>{new Date(note.createdAt).toLocaleDateString()}</Text>
+        {allTopics.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.topicRow}>
+            <TouchableOpacity
+              style={[styles.topicChip, selectedTopic === '' && styles.topicChipActive]}
+              onPress={() => setSelectedTopic('')}
+            >
+              <Text style={[styles.topicChipText, selectedTopic === '' && styles.topicChipTextActive]}>All</Text>
             </TouchableOpacity>
-          ))}
-          {filtered.length === 0 && (
-            <Text style={styles.emptyText}>No notes yet. Save one from the AI Tutor!</Text>
-          )}
-        </View>
-      </ScrollView>
-      {/* Add Note Modal */}
-      <Modal visible={showAddModal} transparent animationType="fade" onRequestClose={() => setShowAddModal(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowAddModal(false)}>
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Add Note</Text>
+            {allTopics.map((topic) => {
+              const isActive = topic === selectedTopic;
+              return (
+                <TouchableOpacity
+                  key={topic}
+                  style={[styles.topicChip, isActive && styles.topicChipActive]}
+                  onPress={() => setSelectedTopic(isActive ? '' : topic)}
+                >
+                  <Text style={[styles.topicChipText, isActive && styles.topicChipTextActive]}>{topic}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
-            <TouchableOpacity style={styles.optionBtn} onPress={() => { setShowAddModal(false); navigation.navigate('CreateNote'); }}>
-              <View style={[styles.optionIcon, { backgroundColor: colors.primary + '15' }]}>
-                <Text style={styles.optionIconText}>✏️</Text>
+        {filtered.length > 0 ? (
+          <View style={styles.grid}>
+            {filtered.map((note) => (
+              <TouchableOpacity
+                key={note.id}
+                style={styles.noteCard}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('NoteDetail', { noteId: note.id })}
+              >
+                <View style={styles.cardMenu}>
+                  <View style={styles.dot} />
+                  <View style={styles.dot} />
+                  <View style={styles.dot} />
+                </View>
+                <Text style={styles.cardTitle} numberOfLines={1}>{note.title}</Text>
+                <Text style={styles.cardPreview} numberOfLines={11}>{note.content}</Text>
+                <Text style={styles.cardTime}>{formatDate(note.createdAt)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyState}>
+            <EmptyNotesIcon />
+            <Text style={styles.emptyTitle}>
+              {searchQuery || selectedTopic ? 'No matching notes' : 'No notes yet'}
+            </Text>
+            <Text style={styles.emptySub}>
+              {searchQuery || selectedTopic
+                ? 'Try a different search or filter'
+                : 'Tap the + button to create your first note'}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
+
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={openCreateModal}
+        style={[styles.fab, Platform.select({ web: { boxShadow: '0 4px 16px rgba(247, 177, 26, 0.4)' }, default: { elevation: 6 } })]}
+      >
+        <LinearGradient
+          colors={[BRAND_YELLOW, '#DAA10E']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabGradient}
+        >
+          <Svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <Path d="M11 2V20M2 11H20" stroke={colors.white} strokeWidth="2.5" strokeLinecap="round" />
+          </Svg>
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <Modal visible={showAddModal} transparent animationType="none" onRequestClose={closeCreateModal}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeCreateModal}>
+          <Animated.View style={[styles.modalSheet, { transform: [{ translateY: createSlideAnim }] }]}>
+            <View style={styles.modalHandle} />
+            <Text style={styles.modalTitle}>Create Note</Text>
+
+            <TouchableOpacity style={styles.optionBtn} onPress={() => { closeCreateModal(); setTimeout(() => navigation.navigate('CreateNote'), 220); }}>
+              <View style={[styles.optionIcon, { backgroundColor: `${BRAND_YELLOW}15` }]}>
+                <TextNoteIcon />
               </View>
               <View style={styles.optionTextWrap}>
                 <Text style={styles.optionTitle}>Type a note</Text>
@@ -221,39 +267,19 @@ export function SavedNotesScreen({ navigation }: any) {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.optionBtn} onPress={handleVoiceNote}>
-              <View style={[styles.optionIcon, { backgroundColor: '#16A34A' + '15' }]}>
-                <Text style={styles.optionIconText}>{isRecording ? '⏹️' : '🎤'}</Text>
+              <View style={[styles.optionIcon, { backgroundColor: colors.success + '15' }]}>
+                <VoiceIcon />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>{isRecording ? 'Recording… tap to stop' : 'Voice note'}</Text>
+                <Text style={styles.optionTitle}>{isRecording ? 'Recording... tap to stop' : 'Voice note'}</Text>
                 <Text style={styles.optionSub}>{isRecording ? 'Recording in progress' : 'Record a voice note'}</Text>
               </View>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.optionBtn} onPress={handleImagePick}>
-              <View style={[styles.optionIcon, { backgroundColor: '#F59E0B' + '15' }]}>
-                <Text style={styles.optionIconText}>🖼️</Text>
-              </View>
-              <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>Upload from gallery</Text>
-                <Text style={styles.optionSub}>Choose an image from your library</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.optionBtn} onPress={handleCaptureImage}>
-              <View style={[styles.optionIcon, { backgroundColor: '#DC2626' + '15' }]}>
-                <Text style={styles.optionIconText}>📷</Text>
-              </View>
-              <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>Capture image</Text>
-                <Text style={styles.optionSub}>Take a photo with your camera</Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowAddModal(false)}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={closeCreateModal}>
               <Text style={styles.cancelBtnText}>Cancel</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
     </View>
@@ -263,238 +289,313 @@ export function SavedNotesScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: colors.bg,
   },
   topBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 122,
+    height: 110,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingTop: 21,
-    paddingBottom: 57,
-    gap: 12,
-    backgroundColor: 'transparent',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: 16,
+    gap: spacing.sm,
+    backgroundColor: colors.transparent,
     zIndex: 10,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  backArrowWrap: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 999,
+    borderColor: colors.borderLight,
+    borderRadius: radius.full,
+    ...Platform.select({ web: { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }, default: { elevation: 2 } }),
+  },
+  headerTextWrap: {
+    paddingBottom: 1,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: fontFamily.bodySemiBold,
+    color: colors.text,
+    lineHeight: 22,
+  },
+  headerSub: {
+    fontSize: 12,
+    fontWeight: '400',
+    fontFamily: fontFamily.body,
+    color: colors.textSecondary,
+    lineHeight: 16,
+    marginTop: 1,
   },
 
   scrollContent: {
-    paddingTop: 96,
-    paddingBottom: 240,
-    paddingHorizontal: 16,
-    gap: 24,
+    paddingTop: 120,
+    paddingBottom: 120,
+    paddingHorizontal: spacing.md,
   },
+
   searchRow: {
+    marginBottom: spacing.md,
+  },
+  searchInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    height: 44,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    gap: 10,
+    outlineStyle: 'none',
+    ...Platform.select({ web: { boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }, default: { elevation: 1 } }),
   },
   searchInput: {
     flex: 1,
-    height: 48,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '400',
-    lineHeight: 22,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
+    padding: 0,
     outlineWidth: 0,
+    outlineStyle: 'none',
+    lineHeight: 20,
   },
-  addBtn: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#F7B11A',
-    borderRadius: 999,
+  clearBtn: {
+    width: 28,
+    height: 28,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  addBtnText: {
-    fontSize: 36,
-    fontWeight: '700',
-    lineHeight: 49,
-    fontFamily: fontFamily.bodyBold,
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
   topicRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: spacing.sm,
     alignItems: 'center',
+    paddingBottom: 20,
   },
   topicChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    height: 44,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 999,
-    gap: 4,
+    paddingHorizontal: spacing.sm + 4,
+    height: 32,
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.full,
+    ...Platform.select({ web: { boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }, default: { elevation: 1 } }),
   },
   topicChipActive: {
-    backgroundColor: '#F7B11A',
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: BRAND_YELLOW,
   },
   topicChipText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
-    lineHeight: 19,
     fontFamily: fontFamily.bodyMedium,
-    color: '#000000',
+    color: colors.textSecondary,
+    lineHeight: 16,
   },
   topicChipTextActive: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
-  topicChipCross: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontFamily: fontFamily.bodyBold,
-  },
-  table: {
-    paddingHorizontal: 16,
-    gap: 0,
-  },
-  tableHeader: {
+
+  grid: {
     flexDirection: 'row',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  tableHeaderCell: {
-    fontSize: 12,
-    fontWeight: '600',
-    fontFamily: fontFamily.bodyBold,
-    color: 'rgba(0, 0, 0, 0.5)',
-    textTransform: 'uppercase',
+  noteCard: {
+    width: '47.5%',
+    flexGrow: 1,
+    maxWidth: 260,
+    minHeight: 275,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    padding: 20,
+    position: 'relative',
+    ...Platform.select({ web: { boxShadow: '0 16px 35px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.03)' }, default: { elevation: 4 } }),
   },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 14,
-    borderBottomWidth: 0.5,
-    borderBottomColor: 'rgba(0, 0, 0, 0.08)',
-    gap: 8,
+  cardMenu: {
+    position: 'absolute',
+    top: 18,
+    right: 18,
+    gap: 4,
     alignItems: 'center',
   },
-  tableCell: {
-    fontSize: 14,
-    fontWeight: '400',
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#9f9f9f',
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: fontFamily.bodyBold,
+    color: '#2f2f2f',
     lineHeight: 19,
-    fontFamily: fontFamily.body,
-    color: '#000000',
+    paddingRight: 18,
+    marginBottom: 2,
   },
-  emptyText: {
-    fontSize: 16,
+  cardPreview: {
+    flex: 1,
+    fontSize: 13,
     fontWeight: '400',
-    lineHeight: 22,
     fontFamily: fontFamily.body,
-    color: 'rgba(0,0,0,0.5)',
-    textAlign: 'center',
-    paddingVertical: 40,
-    width: '100%',
+    color: '#666666',
+    lineHeight: 18.5,
+    overflow: 'hidden',
   },
-  recordingBanner: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#DC2626',
-    marginHorizontal: 16,
-    borderRadius: 12,
-    marginTop: 96,
-    marginBottom: -16,
-    zIndex: 20,
+  cardTime: {
+    fontSize: 12,
+    fontWeight: '500',
+    fontFamily: fontFamily.bodyMedium,
+    color: '#9b9b9b',
+    marginTop: 8,
   },
-  recordingBannerText: {
-    fontSize: 14,
+
+  emptyState: {
+    alignItems: 'center',
+    paddingTop: 60,
+    gap: spacing.sm,
+  },
+  emptyTitle: {
+    fontSize: 15,
     fontWeight: '600',
     fontFamily: fontFamily.bodyMedium,
-    color: '#FFFFFF',
-    textAlign: 'center',
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+    lineHeight: 21,
   },
+  emptySub: {
+    fontSize: 13,
+    fontWeight: '400',
+    fontFamily: fontFamily.body,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xxl,
+    lineHeight: 18,
+  },
+
+  recordingBanner: {
+    position: 'absolute',
+    top: 110,
+    left: spacing.md,
+    right: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
+    backgroundColor: colors.error,
+    borderRadius: radius.md,
+    zIndex: 20,
+    ...Platform.select({ web: { boxShadow: '0 4px 16px rgba(220,38,38,0.25)' }, default: { elevation: 6 } }),
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.white,
+  },
+  recordingBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    fontFamily: fontFamily.bodyMedium,
+    color: colors.white,
+    flex: 1,
+    lineHeight: 18,
+  },
+
+  fab: {
+    position: 'absolute',
+    bottom: spacing.xl + 8,
+    right: spacing.lg,
+    zIndex: 50,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 40 : spacing.lg,
+    gap: spacing.sm,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.xs,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: fontFamily.bodyBold,
-    color: '#000000',
+    fontSize: 17,
+    fontWeight: '600',
+    fontFamily: fontFamily.bodySemiBold,
+    color: colors.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.sm,
+    lineHeight: 23,
   },
   optionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#F9F9F9',
-    borderRadius: 16,
-    gap: 16,
+    padding: spacing.md,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: radius.lg,
+    gap: spacing.md,
   },
   optionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionIconText: { fontSize: 22 },
   optionTextWrap: { flex: 1 },
   optionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     fontFamily: fontFamily.bodyMedium,
-    color: '#000000',
+    color: colors.text,
+    lineHeight: 19,
   },
   optionSub: {
     fontSize: 12,
     fontWeight: '400',
     fontFamily: fontFamily.body,
-    color: 'rgba(0,0,0,0.5)',
+    color: colors.textSecondary,
     marginTop: 2,
+    lineHeight: 16,
   },
   cancelBtn: {
     alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
+    paddingVertical: 12,
+    marginTop: spacing.xs,
   },
   cancelBtnText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
     fontFamily: fontFamily.bodyMedium,
-    color: 'rgba(0,0,0,0.5)',
+    color: colors.textSecondary,
+    lineHeight: 19,
   },
 });

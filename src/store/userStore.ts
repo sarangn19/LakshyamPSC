@@ -16,6 +16,7 @@ interface UserState {
   masteredTopics: string[];
   accuracyImprovement: number;
   currentAffairs: CurrentAffair[];
+  lastCurrentAffairsFetch: number;
   dailyGoal: DailyGoal | null;
   examReadiness: ExamReadiness[];
   setupComplete: boolean;
@@ -29,6 +30,7 @@ interface UserState {
   updateStreak: () => void;
   markMasteredTopic: (topic: string) => void;
   getCategoryAffairs: (category: string) => CurrentAffair[];
+  setLastCurrentAffairsFetch: (ts: number) => void;
   updateDailyGoal: (goal: Partial<DailyGoal>) => void;
   getReadinessForExam: (exam: string) => ExamReadiness | undefined;
   isExamActive: (exam: string) => boolean;
@@ -49,6 +51,7 @@ export const useUserStore = create<UserState>()(
       masteredTopics: [],
       accuracyImprovement: 0,
       currentAffairs: [],
+      lastCurrentAffairsFetch: 0,
       dailyGoal: null,
       examReadiness: [],
       setupComplete: false,
@@ -101,6 +104,8 @@ export const useUserStore = create<UserState>()(
 
       getCategoryAffairs: (category) =>
         get().currentAffairs.filter((ca) => ca.category === category),
+
+      setLastCurrentAffairsFetch: (ts) => set({ lastCurrentAffairsFetch: ts }),
 
       updateDailyGoal: (goal) =>
         set((state) => ({

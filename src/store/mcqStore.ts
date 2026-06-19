@@ -2,10 +2,11 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Question, EXAM_DIFFICULTY } from '../data/questions';
-import { MistakeCard, SubjectProgress, Note, CurrentAffair } from '../data/mockData';
+import { SubjectProgress, Note, CurrentAffair } from '../data/mockData';
 import { generateMCQs, getQuestionPoolSize, GeneratedQuestion } from '../services/aiMCQGenerator';
 import { generateAIQuestion } from '../services/aiQuestionGenerator';
 import { generateNextAdaptiveQuestion, makeAdaptiveState, AdaptiveState, recordAnswer } from '../services/infinityEngine';
+import { makeInitialDifficultyState, recordSessionAnswer, DifficultySessionState } from '../services/sessionDifficultyAdapter';
 import { useUserStore } from './userStore';
 import { useKnowledgeStore } from './knowledgeStore';
 import { storeGeneratedMCQ } from '../services/questionBankStorage';
@@ -97,7 +98,6 @@ interface MCQState {
   selectedAnswer: number | null;
   isAnswered: boolean;
   score: { correct: number; total: number };
-  mistakes: MistakeCard[];
   subjectProgress: SubjectProgress[];
   drillMode: 'daily' | 'weakness' | 'exam';
   selectedExam: string;
@@ -118,6 +118,7 @@ interface MCQState {
   // session is infinite until user taps Finish
   sessionCoveredTopics: string[];
   currentDifficulty: 'easy' | 'medium' | 'hard';
+  difficultySessionState: DifficultySessionState;
   generatingNext: boolean;
   adaptiveState: AdaptiveState;
   recommendedSubject: string;
@@ -135,6 +136,9 @@ interface MCQState {
   sessionFocusMetrics: SessionFocusMetrics;
   diversityDashboard: DiversityDashboardEntry[];
   coverageDashboard: CoverageDashboardEntry[];
+  bookmarkedQuestions: string[];
+  bookmarkedQuestionData: Record<string, Pick<Question, 'text' | 'subject' | 'topic' | 'subtopic' | 'options' | 'correctAnswer' | 'explanation'>>;
+  toggleBookmark: (questionId: string) => void;
   getDiversityDashboard: () => DiversityDashboardEntry[];
   getCoverageDashboard: () => CoverageDashboardEntry[];
   getCoverageBreadthReport: (subject: string, topic: string) => CoverageBreadthReport;
@@ -144,8 +148,6 @@ interface MCQState {
   startExamMode: (examType: string) => void;
   selectAnswer: (index: number) => void;
   nextQuestion: () => void;
-  addMistake: (mistake: MistakeCard) => void;
-  reviewMistake: (id: string) => void;
   reportQuestion: (id: string) => void;
   reportQuestionWithReason: (id: string, reason: string) => void;
   setSelectedExam: (exam: string) => void;
@@ -389,7 +391,6 @@ export const useMCQStore = create<MCQState>()(
       selectedAnswer: null,
       isAnswered: false,
       score: { correct: 0, total: 0 },
-      mistakes: [],
       subjectProgress: buildEmptySubjectProgress(),
       drillMode: 'daily',
       selectedExam: 'LDC',
@@ -409,6 +410,7 @@ export const useMCQStore = create<MCQState>()(
       sessionSignals: [],
       sessionCoveredTopics: [],
       currentDifficulty: 'easy',
+      difficultySessionState: makeInitialDifficultyState(),
       generatingNext: false,
       adaptiveState: makeAdaptiveState(),
       recommendedSubject: '',
@@ -426,6 +428,27 @@ export const useMCQStore = create<MCQState>()(
       sessionFocusMetrics: { totalGeneratedInFocusedSessions: 0, totalMatchingRecommendedTopic: 0, focusedSessionSuccessRate: 0, targetSuccessRate: 90 },
       diversityDashboard: [],
       coverageDashboard: [],
+      bookmarkedQuestions: [],
+      bookmarkedQuestionData: {},
+
+      toggleBookmark: (questionId) =>
+        set((state) => {
+          const has = state.bookmarkedQuestions.includes(questionId);
+          const ids = has
+            ? state.bookmarkedQuestions.filter((id) => id !== questionId)
+            : [...state.bookmarkedQuestions, questionId];
+          const data = { ...state.bookmarkedQuestionData };
+          if (has) {
+            delete data[questionId];
+          } else {
+            const current = state.currentQuestions[state.currentIndex];
+            if (current && current.id === questionId) {
+              data[questionId] = { text: current.text, subject: current.subject, topic: current.topic, subtopic: current.subtopic, options: current.options, correctAnswer: current.correctAnswer, explanation: current.explanation };
+            }
+          }
+          return { bookmarkedQuestions: ids, bookmarkedQuestionData: data };
+        }),
+      
 
       startDailyDrill: async (exams, subjects) => {
         const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
@@ -435,7 +458,7 @@ export const useMCQStore = create<MCQState>()(
           : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
         const recommendedTopic = twinRec.topic || undefined;
 
-        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0 });
+        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0 });
 
         const baseState = makeAdaptiveState();
         const { question, report } = await resolveValidQuestion(
@@ -466,7 +489,7 @@ export const useMCQStore = create<MCQState>()(
         const weakSubjects = get().getWeakSubjects(targetExams);
         const recommendedSubject = weakSubjects.length > 0 ? weakSubjects[0] : '';
 
-        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'medium', score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), sessionReduced: false, questionsSkipped: 0 });
+        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), sessionReduced: false, questionsSkipped: 0 });
 
         const { question } = await resolveValidQuestion(
           weakSubjects, [], 0, 0, 'medium', get().adaptiveState, [],
@@ -572,6 +595,7 @@ export const useMCQStore = create<MCQState>()(
         const newCorrect = state.score.correct + (isCorrect ? 1 : 0);
         const newSignals = [...state.sessionSignals, { subject: current.subject, topic: current.topic, correct: isCorrect }];
         const updatedAdaptive = recordAnswer(state.adaptiveState, current.text, current.topic, current.subject, isCorrect, current.id, current.subtopic);
+        const updatedDiffSession = recordSessionAnswer(state.difficultySessionState, isCorrect);
 
         set({
           selectedAnswer: index,
@@ -588,7 +612,8 @@ export const useMCQStore = create<MCQState>()(
             },
           },
           sessionSignals: newSignals,
-          currentDifficulty: ['easy', 'medium', 'hard'][Math.min(2, Math.max(0, 1 + (newTotal >= 3 ? (newCorrect / newTotal >= 0.75 ? 1 : newCorrect / newTotal <= 0.35 ? -1 : 0) : 0)))] as 'easy' | 'medium' | 'hard',
+          currentDifficulty: updatedDiffSession.currentDifficulty,
+          difficultySessionState: updatedDiffSession,
           adaptiveState: updatedAdaptive,
         });
 
@@ -758,25 +783,9 @@ export const useMCQStore = create<MCQState>()(
           });
         }
 
-        if (!isCorrect) {
-          const mistake: MistakeCard = {
-            id: `m${Date.now()}`,
-            questionId: current.id,
-            questionText: current.text,
-            userAnswer: current.options[index],
-            correctAnswer: current.options[current.correctAnswer],
-            explanation: current.explanation,
-            subject: current.subject,
-            topic: current.topic,
-            date: new Date().toISOString(),
-            reviewed: false,
-            timesMistaken: 1,
-          };
-          get().addMistake(mistake);
-        }
       },
 
-          nextQuestion: async () => {
+      nextQuestion: async () => {
         const state = get();
         const current = state.currentQuestions[state.currentIndex];
         if (!current) return;
@@ -826,8 +835,8 @@ export const useMCQStore = create<MCQState>()(
 
         set({ generatingNext: true });
         const weakSubjects = state.getWeakSubjects(
-          useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'],
-        );
+              useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'],
+            );
         const recentSignals = usePerformanceStore.getState().interactionSignals;
         const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
 
@@ -949,13 +958,6 @@ export const useMCQStore = create<MCQState>()(
         }
       },
 
-      addMistake: (mistake) =>
-        set((state) => ({ mistakes: [mistake, ...state.mistakes] })),
-
-      reviewMistake: (id) =>
-        set((state) => ({
-          mistakes: state.mistakes.map((m) => (m.id === id ? { ...m, reviewed: true } : m)),
-        })),
 
       reportQuestion: (id) =>
         set((state) => ({
@@ -1036,6 +1038,7 @@ export const useMCQStore = create<MCQState>()(
           sessionSignals: [],
           sessionCoveredTopics: [],
           currentDifficulty: 'easy',
+          difficultySessionState: makeInitialDifficultyState(),
           generatingNext: false,
           adaptiveState: makeAdaptiveState(),
           recommendedSubject: '',
@@ -1102,7 +1105,7 @@ export const useMCQStore = create<MCQState>()(
         const noteId = config.noteId;
         const pastedContent = config.pastedContent;
 
-        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: diff, score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), sessionReduced: false, questionsSkipped: 0 });
+        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: diff, difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), sessionReduced: false, questionsSkipped: 0 });
 
         // Resolve source content
         let focusInstruction = '';
@@ -1248,7 +1251,7 @@ export const useMCQStore = create<MCQState>()(
           ?? (weakSubjects.length > 0 ? weakSubjects[0] : twinRec.subject);
         const recommendedTopic = config.recommendedTopic || twinRec.topic;
 
-        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: diff, score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0 });
+        set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: diff, difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0 });
 
         const { question, report } = await resolveValidQuestion(
           weakSubjects, [], 0, 0, diff, get().adaptiveState, [],
@@ -1286,10 +1289,8 @@ export const useMCQStore = create<MCQState>()(
         get().subjectProgress.find((s) => s.subjectName === subject),
 
       getExamScore: (exam) => {
-        const mistakes = get().mistakes;
         const totalPossible = 100;
-        const examMistakes = mistakes.length;
-        return { available: totalPossible, mastered: Math.max(0, totalPossible - examMistakes), accuracy: 85 };
+        return { available: totalPossible, mastered: 0, accuracy: 85 };
       },
 
       getCoverageReport: () => getCoverageReport(),
@@ -1362,7 +1363,6 @@ export const useMCQStore = create<MCQState>()(
       name: 'lakshyam-mcq',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        mistakes: state.mistakes,
         subjectProgress: state.subjectProgress,
         reportedQuestions: state.reportedQuestions,
         questionReports: state.questionReports,
@@ -1374,6 +1374,8 @@ export const useMCQStore = create<MCQState>()(
         skipAuditRecords: state.skipAuditRecords,
         alignmentMetrics: state.alignmentMetrics,
         sessionFocusMetrics: state.sessionFocusMetrics,
+        bookmarkedQuestions: state.bookmarkedQuestions,
+        bookmarkedQuestionData: state.bookmarkedQuestionData,
       }),
     }
   )

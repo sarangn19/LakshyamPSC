@@ -111,14 +111,36 @@ export interface GapScore {
   recencyFactor: number;
 }
 
-// ─── CONSTANTS ───
+// ─── DYNAMIC CONFIG ───
 
-const GAP_ACCURACY_THRESHOLD = 40;
-const FORGETTING_THRESHOLD = 0.6;
-const HESITATION_THRESHOLD = 0.5;
+function getStageConfigForLearner(): ReturnType<typeof getStageConfig> {
+  try {
+    const profile = getLearnerProfile();
+    return getStageConfig(profile.stage);
+  } catch {
+    return getStageConfig('discovering');
+  }
+}
+
+// ─── Dynamic threshold getters ───
+
+function getGapAccuracyThreshold(): number {
+  return getStageConfigForLearner().gapAccuracyThreshold;
+}
+
+function getForgettingThreshold(): number {
+  return getStageConfigForLearner().forgettingThreshold;
+}
+
+function getHesitationThreshold(): number {
+  return getStageConfigForLearner().hesitationThreshold;
+}
+
+function getMasteryOpenThreshold(): number {
+  return getStageConfigForLearner().openThreshold;
+}
 
 // ─── Gap closure thresholds (Part 4 rules) ───
-const MASTERY_OPEN_THRESHOLD = 40;
 const MASTERY_IMPROVING_THRESHOLD = 60;
 const MASTERY_CLOSING_THRESHOLD = 80;
 const MASTERY_CLOSED_THRESHOLD = 80;
@@ -187,6 +209,9 @@ import {
   getAssessmentDashboard as getServiceAssessmentDashboard,
 } from '../services/retentionAssessmentService';
 import type { RetentionAssessment, AssessmentDashboard } from '../services/retentionAssessmentService';
+import { useUserStore } from './userStore';
+import { getCompositeExamWeight } from '../data/examBlueprints';
+import { getLearnerProfile, getStageConfig } from '../services/learnerStage';
 
 export interface CognitiveTwinState {
   masteryMap: Record<string, KnowledgeMastery>;
@@ -333,16 +358,17 @@ export const useCognitiveTwinStore = create<CognitiveTwinState>()(
 
           const nodePath = getNodePath(nodeId);
 
-          // Gap rules: accuracy < 40% OR forgetting > threshold OR hesitation > threshold
-          const isGap = m.accuracy < GAP_ACCURACY_THRESHOLD
-            || m.forgettingScore > FORGETTING_THRESHOLD
-            || m.hesitationScore > HESITATION_THRESHOLD;
+          // Gap rules: dynamic thresholds based on learner stage
+          const isGap = m.accuracy < getGapAccuracyThreshold()
+            || m.forgettingScore > getForgettingThreshold()
+            || m.hesitationScore > getHesitationThreshold();
 
           // Determine status from mastery score (Part 4 rules)
           function computeStatus(score: number): GapStatus {
             if (score >= MASTERY_CLOSED_THRESHOLD) return 'closed';
             if (score >= MASTERY_CLOSING_THRESHOLD) return 'closing';
             if (score >= MASTERY_IMPROVING_THRESHOLD) return 'improving';
+            if (score >= getMasteryOpenThreshold()) return 'improving';
             return 'open';
           }
 
@@ -437,10 +463,12 @@ export const useCognitiveTwinStore = create<CognitiveTwinState>()(
       prioritizeGaps: () => {
         const gaps = get().gapRecords.filter((g) => g.status !== 'closed');
         const now = Date.now();
+        const stageConfig = getStageConfigForLearner();
+        const mMap = get().masteryMap;
 
         return gaps.map((gap) => {
           const node = getNode(gap.nodeId);
-          const mastery = get().masteryMap[gap.nodeId];
+          const mastery = mMap[gap.nodeId];
           if (!node) return null;
 
           // Recency: how long since last practice (0-1)
@@ -451,20 +479,39 @@ export const useCognitiveTwinStore = create<CognitiveTwinState>()(
           // Weakness: lower mastery = higher weakness score
           const weaknessScore = gap.currentMastery < 30 ? 40 : gap.currentMastery < 50 ? 25 : 10;
 
-          // Forgetting factor
-          const forgettingFactor = (mastery?.forgettingScore ?? 0) * 20;
+          // Forgetting factor — scaled by stage (advanced users care more about forgetting)
+          const forgettingFactor = (mastery?.forgettingScore ?? 0) * (stageConfig.forgettingWeight);
 
           // Hesitation factor
           const hesitationFactor = (mastery?.hesitationScore ?? 0) * 15;
 
           // Importance: subtopic first, then topic, then subject
-          const importanceScore = node.level === 'subtopic' ? 30 : node.level === 'topic' ? 20 : 10;
+          let importanceScore = node.level === 'subtopic' ? 30 : node.level === 'topic' ? 20 : 10;
 
-          // Exam weight (placeholder - can be enhanced with exam blueprint weights)
-          const examWeight = 10;
+          // Prerequisite boost: if this node is a prerequisite for another gap, boost its score
+          const allNodes = getAllNodes();
+          const dependents = allNodes.filter((n) => n.prerequisites?.includes(gap.nodeId));
+          const unmasteredDependents = dependents.some((d) => {
+            const dMastery = mMap[d.id];
+            return !dMastery || dMastery.masteryScore < 60;
+          });
+          if (unmasteredDependents) {
+            importanceScore += 15; // boost foundational topics
+          }
+
+          // Exam weight from target exams (Kerala PSC blueprint weights)
+          const targetExams = useUserStore.getState().targetExams;
+          const subjectName = gap.subject;
+          const topicName = gap.topic;
+          const examWeight = targetExams.length > 0
+            ? getCompositeExamWeight(targetExams, subjectName, topicName)
+            : 5;
+
+          // Coverage boost for early stages — encourages exploration
+          const coverageBoost = gap.currentMastery < 50 ? (stageConfig.coverageWeight / 10) : 0;
 
           // Total score
-          const totalScore = weaknessScore + forgettingFactor + hesitationFactor + importanceScore + examWeight + recencyScore * 10;
+          const totalScore = weaknessScore + forgettingFactor + hesitationFactor + importanceScore + examWeight + recencyScore * 10 + coverageBoost;
 
           return {
             gap,

@@ -11,6 +11,7 @@ import { ContentQualityCenterScreen } from '../screens/admin/ContentQualityCente
 import { LearnerSupportScreen } from '../screens/admin/LearnerSupportScreen';
 import { LearningAnalyticsScreen } from '../screens/admin/LearningAnalyticsScreen';
 import { QuestionAuditScreen } from '../screens/admin/QuestionAuditScreen';
+import { BulkUploadScreen } from '../screens/admin/BulkUploadScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,6 +21,7 @@ const ADMIN_TABS = [
   { name: 'CurrentAffairsMgmt', component: CurrentAffairsManagementScreen, icon: '📰', labelKey: 'admin.caTab' },
   { name: 'ContentQuality', component: ContentQualityCenterScreen, icon: '✨', labelKey: 'admin.qualityTab' },
   { name: 'QuestionAudit', component: QuestionAuditScreen, icon: '🔍', labelKey: 'admin.auditTab' },
+  { name: 'BulkUpload', component: BulkUploadScreen, icon: '📤', labelKey: 'admin.bulkUploadTab' },
   { name: 'LearnerSupport', component: LearnerSupportScreen, icon: '🎫', labelKey: 'admin.supportTab' },
   { name: 'LearningAnalytics', component: LearningAnalyticsScreen, icon: '📈', labelKey: 'admin.analyticsTab' },
 ];

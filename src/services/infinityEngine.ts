@@ -7,6 +7,7 @@ import { useBKTStore } from '../store/bktStore';
 import { useUserStore } from '../store/userStore';
 import { InteractionSignal } from '../store/performanceStore';
 import { getUnifiedPriorities } from './cognitiveTwinRecommender';
+import { getLearnerProfile, getStageConfig } from './learnerStage';
 
 export interface RecentAnswer {
   text: string;
@@ -34,16 +35,30 @@ function getWeaknessTier(priority: TopicPriority): 'weak' | 'unattempted' | 'str
   return 'default';
 }
 
-function difficultyForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default'): 'easy' | 'medium' | 'hard' {
-  switch (tier) {
-    case 'weak': return 'easy';
-    case 'unattempted': return 'medium';
-    case 'strong': return 'hard';
-    default: return 'medium';
-  }
+function difficultyForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default', difficultyShift?: number): 'easy' | 'medium' | 'hard' {
+  const base = (() => {
+    switch (tier) {
+      case 'weak': return 'easy';
+      case 'unattempted': return 'medium';
+      case 'strong': return 'hard';
+      default: return 'medium';
+    }
+  })();
+  const shift = difficultyShift ?? 0;
+  if (shift === 0) return base;
+  const levels: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
+  const idx = Math.max(0, Math.min(2, levels.indexOf(base) + shift));
+  return levels[idx];
 }
 
-function focusForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default'): string {
+function focusForTier(tier: 'weak' | 'unattempted' | 'strong' | 'default', difficultyShift?: number): string {
+  const shift = difficultyShift ?? 0;
+  if (shift >= 1 && tier === 'weak') {
+    return 'They have practiced this before but still struggle. Test with a medium-level conceptual question that builds on their existing knowledge.';
+  }
+  if (shift >= 2 && tier === 'unattempted') {
+    return 'They are an advanced learner. Start with a challenging but fair question to gauge their current level.';
+  }
   switch (tier) {
     case 'weak': return 'Focus on the CORE CONCEPT they are missing';
     case 'unattempted': return 'Build interest with a clear conceptual question';
@@ -176,8 +191,11 @@ export async function generateNextAdaptiveQuestion(
   const priorities = computePriorities(knowledgeMap, {});
   const thisPriority = priorities.find((p) => p.subject === topic!.subject && p.topic === topic!.topic);
   const tier = thisPriority ? getWeaknessTier(thisPriority) : 'default';
-  const difficulty = difficultyForTier(tier);
-  const focusInstruction = focusForTier(tier);
+  const stageConfig = (() => {
+    try { const p = getLearnerProfile(); return getStageConfig(p.stage); } catch { return getStageConfig('discovering'); }
+  })();
+  const difficulty = difficultyForTier(tier, stageConfig.difficultyShift);
+  const focusInstruction = focusForTier(tier, stageConfig.difficultyShift);
 
   // Build recent history for this subtopic
   const historyKey = `${topic.subject}::${topic.topic}::${subtopic}`;

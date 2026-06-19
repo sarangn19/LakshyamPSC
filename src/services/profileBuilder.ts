@@ -154,8 +154,10 @@ export function buildProfile(): UserProfile {
   const flashSignals = perf.flashcardSignals;
 
   const subjectAccuracy = computeSubjectAccuracy(interactions);
-  const totalQuestions = interactions.length;
-  const correctQuestions = interactions.filter((s) => s.answeredCorrect).length;
+  const uniqueQuestionIds = new Set(interactions.map((s) => s.questionId));
+  const totalQuestions = uniqueQuestionIds.size;
+  const correctQuestionIds = new Set(interactions.filter((s) => s.answeredCorrect).map((s) => s.questionId));
+  const correctQuestions = correctQuestionIds.size;
 
   const sortedByAccuracy = Object.entries(subjectAccuracy).sort(
     ([, a], [, b]) => a.accuracy - b.accuracy

@@ -6,14 +6,16 @@ import { useKnowledgeStore } from '../store/knowledgeStore';
 import { subjectColors } from '../theme/colors';
 import { syllabus } from '../data/syllabus';
 
-export function CreateNoteScreen({ navigation }: any) {
+export function CreateNoteScreen({ route, navigation }: any) {
   const { t } = useTranslation();
   const addNote = useKnowledgeStore((s) => s.addNote);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState('');
+  const updateNote = useKnowledgeStore((s) => s.updateNote);
+  const existingNote = route?.params?.note;
+  const [title, setTitle] = useState(existingNote?.title || '');
+  const [content, setContent] = useState(existingNote?.content || '');
+  const [selectedSubject, setSelectedSubject] = useState(existingNote?.subject || '');
   const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>(existingNote?.tags || []);
 
   const subjects = syllabus.map((s) => s.name);
 
@@ -31,17 +33,27 @@ export function CreateNoteScreen({ navigation }: any) {
 
   const handleSave = () => {
     if (!title.trim() || !selectedSubject) return;
-    addNote({
-      id: `note-${Date.now()}`,
-      title: title.trim(),
-      content: content.trim(),
-      type: 'text',
-      subject: selectedSubject,
-      topicIds: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags: tags,
-    });
+    if (existingNote) {
+      updateNote(existingNote.id, {
+        title: title.trim(),
+        content: content.trim(),
+        subject: selectedSubject,
+        tags: tags,
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      addNote({
+        id: `note-${Date.now()}`,
+        title: title.trim(),
+        content: content.trim(),
+        type: 'text',
+        subject: selectedSubject,
+        topicIds: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tags: tags,
+      });
+    }
     navigation.goBack();
   };
 
@@ -51,7 +63,7 @@ export function CreateNoteScreen({ navigation }: any) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Text style={styles.backBtnText}>✕</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Note</Text>
+        <Text style={styles.headerTitle}>{existingNote ? 'Edit Note' : 'New Note'}</Text>
         <TouchableOpacity
           style={[styles.saveBtn, (!title.trim() || !selectedSubject) && styles.saveBtnDisabled]}
           onPress={handleSave}

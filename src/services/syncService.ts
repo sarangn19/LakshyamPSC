@@ -6,6 +6,7 @@ import { useMCQStore } from '../store/mcqStore';
 import { useCognitiveTwinStore } from '../store/cognitiveTwinStore';
 import { useBKTStore } from '../store/bktStore';
 import type { TopicKnowledge, BKTFittedParams } from './knowledgeEngine';
+import { useKnowledgeStore } from '../store/knowledgeStore';
 
 let _profileId: string | null = null;
 
@@ -384,6 +385,40 @@ export async function pullSessionOutcomes(sinceDays = 90): Promise<void> {
       strongestSubject: row.strongest_subject || '',
       difficultyMix: row.difficulty_mix as { easy: number; medium: number; hard: number },
     });
+  }
+}
+
+export async function pullInteractionSignals(): Promise<void> {
+  if (!isOnline()) return;
+  const profileId = getProfileId();
+  if (!profileId) return;
+
+  const since = new Date(Date.now() - 90 * 86400000).toISOString();
+  const { data } = await supabase!
+    .from('interaction_signals')
+    .select('payload')
+    .eq('profile_id', profileId)
+    .eq('signal_type', 'interaction')
+    .gte('created_at', since);
+
+  if (!data || data.length === 0) return;
+
+  const existing = new Set(
+    usePerformanceStore.getState().interactionSignals.map((s) => `${s.questionId}_${s.sessionTime}`),
+  );
+  const signals = usePerformanceStore.getState().interactionSignals.slice();
+  let added = 0;
+  for (const row of data) {
+    const signal = row.payload as Record<string, unknown>;
+    if (!signal || !signal.questionId) continue;
+    const key = `${signal.questionId}_${signal.sessionTime}`;
+    if (existing.has(key)) continue;
+    existing.add(key);
+    signals.push(signal as InteractionSignal);
+    added++;
+  }
+  if (added > 0) {
+    usePerformanceStore.setState({ interactionSignals: signals });
   }
 }
 
@@ -879,17 +914,30 @@ async function processQueueItem(item: { operation: string; table: string; data: 
 // 7. STARTUP RECOVERY
 // ──────────────────────────────────────────────
 
+export async function pullNotes(): Promise<void> {
+  if (!isOnline()) return;
+  try {
+    await useKnowledgeStore.getState().loadNotes();
+  } catch (err) {
+    console.warn('[Sync] pullNotes failed:', err);
+  }
+}
+
 export async function restoreFromRemote(): Promise<void> {
   if (!isOnline()) return;
 
   try {
     await pullProfile();
-    await pullSessionOutcomes(90);
-    await pullRecommendations(50);
-    await pullStudyStreak();
-    await pullSubjectProgress();
-    await pullGoals();
-    await pullCognitiveTwin();
+    await Promise.all([
+      pullSessionOutcomes(90),
+      pullInteractionSignals(),
+      pullRecommendations(50),
+      pullStudyStreak(),
+      pullSubjectProgress(),
+      pullGoals(),
+      pullCognitiveTwin(),
+      pullNotes(),
+    ]);
     await flushOfflineQueue();
   } catch (err) {
     console.warn('[Sync] Restore failed:', err);
@@ -912,6 +960,7 @@ export function startPeriodicSync(intervalMs = 60000): void {
       await syncSubjectProgress();
       await syncGoals();
       await syncCognitiveTwin();
+      await pullNotes();
       await flushOfflineQueue();
     } catch {
       // silence periodic sync errors

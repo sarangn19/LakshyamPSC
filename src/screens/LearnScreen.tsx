@@ -40,16 +40,41 @@ export function LearnScreen({ navigation }: any) {
   const [isAdaptiveLoading, setIsAdaptiveLoading] = useState(false);
   const generationProgress = useMCQStore((s) => s.generationProgress);
   const taskPresets = [5, 20, 50, 100];
-  const sourceOverlayOpacity = useRef(new Animated.Value(0)).current;
+  const sourceSlideAnim = useRef(new Animated.Value(300)).current;
 
   useEffect(() => {
-    if (showSourceModal) {
-      sourceOverlayOpacity.setValue(0);
-      Animated.timing(sourceOverlayOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
-    } else {
-      Animated.timing(sourceOverlayOpacity, { toValue: 0, duration: 150, useNativeDriver: true }).start();
-    }
+    Animated.timing(sourceSlideAnim, { toValue: showSourceModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
   }, [showSourceModal]);
+
+  const typeSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(typeSlideAnim, { toValue: showTypeModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showTypeModal]);
+
+  const chapterSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(chapterSlideAnim, { toValue: showChapterModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showChapterModal]);
+
+  const noteSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(noteSlideAnim, { toValue: showNoteModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showNoteModal]);
+
+  const pasteSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(pasteSlideAnim, { toValue: showPasteModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showPasteModal]);
+
+  const tasksSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(tasksSlideAnim, { toValue: showTasksModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showTasksModal]);
 
   const handleSourceSelect = (source: string) => {
     setShowSourceModal(false);
@@ -217,31 +242,50 @@ export function LearnScreen({ navigation }: any) {
           <Image source={require('../../icons/adaptive learning image.png')} style={styles.cardImageLarge} />
         </TouchableOpacity>
 
-        {/* Card 2: Notes */}
-        <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('SavedNotes')}>
-          <View style={styles.cardLeftSmall}>
-            <Text style={styles.cardTitle}>Notes</Text>
-            <Text style={styles.cardSubtitle}>View saved notes</Text>
-          </View>
-          <Image source={require('../../icons/notes image for learn page.png')} style={styles.cardImageSmall} />
-        </TouchableOpacity>
-
-        {/* Card 3: Practice */}
-        <TouchableOpacity style={styles.card} onPress={() => setShowTypeModal(true)}>
-          <View style={styles.cardLeftSmall}>
-            <View style={styles.cardTextGroup}>
-              <Text style={styles.cardTitle}>Practice</Text>
-              <Text style={styles.cardSubtitle}>Practice MCQ,{'\n'}Flashcards</Text>
+        {/* Card 2 + 3: Notes & Practice row */}
+        <View style={styles.cardRow}>
+          <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('SavedNotes')} activeOpacity={0.7}>
+            <View style={styles.smallCardContent}>
+              <Text style={styles.smallCardTitle}>Notes</Text>
+              <Text style={styles.smallCardSubtitle}>View saved{'\n'}notes</Text>
             </View>
+            <View style={styles.smallCardArrow}>
+              <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.smallCard} onPress={() => setShowTypeModal(true)} activeOpacity={0.7}>
+            <View style={styles.smallCardContent}>
+              <Text style={styles.smallCardTitle}>Practice</Text>
+              <Text style={styles.smallCardSubtitle}>Practice MCQ,{'\n'}Flashcards</Text>
+            </View>
+            <View style={styles.smallCardArrow}>
+              <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Card 4: Knowledge Map */}
+        <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('Map')} activeOpacity={0.7}>
+          <View style={styles.smallCardContent}>
+            <Text style={styles.smallCardTitle}>Knowledge Map</Text>
+            <Text style={styles.smallCardSubtitle}>Visual concept{'\n'}mapping</Text>
           </View>
-          <Image source={require('../../icons/practice image for learn page.png')} style={styles.cardImageSmall} />
+          <View style={styles.smallCardArrow}>
+            <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </View>
         </TouchableOpacity>
       </ScrollView>
 
       {/* Select type modal (MCQ or Flashcard) */}
-      <Modal visible={showTypeModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <View style={styles.sourceModal}>
+      <Modal visible={showTypeModal} transparent animationType="none" onRequestClose={() => setShowTypeModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTypeModal(false)}>
+          <Animated.View style={[styles.sourceModal, { transform: [{ translateY: typeSlideAnim }] }]}>
             <View style={styles.sourceModalHeader}>
               <Text style={styles.sourceModalTitle}>Select type</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowTypeModal(false)}>
@@ -264,14 +308,14 @@ export function LearnScreen({ navigation }: any) {
                 <Text style={styles.sourceOptionText}>Flashcard</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Select a source modal */}
-      <Modal visible={showSourceModal} transparent animationType="none">
-        <Animated.View style={[styles.modalOverlay, { opacity: sourceOverlayOpacity }]}>
-          <View style={styles.sourceModal}>
+      <Modal visible={showSourceModal} transparent animationType="none" onRequestClose={() => setShowSourceModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowSourceModal(false)}>
+          <Animated.View style={[styles.sourceModal, { transform: [{ translateY: sourceSlideAnim }] }]}>
             <View style={styles.sourceModalHeader}>
               <Text style={styles.sourceModalTitle}>Select a source</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowSourceModal(false)}>
@@ -287,14 +331,14 @@ export function LearnScreen({ navigation }: any) {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Select a chapter modal */}
-      <Modal visible={showChapterModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <View style={styles.selectionModal}>
+      <Modal visible={showChapterModal} transparent animationType="none" onRequestClose={() => setShowChapterModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowChapterModal(false)}>
+          <Animated.View style={[styles.selectionModal, { transform: [{ translateY: chapterSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
               <Text style={styles.selectionModalTitle}>Select a chapter</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowChapterModal(false)}>
@@ -354,14 +398,14 @@ export function LearnScreen({ navigation }: any) {
                 <Text style={styles.continueBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Select a note modal */}
-      <Modal visible={showNoteModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <View style={styles.selectionModal}>
+      <Modal visible={showNoteModal} transparent animationType="none" onRequestClose={() => setShowNoteModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowNoteModal(false)}>
+          <Animated.View style={[styles.selectionModal, { transform: [{ translateY: noteSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
               <Text style={styles.selectionModalTitle}>Select a note</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowNoteModal(false)}>
@@ -421,14 +465,14 @@ export function LearnScreen({ navigation }: any) {
                 <Text style={styles.continueBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Paste content modal */}
-      <Modal visible={showPasteModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <View style={styles.selectionModal}>
+      <Modal visible={showPasteModal} transparent animationType="none" onRequestClose={() => setShowPasteModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPasteModal(false)}>
+          <Animated.View style={[styles.selectionModal, { transform: [{ translateY: pasteSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
               <Text style={styles.selectionModalTitle}>Paste content</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowPasteModal(false)}>
@@ -459,14 +503,14 @@ export function LearnScreen({ navigation }: any) {
                 <Text style={styles.continueBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Number of tasks modal */}
-      <Modal visible={showTasksModal} transparent animationType="none">
-        <View style={styles.modalOverlay}>
-          <View style={styles.tasksModal}>
+      <Modal visible={showTasksModal} transparent animationType="none" onRequestClose={() => setShowTasksModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTasksModal(false)}>
+          <Animated.View style={[styles.tasksModal, { transform: [{ translateY: tasksSlideAnim }] }]}>
             <View style={styles.tasksModalHeader}>
               <Text style={styles.tasksModalTitle}>Number of tasks</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowTasksModal(false)}>
@@ -513,8 +557,8 @@ export function LearnScreen({ navigation }: any) {
                 <Text style={styles.continueBtnText}>Continue</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       {/* Loading overlay for practice */}
@@ -562,7 +606,7 @@ export function LearnScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#F4F0EF',
   },
   topBar: {
     position: 'absolute',
@@ -634,14 +678,55 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bodyMedium,
     color: '#000000',
   },
-  cardLeftSmall: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
+  cardRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'flex-start',
-    padding: 0,
     gap: 10,
     alignSelf: 'stretch',
+  },
+  smallCard: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    gap: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  smallCardContent: {
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+    alignSelf: 'stretch',
+  },
+  smallCardTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 22,
+    fontFamily: fontFamily.bodyMedium,
+    color: '#000000',
+  },
+  smallCardSubtitle: {
+    fontSize: 14,
+    fontWeight: '300',
+    lineHeight: 19,
+    fontFamily: fontFamily.bodyLight,
+    color: '#000000',
+  },
+  smallCardArrow: {
+    width: 44,
+    height: 44,
+    borderRadius: 999,
+    backgroundColor: '#F9F9F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
   },
   cardImageLarge: {
     width: '65%',
@@ -649,39 +734,12 @@ const styles = StyleSheet.create({
     maxWidth: 265,
     borderRadius: 8,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    lineHeight: 22,
-    fontFamily: fontFamily.bodyMedium,
-    color: '#000000',
-    alignSelf: 'stretch',
-  },
-  cardSubtitle: {
-    fontSize: 14,
-    fontWeight: '300',
-    lineHeight: 19,
-    fontFamily: fontFamily.bodyLight,
-    color: '#000000',
-    alignSelf: 'stretch',
-  },
-  cardTextGroup: {
-    flexDirection: 'column',
-    gap: 10,
-    alignSelf: 'stretch',
-  },
-  cardImageSmall: {
-    width: '30%',
-    aspectRatio: 117.16 / 110.57,
-    maxWidth: 120,
-    borderRadius: 8,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 38.5,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 40,
   },
   sourceModal: {
     width: '100%',
@@ -873,6 +931,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginHorizontal: -24,
     marginBottom: -24,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
   },
   continueBtn: {
     width: '100%',

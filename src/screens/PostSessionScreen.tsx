@@ -7,6 +7,8 @@ import { useMCQStore } from '../store';
 import { usePerformanceStore } from '../store/performanceStore';
 import { generateImprovementMessages, buildSessionSummary } from '../services/sessionFeedback';
 import { useFlashcardStore } from '../store/flashcardStore';
+import { getRecommendedSubjectAndTopic } from '../services/cognitiveTwinRecommender';
+import { getLearnerProfile } from '../services/learnerStage';
 
 export function PostSessionScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -94,6 +96,43 @@ export function PostSessionScreen({ navigation }: any) {
         </View>
       </View>
 
+      {(() => {
+        const lp = getLearnerProfile();
+        const nextRec = getRecommendedSubjectAndTopic();
+        const hasEnoughData = lp.totalQuestions >= 5;
+        return (
+          <View style={styles.reflectionSection}>
+            <Text style={styles.reflectionLabel}>Behind the Scenes</Text>
+            {hasEnoughData ? (
+              <>
+                <View style={styles.reflectionRow}>
+                  <Text style={styles.reflectionLabel2}>Learner Stage</Text>
+                  <Text style={styles.reflectionValue}>{lp.stage} ({lp.totalQuestions} questions, {lp.sessionCount} sessions)</Text>
+                </View>
+                <View style={styles.reflectionRow}>
+                  <Text style={styles.reflectionLabel2}>Overall Mastery</Text>
+                  <Text style={styles.reflectionValue}>{lp.overallMastery}%</Text>
+                </View>
+                <View style={styles.reflectionRow}>
+                  <Text style={styles.reflectionLabel2}>Gap Closure Rate</Text>
+                  <Text style={styles.reflectionValue}>{Math.round(lp.gapClosureRate * 100)}%</Text>
+                </View>
+                {nextRec.subject && (
+                  <View style={styles.reflectionRow}>
+                    <Text style={styles.reflectionLabel2}>Next System Target</Text>
+                    <Text style={styles.reflectionValue}>{nextRec.subject}{nextRec.topic ? ` → ${nextRec.topic}` : ''}{nextRec.subtopic ? ` → ${nextRec.subtopic}` : ''}</Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.reflectionRow}>
+                <Text style={styles.reflectionValue}>Keep going! After {5 - Math.min(lp.totalQuestions, 5)} more questions, personalized insights will unlock here.</Text>
+              </View>
+            )}
+          </View>
+        );
+      })()}
+
       <View style={styles.actionsSection}>
         {hasWeakAction && (
           <TouchableOpacity style={styles.primaryAction} onPress={handleTargetWeakness} activeOpacity={0.9}>
@@ -140,8 +179,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  reflectionLabel: { fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bodyBold, color: colors.textTertiary, letterSpacing: 0.3, textTransform: 'uppercase' },
+  reflectionLabel: { fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bodyBold, color: colors.textTertiary, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: spacing.sm },
   reflectionText: { fontSize: 14, color: colors.textSecondary, lineHeight: 22, marginTop: spacing.xs },
+  reflectionLabel2: { fontSize: 11, fontWeight: '700', fontFamily: fontFamily.bodyBold, color: colors.textTertiary, letterSpacing: 0.3, textTransform: 'uppercase' },
+  reflectionValue: { fontSize: 14, color: colors.textSecondary, lineHeight: 22, marginTop: spacing.xs },
 
   actionsSection: { marginTop: spacing.xl, gap: spacing.sm },
   primaryAction: {

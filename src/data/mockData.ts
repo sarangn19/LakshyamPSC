@@ -26,20 +26,6 @@ export interface FlashCard {
   mastered: boolean;
 }
 
-export interface MistakeCard {
-  id: string;
-  questionId: string;
-  questionText: string;
-  userAnswer: string;
-  correctAnswer: string;
-  explanation: string;
-  subject: string;
-  topic: string;
-  date: string;
-  reviewed: boolean;
-  timesMistaken: number;
-}
-
 export interface DailyGoal {
   date: string;
   targetMCQs: number;
@@ -190,35 +176,6 @@ export const mockFlashcards: FlashCard[] = [
   },
 ];
 
-export const mockMistakes: MistakeCard[] = [
-  {
-    id: 'm1',
-    questionId: 'q4',
-    questionText: 'Which is the smallest district in Kerala by area?',
-    userAnswer: 'Pathanamthitta',
-    correctAnswer: 'Alappuzha',
-    explanation: 'Alappuzha is the smallest district in Kerala by area (1,414 sq km).',
-    subject: 'Geography',
-    topic: 'Districts',
-    date: '2026-06-12T10:00:00Z',
-    reviewed: false,
-    timesMistaken: 2,
-  },
-  {
-    id: 'm2',
-    questionId: 'q12',
-    questionText: 'Sree Narayana Guru consecrated the first temple of?',
-    userAnswer: 'Sivagiri',
-    correctAnswer: 'Aruvippuram',
-    explanation: 'Sree Narayana Guru consecrated the first temple at Aruvippuram in 1888.',
-    subject: 'Renaissance',
-    topic: 'Sree Narayana Guru',
-    date: '2026-06-11T15:00:00Z',
-    reviewed: true,
-    timesMistaken: 1,
-  },
-];
-
 export const mockSubjectProgress: SubjectProgress[] = [
   { subjectId: '1', subjectName: 'Kerala History', completionPercent: 75, accuracyPercent: 82, confidenceScore: 78, revisionStatus: 'good', lastStudied: '2026-06-14' },
   { subjectId: '2', subjectName: 'Renaissance', completionPercent: 90, accuracyPercent: 88, confidenceScore: 85, revisionStatus: 'good', lastStudied: '2026-06-15' },
@@ -254,6 +211,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-15',
     source: 'The Hindu',
     isImportant: true,
+    url: 'https://www.thehindu.com/news/national/kerala/health-insurance-scheme',
   },
   {
     id: 'ca2',
@@ -263,6 +221,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-14',
     source: 'Mathrubhumi',
     isImportant: false,
+    url: 'https://www.mathrubhumi.com/news/kerala/chief-secretary',
   },
   {
     id: 'ca3',
@@ -272,6 +231,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-13',
     source: 'Times of India',
     isImportant: true,
+    url: 'https://timesofindia.indiatimes.com/india/un-security-council',
   },
   {
     id: 'ca4',
@@ -281,6 +241,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-12',
     source: 'PIB',
     isImportant: false,
+    url: 'https://pib.gov.in/PressReleasePage.aspx?PRID=budget-education',
   },
   {
     id: 'ca5',
@@ -290,6 +251,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-11',
     source: 'PIB',
     isImportant: true,
+    url: 'https://pib.gov.in/PressReleasePage.aspx?PRID=chief-justice',
   },
   {
     id: 'ca6',
@@ -299,6 +261,7 @@ export const mockCurrentAffairs: CurrentAffair[] = [
     date: '2026-06-10',
     source: 'The New Indian Express',
     isImportant: true,
+    url: 'https://www.newindianexpress.com/states/kerala/kiifb-projects',
   },
 ];
 

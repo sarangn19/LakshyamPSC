@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fontFamily } from '../theme';
-import { useMCQStore, useUserStore } from '../store';
+import { useMCQStore, useUserStore, usePerformanceStore } from '../store';
+import { reportQuestionToBackend } from '../services/adminDataService';
 import { LoadingAnimation } from '../components/common/LoadingAnimation';
+import { getConfidenceLabel, ConfidenceLevel } from '../services/confidenceCalibration';
+
+const FlagIcon = () => (
+  <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <Path d="M3 14V2M3 2L12 5L3 8" stroke={colors.error} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 export function MCQEngineScreen({ route, navigation }: any) {
   const {
@@ -15,17 +24,43 @@ export function MCQEngineScreen({ route, navigation }: any) {
   } = useMCQStore();
   const { targetExams } = useUserStore();
   const [reported, setReported] = useState<string | null>(null);
+  const [selectedConfidence, setSelectedConfidence] = useState<ConfidenceLevel | null>(null);
+
+  const handleNext = () => {
+    setSelectedConfidence(null);
+    nextQuestion();
+  };
+
+  const handleConfidenceSelect = (level: ConfidenceLevel) => {
+    if (selectedConfidence) return;
+    setSelectedConfidence(level);
+    const perf = usePerformanceStore.getState();
+    perf.addConfidenceRecord({
+      questionId: current?.id ?? '',
+      subject: current?.subject ?? '',
+      topic: current?.topic ?? '',
+      confidenceLevel: level,
+      wasCorrect: isCorrect,
+    });
+  };
+
+  const handleReport = (id: string, reason: string) => {
+    if (reported === id) return;
+    reportQuestionWithReason(id, reason);
+    reportQuestionToBackend(id, reason);
+    setReported(id);
+  };
 
   const mode = route?.params?.mode || 'daily';
 
   useEffect(() => {
-    // Don't regenerate if practice session is already active
-    if (sessionActive && mode === 'practice') return;
+    if (sessionActive) return;
+    if (currentQuestions.length > 0) return;
 
     if (mode === 'daily') startDailyDrill(targetExams);
     else if (mode === 'weakness') useMCQStore.getState().startWeaknessPractice(targetExams);
     else if (mode === 'exam') useMCQStore.getState().startExamMode(route?.params?.exam);
-  }, [mode, sessionActive]);
+  }, [mode, sessionActive, currentQuestions.length]);
 
   // Navigate to PostSession when practice session ends
   useEffect(() => {
@@ -115,9 +150,37 @@ export function MCQEngineScreen({ route, navigation }: any) {
         style={styles.topBar}
       >
         <Text style={styles.topBarCounter}>Q{score.total + 1}</Text>
-        <TouchableOpacity onPress={handleEnd} activeOpacity={0.7}>
-          <Text style={styles.endLink}>End practice</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          {current && (
+            <>
+              <TouchableOpacity
+                onPress={() => useMCQStore.getState().toggleBookmark(current.id)}
+                activeOpacity={0.6}
+                style={{ padding: 4 }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{useMCQStore.getState().bookmarkedQuestions.includes(current.id) ? 'Saved' : 'Save'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  if (reported === current.id) return;
+                  Alert.alert('Report Question', 'What is the issue?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Wrong answer', onPress: () => handleReport(current.id, 'wrong_answer_key') },
+                  { text: 'Bad explanation', onPress: () => handleReport(current.id, 'bad_explanation') },
+                  { text: 'Other issue', onPress: () => handleReport(current.id, 'other') },
+                ]);
+              }}
+              activeOpacity={0.6}
+              style={{ padding: 4 }}
+            >
+              <View style={{ opacity: reported === current?.id ? 0.4 : 1 }}><FlagIcon /></View>
+            </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity onPress={handleEnd} activeOpacity={0.7}>
+            <Text style={styles.endLink}>End practice</Text>
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
       {(recommendedSubject || recommendedTopic) && (
         <View style={styles.focusBanner}>
@@ -169,34 +232,12 @@ export function MCQEngineScreen({ route, navigation }: any) {
               style={styles.reportBtn}
               onPress={() => {
                 if (reported === current.id) return;
-                Alert.alert(
-                  'Report Incorrect Question',
-                  'Is there an issue with this question?',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
-                    {
-                      text: 'Wrong answer',
-                      onPress: () => {
-                        reportQuestionWithReason(current.id, 'wrong_answer_key');
-                        setReported(current.id);
-                      },
-                    },
-                    {
-                      text: 'Bad explanation',
-                      onPress: () => {
-                        reportQuestionWithReason(current.id, 'bad_explanation');
-                        setReported(current.id);
-                      },
-                    },
-                    {
-                      text: 'Other issue',
-                      onPress: () => {
-                        reportQuestionWithReason(current.id, 'other');
-                        setReported(current.id);
-                      },
-                    },
-                  ],
-                );
+                Alert.alert('Report Question', 'What is the issue?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Wrong answer', onPress: () => handleReport(current.id, 'wrong_answer_key') },
+                  { text: 'Bad explanation', onPress: () => handleReport(current.id, 'bad_explanation') },
+                  { text: 'Other issue', onPress: () => handleReport(current.id, 'other') },
+                ]);
               }}
               activeOpacity={0.7}
             >
@@ -206,11 +247,34 @@ export function MCQEngineScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
         )}
+
+        {isAnswered && (
+          <View style={styles.confidenceSection}>
+            <Text style={styles.confidenceLabel}>How sure were you?</Text>
+            <View style={styles.confidenceRow}>
+              {([1, 2, 3, 4] as ConfidenceLevel[]).map((level) => {
+                const active = selectedConfidence === level;
+                return (
+                  <TouchableOpacity
+                    key={level}
+                    style={[styles.confidenceBtn, active && styles.confidenceBtnActive]}
+                    onPress={() => handleConfidenceSelect(level)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.confidenceBtnText, active && styles.confidenceBtnTextActive]}>
+                      {getConfidenceLabel(level)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {isAnswered && (
         <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.nextBtn} onPress={nextQuestion} activeOpacity={0.9}>
+          <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.9}>
             <Text style={styles.nextBtnText}>Next question</Text>
           </TouchableOpacity>
         </View>
@@ -312,4 +376,43 @@ const styles = StyleSheet.create({
   reportBtn: { marginTop: 16, paddingVertical: 8, alignSelf: 'flex-start' },
   reportBtnText: { fontSize: 12, fontWeight: '500', color: colors.error, fontFamily: fontFamily.body, textDecorationLine: 'underline' },
   reportBtnDone: { color: colors.textTertiary, textDecorationLine: 'none' },
+
+  confidenceSection: {
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  confidenceLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.bodyMedium,
+    marginBottom: 8,
+  },
+  confidenceRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  confidenceBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.cardBg,
+  },
+  confidenceBtnActive: {
+    backgroundColor: colors.primary + '15',
+    borderColor: colors.primary,
+  },
+  confidenceBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  confidenceBtnTextActive: {
+    color: colors.primary,
+  },
 });

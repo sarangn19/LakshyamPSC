@@ -1,10 +1,67 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore, usePerformanceStore, useAuthStore } from '../store';
 import { supabase } from '../services/supabase';
+import { getLearnerProfile } from '../services/learnerStage';
+import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
+import { computeCalibrationMetrics, getCalibrationInterpretation } from '../services/confidenceCalibration';
+
+const TargetIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Circle cx="10" cy="10" r="8" stroke={colors.primary} strokeWidth="1.5" />
+    <Circle cx="10" cy="10" r="4" stroke={colors.primary} strokeWidth="1.5" />
+    <Circle cx="10" cy="10" r="1.5" fill={colors.primary} />
+  </Svg>
+);
+
+const CalendarIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Rect x="2" y="3" width="16" height="15" rx="2" stroke={colors.primary} strokeWidth="1.5" />
+    <Path d="M2 7H18" stroke={colors.primary} strokeWidth="1.5" />
+    <Path d="M6 1V4" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M14 1V4" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const GlobeIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Circle cx="10" cy="10" r="8" stroke={colors.primary} strokeWidth="1.5" />
+    <Path d="M2 10H18" stroke={colors.primary} strokeWidth="1.5" />
+    <Path d="M10 2C12.5 4.5 13.5 7 13.5 10C13.5 13 12.5 15.5 10 18" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M10 2C7.5 4.5 6.5 7 6.5 10C6.5 13 7.5 15.5 10 18" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
+
+const UploadIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path d="M10 14V4M10 4L6 8M10 4L14 8" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M3 13V16H17V13" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const ShieldIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path d="M10 2L3 5V10C3 14 6 17.5 10 19C14 17.5 17 14 17 10V5L10 2Z" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const WrenchIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path d="M14 2L11 5L12 7L9 10L7 9L3 14C3 14 3 16 4 17C5 18 7 18 7 18L12 13L11 11L14 8L16 9L19 6L17 4L14 6V2Z" stroke={colors.primary} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const LogoutIcon = () => (
+  <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+    <Path d="M8 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H8" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M13 14L17 10L13 6" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M17 10H8" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" />
+  </Svg>
+);
 
 export function ProfileScreen({ navigation }: any) {
   const { t, locale, setLocale } = useTranslation();
@@ -16,15 +73,15 @@ export function ProfileScreen({ navigation }: any) {
   const hasData = streak.current > 0 || masteredTopics.length > 0 || (profile?.totalQuestionsAttempted ?? 0) > 0;
 
   const settings = [
-    { icon: '🎯', label: t('profile.targetPosts'), value: targetExams.length > 0 ? targetExams.join(', ') : t('profile.notSet') },
-    { icon: '📅', label: t('profile.examDate'), value: examDate || t('profile.notSet') },
+    { icon: <TargetIcon />, label: t('profile.targetPosts'), value: targetExams.length > 0 ? targetExams.join(', ') : t('profile.notSet') },
+    { icon: <CalendarIcon />, label: t('profile.examDate'), value: examDate || t('profile.notSet') },
   ];
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.avatarLarge}>
-          <Text style={{ fontSize: 48 }}>🧑‍🎓</Text>
+          <Text style={{ fontSize: 48, lineHeight: 56 }}>🧑‍🎓</Text>
         </View>
         <Text style={[typography.h2, { color: colors.text, marginTop: spacing.md }]}>{displayName}</Text>
         {primaryExam && (
@@ -56,7 +113,7 @@ export function ProfileScreen({ navigation }: any) {
         </View>
       ) : (
         <View style={styles.emptyCard}>
-          <Text style={{ fontSize: 24, textAlign: 'center' }}>📊</Text>
+          <TargetIcon />
           <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm }]}>
             {t('profile.emptyStats')}
           </Text>
@@ -67,7 +124,7 @@ export function ProfileScreen({ navigation }: any) {
         <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.settings')}</Text>
         {settings.map((s) => (
           <TouchableOpacity key={s.label} style={styles.settingRow}>
-            <Text style={{ fontSize: 20 }}>{s.icon}</Text>
+            {s.icon}
             <View style={{ flex: 1, marginLeft: spacing.md }}>
               <Text style={[typography.body, { color: colors.text }]}>{s.label}</Text>
               <Text style={[typography.small, { color: colors.textMuted }]}>{s.value}</Text>
@@ -75,7 +132,7 @@ export function ProfileScreen({ navigation }: any) {
           </TouchableOpacity>
         ))}
         <View style={styles.settingRow}>
-          <Text style={{ fontSize: 20 }}>🌐</Text>
+          <GlobeIcon />
           <View style={{ flex: 1, marginLeft: spacing.md }}>
             <Text style={[typography.body, { color: colors.text }]}>{t('profile.language')}</Text>
           </View>
@@ -98,9 +155,10 @@ export function ProfileScreen({ navigation }: any) {
 
       {(role === 'admin' || role === 'superadmin') && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>
-            {role === 'superadmin' ? '🛡️' : '🔧'} {t('profile.adminPortal')}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+            {role === 'superadmin' ? <ShieldIcon /> : <WrenchIcon />}
+            <Text style={[typography.h3, { color: colors.text }]}>{t('profile.adminPortal')}</Text>
+          </View>
           {!isAuthenticated ? (
             <TouchableOpacity
               style={styles.adminLoginBtn}
@@ -123,6 +181,26 @@ export function ProfileScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => navigation.navigate('BulkUpload')}
+          >
+            <UploadIcon />
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={[typography.body, { color: colors.text }]}>Bulk Upload Questions</Text>
+              <Text style={[typography.small, { color: colors.textMuted }]}>JSON / CSV / file upload</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingRow}
+            onPress={() => navigation.navigate('Bookmarks')}
+          >
+            <Text style={{ fontSize: 18 }}>🔖</Text>
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={[typography.body, { color: colors.text }]}>Bookmarked Questions</Text>
+              <Text style={[typography.small, { color: colors.textMuted }]}>Questions you saved during practice</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -146,6 +224,81 @@ export function ProfileScreen({ navigation }: any) {
         </View>
       )}
 
+      {hasData && (() => {
+        const lp = getLearnerProfile();
+        const cs = getCognitiveTwinSummary();
+        return (
+          <View style={styles.section}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+              <Text style={[typography.h3, { color: colors.text }]}>Learning Profile</Text>
+              <View style={{ backgroundColor: '#E8EDF5', borderRadius: 999, paddingHorizontal: 10, height: 22, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 10, fontWeight: '600', color: '#4D5F81', letterSpacing: 0.5, textTransform: 'capitalize' }}>{lp.stage}</Text>
+              </View>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Stage</Text>
+              <Text style={[typography.bodyBold, { color: colors.text, textTransform: 'capitalize' }]}>{lp.stage}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Total Questions</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{lp.totalQuestions}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Sessions Completed</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{lp.sessionCount}</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Overall Mastery</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.overallMastery}%</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Open Gaps</Text>
+              <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.openGaps}</Text>
+            </View>
+            {cs.strongestSubject && (
+              <View style={styles.statItem}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Strongest Subject</Text>
+                <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.strongestSubject}</Text>
+              </View>
+            )}
+            {cs.weakestSubject && (
+              <View style={styles.statItem}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Weakest Subject</Text>
+                <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.weakestSubject}</Text>
+              </View>
+            )}
+          </View>
+        );
+      })()}
+
+      {hasData && (() => {
+        const cal = computeCalibrationMetrics(usePerformanceStore.getState().confidenceRecords);
+        if (cal.totalRecords < 3) return null;
+        return (
+          <View style={styles.section}>
+            <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>Confidence Calibration</Text>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Calibration Score</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={[typography.bodyBold, { color: cal.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea }]}>{cal.calibrationScore}%</Text>
+                <View style={{ flex: 1, height: 4, backgroundColor: colors.border, borderRadius: 2 }}>
+                  <View style={{ width: `${cal.calibrationScore}%`, height: 4, backgroundColor: cal.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea, borderRadius: 2 }} />
+                </View>
+              </View>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Overconfidence</Text>
+              <Text style={[typography.bodyBold, { color: cal.overconfidenceRate > 30 ? colors.error : colors.text }]}>{cal.overconfidenceRate}%</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Underconfidence</Text>
+              <Text style={[typography.bodyBold, { color: cal.underconfidenceRate > 30 ? colors.warning : colors.text }]}>{cal.underconfidenceRate}%</Text>
+            </View>
+            <Text style={[typography.tiny, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>{getCalibrationInterpretation(cal)}</Text>
+          </View>
+        );
+      })()}
+
       <View style={styles.section}>
         <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.about')}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>
@@ -156,15 +309,16 @@ export function ProfileScreen({ navigation }: any) {
 
       {hasData && (
         <TouchableOpacity style={styles.logoutBtn} onPress={() => {}}>
-          <Text style={[typography.bodyBold, { color: colors.secondary }]}>{t('profile.resetData')}</Text>
+          <Text style={[typography.bodyBold, { color: colors.textSecondary }]}>{t('profile.resetData')}</Text>
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={async () => {
+      <TouchableOpacity style={[styles.logoutBtn, styles.logoutDanger]} onPress={async () => {
         if (supabase) await supabase.auth.signOut().catch(() => {});
         useAuthStore.getState().logout();
       }}>
-        <Text style={[typography.bodyBold, { color: '#E53935' }]}>Logout</Text>
+        <LogoutIcon />
+        <Text style={[typography.bodyBold, { color: '#E53935', marginLeft: spacing.sm }]}>Logout</Text>
       </TouchableOpacity>
 
       <View style={{ height: spacing.huge }} />
@@ -173,8 +327,8 @@ export function ProfileScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg },
-  profileHeader: { alignItems: 'center', paddingTop: spacing.lg, paddingBottom: spacing.xl },
+  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  profileHeader: { alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.xl },
   avatarLarge: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.bgCard, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: colors.primary },
   statsRow: { flexDirection: 'row', gap: spacing.sm },
   emptyCard: {
@@ -216,13 +370,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   logoutBtn: {
+    flexDirection: 'row',
     padding: spacing.lg,
     borderRadius: borderRadius.md,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.secondary + '30',
+    borderColor: colors.border,
   },
+  logoutDanger: { borderColor: '#E5393530' },
   langBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,

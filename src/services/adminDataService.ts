@@ -378,3 +378,29 @@ export async function fetchSystemHealth() {
     lastChecked: new Date().toISOString(),
   };
 }
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+export async function reportQuestionToBackend(
+  questionId: string,
+  reason: string,
+  userId?: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/report-question`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ questionId, reason, userId }),
+    });
+    const data = await res.json();
+    if (!res.ok) { console.error('reportQuestionToBackend failed:', data.error); return false; }
+    return true;
+  } catch (err) {
+    console.error('reportQuestionToBackend network error:', err);
+    return false;
+  }
+}

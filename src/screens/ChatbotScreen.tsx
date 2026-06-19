@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, ActivityIndicator, Animated, Keyboard, Platform, UIManager } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Animated, Keyboard, Platform, Easing, Alert } from 'react-native';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
@@ -30,6 +30,7 @@ export function ChatbotScreen({ navigation }: any) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveTitle, setSaveTitle] = useState('');
@@ -39,31 +40,27 @@ export function ChatbotScreen({ navigation }: any) {
   const scrollRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const keyboardOffset = useRef(new Animated.Value(0)).current;
+  const greetingOpacity = useRef(new Animated.Value(1)).current;
+  const greetingSlide = useRef(new Animated.Value(0)).current;
+  const chatOpacity = useRef(new Animated.Value(0)).current;
   const greetingAnim = useRef(new Animated.Value(0)).current;
   const chipAnims = useRef(suggestions.map(() => new Animated.Value(0))).current;
-  const gradientAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(gradientAnim, { toValue: 1, duration: 3000, useNativeDriver: false })
-    ).start();
-  }, []);
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(greetingAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(greetingAnim, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       Animated.stagger(100, chipAnims.map((a) =>
-        Animated.timing(a, { toValue: 1, duration: 350, useNativeDriver: true })
+        Animated.timing(a, { toValue: 1, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true })
       )),
     ]).start();
   }, []);
 
   useEffect(() => {
     const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
-      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height, duration: 250, useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
-      Animated.timing(keyboardOffset, { toValue: 0, duration: 250, useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
@@ -71,7 +68,7 @@ export function ChatbotScreen({ navigation }: any) {
   useEffect(() => {
     if (messages.length > 0 && messages[messages.length - 1].role === 'ai') {
       slideAnim.setValue(0);
-      Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, friction: 8, tension: 40 }).start();
+      Animated.timing(slideAnim, { toValue: 1, duration: 350, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
     }
   }, [messages.length]);
 
@@ -100,6 +97,11 @@ export function ChatbotScreen({ navigation }: any) {
       setChatStarted(true);
       setMessages([welcomeMessage, userMsg]);
       setIsLoading(true);
+      Animated.parallel([
+        Animated.timing(greetingOpacity, { toValue: 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(greetingSlide, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+        Animated.timing(chatOpacity, { toValue: 1, duration: 350, delay: 50, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      ]).start(() => setShowGreeting(false));
       const reply = await getAIResponse(text, []);
       setIsLoading(false);
       setMessages((prev) => [...prev, { role: 'ai', text: reply }]);
@@ -120,13 +122,18 @@ export function ChatbotScreen({ navigation }: any) {
   }
 
   function sanitizeText(text: string) {
-    return text.replace(/[#*]/g, '');
+    return text.replace(/[#*`>]/g, '');
+  }
+
+  function cleanContent(text: string) {
+    return text.replace(/[#*`>]/g, '').replace(/\n{3,}/g, '\n\n').trim();
   }
 
   function handleSaveNote(text: string) {
-    const firstLine = text.split('\n')[0].replace(/[*#]/g, '').trim();
+    const cleaned = cleanContent(text);
+    const firstLine = cleaned.split('\n')[0].trim();
     setSaveTitle(firstLine.slice(0, 60) || 'AI Tutor Response');
-    setSaveContent(text);
+    setSaveContent(cleaned);
     setShowSaveModal(true);
   }
 
@@ -140,6 +147,115 @@ export function ChatbotScreen({ navigation }: any) {
 
   function handleRemoveTag(tag: string) {
     setSaveTags(saveTags.filter((x) => x !== tag));
+  }
+
+  const [showAttachModal, setShowAttachModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const attachSlideAnim = useRef(new Animated.Value(300)).current;
+
+  const openAttachModal = () => {
+    setShowAttachModal(true);
+    attachSlideAnim.setValue(300);
+    Animated.timing(attachSlideAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start();
+  };
+
+  const closeAttachModal = () => {
+    Animated.timing(attachSlideAnim, { toValue: 300, duration: 200, useNativeDriver: true }).start(() => {
+      setShowAttachModal(false);
+    });
+  };
+
+  async function handlePickImage() {
+    closeAttachModal();
+    try {
+      const ImagePicker = await import('expo-image-picker');
+      const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!granted) { Alert.alert('Permission required', 'Gallery permission is needed.'); return; }
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 0.8 });
+      if (!result.canceled && result.assets[0]) {
+        useKnowledgeStore.getState().addNote({
+          id: `note-${Date.now()}`,
+          title: `Image from chat ${new Date().toLocaleString()}`,
+          content: result.assets[0].uri, type: 'ocr', subject: 'General', topicIds: [],
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), tags: ['image', 'chat'],
+        });
+        Alert.alert('Saved', 'Image saved as a note.');
+      }
+    } catch { Alert.alert('Not available', 'Image picker not supported here.'); }
+  }
+
+  async function handleCaptureImage() {
+    closeAttachModal();
+    try {
+      const ImagePicker = await import('expo-image-picker');
+      const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+      if (!granted) { Alert.alert('Permission required', 'Camera permission is needed.'); return; }
+      const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
+      if (!result.canceled && result.assets[0]) {
+        useKnowledgeStore.getState().addNote({
+          id: `note-${Date.now()}`,
+          title: `Captured from chat ${new Date().toLocaleString()}`,
+          content: result.assets[0].uri, type: 'ocr', subject: 'General', topicIds: [],
+          createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), tags: ['image', 'chat'],
+        });
+        Alert.alert('Saved', 'Photo saved as a note.');
+      }
+    } catch { Alert.alert('Not available', 'Camera not supported here.'); }
+  }
+
+  let speechRecognition: any = null;
+
+  function startListening() {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      Alert.alert('Not available', 'Speech recognition is not supported on this device.');
+      return;
+    }
+    speechRecognition = new SR();
+    speechRecognition.continuous = false;
+    speechRecognition.interimResults = true;
+    speechRecognition.lang = 'en-US';
+
+    speechRecognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0].transcript)
+        .join('');
+      if (event.results[0].isFinal) {
+        setInputText(transcript);
+        setIsListening(false);
+        speechRecognition = null;
+      }
+    };
+
+    speechRecognition.onerror = () => {
+      setIsListening(false);
+      speechRecognition = null;
+      Alert.alert('Error', 'Speech recognition failed. Please try again.');
+    };
+
+    speechRecognition.onend = () => {
+      setIsListening(false);
+      speechRecognition = null;
+    };
+
+    speechRecognition.start();
+    setIsListening(true);
+  }
+
+  function stopListening() {
+    if (speechRecognition) {
+      speechRecognition.stop();
+      speechRecognition = null;
+    }
+    setIsListening(false);
+  }
+
+  function handleVoiceNote() {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
   }
 
   return (
@@ -156,60 +272,79 @@ export function ChatbotScreen({ navigation }: any) {
             <Path fillRule="evenodd" clipRule="evenodd" d="M8.99892 15.938L7.95392 17L0.287919 9.21C0.10342 9.0197 0.000244141 8.76505 0.000244141 8.5C0.000244141 8.23495 0.10342 7.9803 0.287919 7.79L7.95392 0L8.99892 1.063L1.68092 8.5L8.99892 15.938Z" fill="black"/>
           </Svg>
         </TouchableOpacity>
+        <View style={styles.headerInfo}>
+          <Text style={styles.headerTitle}>AI Tutor</Text>
+          <Text style={styles.headerSubtitle}>Lakshyam PSC</Text>
+        </View>
       </LinearGradient>
 
-      {!chatStarted ? (
-        /* Initial greeting */
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <Animated.Text style={[styles.greeting, { opacity: greetingAnim, transform: [{ translateY: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>Hi, what would you like to learn today?</Animated.Text>
-          <View style={styles.chipsContainer}>
-            {suggestions.map((item, i) => (
-              <Animated.View key={i} style={{ opacity: chipAnims[i], transform: [{ translateY: chipAnims[i].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
-                <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion(item.text)}>
-                  <Text style={styles.chipText}>{item.text}</Text>
-                </TouchableOpacity>
-              </Animated.View>
-            ))}
+      <View style={styles.contentArea}>
+        {isListening && (
+          <View style={styles.recordingBanner}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.recordingBannerText}>Listening... tap mic to stop</Text>
           </View>
-        </ScrollView>
-      ) : (
-        /* Chat conversation */
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.chatContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {messages.map((msg, i) => {
-            const isLast = i === messages.length - 1 && msg.role === 'ai';
-            return (
-            <Animated.View key={i} style={isLast ? { transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }], opacity: slideAnim } : {}}>
-            <View
-              style={[
-                styles.messageRow,
-                msg.role === 'user' ? styles.userRow : styles.aiRow,
-              ]}
-            >
-              <View style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
-                <Text style={msg.role === 'user' ? styles.userBubbleText : styles.bubbleText}>{sanitizeText(msg.text)}</Text>
-                {msg.role === 'ai' && (
-                  <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
-                    <Text style={styles.saveNoteText}>Save as note</Text>
-                  </TouchableOpacity>
-                )}
+        )}
+        {/* Chat conversation */}
+        <Animated.View style={[styles.overlay, { opacity: chatOpacity, pointerEvents: chatStarted ? 'auto' : 'none' }]}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.chatContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {messages.map((msg, i) => {
+              const isLast = i === messages.length - 1 && msg.role === 'ai';
+              return (
+              <Animated.View key={i} style={isLast ? { transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }], opacity: slideAnim } : {}}>
+              <View
+                style={[
+                  styles.messageRow,
+                  msg.role === 'user' ? styles.userRow : styles.aiRow,
+                ]}
+              >
+                <View style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
+                  <Text style={msg.role === 'user' ? styles.userBubbleText : styles.bubbleText}>{sanitizeText(msg.text)}</Text>
+                  {msg.role === 'ai' && (
+                    <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
+                      <Text style={styles.saveNoteText}>Save as note</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
-            </Animated.View>
-          );})}
-          {isLoading && (
-            <View style={[styles.messageRow, styles.aiRow]}>
-              <View style={[styles.bubble, styles.aiBubble]}>
-                <ActivityIndicator size="small" color="#F7B11A" />
-                <Text style={styles.typingText}>Thinking...</Text>
+              </Animated.View>
+            );})}
+            {isLoading && (
+              <View style={[styles.messageRow, styles.aiRow]}>
+                <View style={[styles.bubble, styles.aiBubble, styles.typingBubble]}>
+                  <Text style={styles.typingDots}>...</Text>
+                </View>
               </View>
-            </View>
-          )}
-        </ScrollView>
-      )}
+            )}
+          </ScrollView>
+        </Animated.View>
+
+        {/* Greeting overlay */}
+        {showGreeting && (
+          <Animated.View style={[styles.overlay, {
+            opacity: greetingOpacity,
+            transform: [{ translateY: greetingSlide.interpolate({ inputRange: [0, 1], outputRange: [0, -60] }) }],
+            pointerEvents: chatStarted ? 'none' : 'auto',
+          }]}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+              <Animated.Text style={[styles.greeting, { opacity: greetingAnim, transform: [{ translateY: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>Hi, what would you like to learn today?</Animated.Text>
+              <View style={styles.chipsContainer}>
+                {suggestions.map((item, i) => (
+                  <Animated.View key={i} style={{ opacity: chipAnims[i], transform: [{ translateY: chipAnims[i].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
+                    <TouchableOpacity style={styles.chip} onPress={() => handleSuggestion(item.text)}>
+                      <Text style={styles.chipText}>{item.text}</Text>
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </View>
+            </ScrollView>
+          </Animated.View>
+        )}
+      </View>
 
       {/* Save Note Modal */}
       <Modal visible={showSaveModal} transparent animationType="none">
@@ -295,51 +430,79 @@ export function ChatbotScreen({ navigation }: any) {
 
       {/* Input Area */}
       <Animated.View style={[styles.inputArea, { bottom: keyboardOffset }]}>
-        <Animated.View style={[styles.gradientGlow, {
-          opacity: gradientAnim.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.15, 0.35, 0.15] }),
-          transform: [{
-            translateX: gradientAnim.interpolate({ inputRange: [0, 1], outputRange: [-80, 80] }),
-          }],
-        }]}>
-          <LinearGradient
-            colors={['rgba(247,177,26,0)', 'rgba(247,177,26,0.6)', 'rgba(247,177,26,0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={{ width: '100%', height: '100%' }}
-          />
-        </Animated.View>
-        <View style={styles.inputRow}>
+        <View style={styles.composer}>
           <TextInput
-            style={styles.inputText}
-            placeholder="Ask about...."
-            placeholderTextColor="rgba(0,0,0,0.75)"
+            style={styles.prompt}
+            placeholder="Ask about anything..."
+            placeholderTextColor="#7f8795"
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={() => handleSend(inputText)}
             returnKeyType="send"
+            multiline
+            textAlignVertical="top"
           />
-          <View style={styles.inputActions}>
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.attachButton}>
-                <Svg width="5.97" height="11.11" viewBox="0 0 6 12" fill="none">
-                  <Path d="M2.2375 4.04576V8.54107C2.24269 8.86979 2.37692 9.18328 2.61122 9.41391C2.84551 9.64453 3.16109 9.77379 3.48984 9.77379C3.8186 9.77379 4.13418 9.64453 4.36847 9.41391C4.60277 9.18328 4.737 8.86979 4.74219 8.54107L4.74625 2.64888C4.74966 2.36792 4.69726 2.08908 4.5921 1.82852C4.48694 1.56796 4.33111 1.33087 4.13364 1.13098C3.93616 0.931099 3.70098 0.7724 3.44171 0.664087C3.18245 0.555773 2.90426 0.5 2.62328 0.5C2.3423 0.5 2.06412 0.555773 1.80485 0.664087C1.54559 0.7724 1.3104 0.931099 1.11293 1.13098C0.915452 1.33087 0.759618 1.56796 0.654458 1.82852C0.549298 2.08908 0.496904 2.36792 0.500313 2.64888V8.58076C0.494588 8.9763 0.567552 9.36904 0.714962 9.73614C0.862372 10.1032 1.08129 10.4374 1.35898 10.7191C1.63667 11.0009 1.9676 11.2246 2.33253 11.3773C2.69746 11.53 3.0891 11.6086 3.48469 11.6086C3.88028 11.6086 4.27192 11.53 4.63685 11.3773C5.00177 11.2246 5.3327 11.0009 5.6104 10.7191C5.88809 10.4374 6.107 10.1032 6.25441 9.73614C6.40182 9.36904 6.47479 8.9763 6.46906 8.58076V3.03763" stroke="black" strokeMiterlimit="10" strokeLinecap="round"/>
-                </Svg>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.mikeButton}>
-                <Svg width="10" height="14" viewBox="0 0 10 14" fill="none">
-                  <Path fillRule="evenodd" clipRule="evenodd" d="M2.8 3V7C2.8 7.28891 2.8569 7.57499 2.96747 7.8419C3.07803 8.10882 3.24008 8.35135 3.44437 8.55564C3.64865 8.75992 3.89118 8.92197 4.1581 9.03254C4.42501 9.1431 4.71109 9.2 5 9.2C5.28891 9.2 5.57499 9.1431 5.8419 9.03254C6.10882 8.92197 6.35135 8.75992 6.55564 8.55564C6.75992 8.35135 6.92197 8.10882 7.03254 7.8419C7.1431 7.57499 7.2 7.28891 7.2 7V3C7.2 2.41652 6.96822 1.85695 6.55564 1.44437C6.14305 1.03179 5.58348 0.8 5 0.8C4.41652 0.8 3.85695 1.03179 3.44437 1.44437C3.03179 1.85695 2.8 2.41652 2.8 3ZM5.4 11.984V14H4.6V11.984C3.34718 11.8835 2.17819 11.3148 1.32576 10.3912C0.473326 9.46759 -6.45565e-06 8.25684 0 7V6H0.8V7C0.8 8.11391 1.2425 9.1822 2.03015 9.96985C2.8178 10.7575 3.88609 11.2 5 11.2C6.11391 11.2 7.1822 10.7575 7.96985 9.96985C8.7575 9.1822 9.2 8.11391 9.2 7V6H10V7C10 8.25684 9.52667 9.46759 8.67424 10.3912C7.82181 11.3148 6.65282 11.8835 5.4 11.984ZM2 3C2 2.20435 2.31607 1.44129 2.87868 0.87868C3.44129 0.31607 4.20435 0 5 0C5.79565 0 6.55871 0.31607 7.12132 0.87868C7.68393 1.44129 8 2.20435 8 3V7C8 7.79565 7.68393 8.55871 7.12132 9.12132C6.55871 9.68393 5.79565 10 5 10C4.20435 10 3.44129 9.68393 2.87868 9.12132C2.31607 8.55871 2 7.79565 2 7V3Z" fill="black"/>
-                </Svg>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.sendButton} onPress={() => handleSend(inputText)}>
-              <Svg width="12.44" height="13.07" viewBox="0 0 13 14" fill="none">
-                <Path d="M6.21363 1.07592C6.2137 0.977425 6.23316 0.879911 6.27092 0.788942C6.30867 0.697972 6.36397 0.61533 6.43366 0.545733C6.50335 0.476135 6.58606 0.420946 6.67708 0.383315C6.7681 0.345685 6.86564 0.326351 6.96413 0.326416C7.06263 0.326482 7.16014 0.345946 7.25111 0.383698C7.34208 0.42145 7.42472 0.476749 7.49432 0.54644C7.56392 0.61613 7.6191 0.698846 7.65674 0.789866C7.69437 0.880885 7.7137 0.978425 7.71363 1.07692L6.21363 1.07592ZM6.96313 2.20642H6.21313V2.20592L6.96313 2.20642ZM7.71313 7.22492C7.71313 7.42383 7.63412 7.61459 7.49346 7.75525C7.35281 7.8959 7.16205 7.97492 6.96313 7.97492C6.76422 7.97492 6.57346 7.8959 6.4328 7.75525C6.29215 7.61459 6.21313 7.42383 6.21313 7.22492H7.71313ZM6.21313 7.23417C6.21313 7.03525 6.29215 6.84449 6.4328 6.70384C6.57346 6.56318 6.76422 6.48417 6.96313 6.48417C7.16205 6.48417 7.35281 6.56318 7.49346 6.70384C7.63412 6.84449 7.71313 7.03525 7.71313 7.23417H6.21313ZM7.71313 12.6509C7.71313 12.8498 7.63412 13.0406 7.49346 13.1812C7.35281 13.3219 7.16205 13.4009 6.96313 13.4009C6.76422 13.4009 6.57346 13.3219 6.4328 13.1812C6.29215 13.0406 6.21313 12.8498 6.21313 12.6509H7.71313ZM7.71363 1.07692V1.09567L6.21363 1.09492V1.07592L7.71363 1.07692ZM7.71363 1.09567V1.31817L6.21363 1.31692V1.09492L7.71363 1.09567ZM7.71363 1.31817V1.54017L6.21363 1.53917V1.31692L7.71363 1.31817ZM7.71363 1.54017L7.71338 1.76267L6.21338 1.76142L6.21363 1.53917L7.71363 1.54017ZM7.71338 1.76267L7.71313 1.98467L6.21313 1.98367L6.21338 1.76142L7.71338 1.76267ZM7.71313 1.98467V2.20692L6.21313 2.20592V1.98367L7.71313 1.98467ZM7.71313 2.20642V7.22492H6.21313V2.20642H7.71313ZM7.71313 7.23417L7.71313 12.6509H6.21313L6.21313 7.23417H7.71313Z" fill="white"/>
-                <Path d="M0.750122 6.42847L6.04437 1.13447C6.16625 1.01258 6.31094 0.915888 6.47019 0.849921C6.62944 0.783953 6.80013 0.75 6.9725 0.75C7.14487 0.75 7.31555 0.783953 7.4748 0.849921C7.63405 0.915888 7.77874 1.01258 7.90062 1.13447L13.1946 6.42872" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          <View style={styles.toolbar}>
+            <TouchableOpacity style={styles.attachBtn} onPress={openAttachModal}>
+              <Svg width="14" height="14" viewBox="0 0 18 18" fill="none">
+                <Path d="M9.5 3V10.5C9.5 10.8978 9.34196 11.2794 9.06066 11.5607C8.77936 11.842 8.39782 12 8 12C7.60218 12 7.22064 11.842 6.93934 11.5607C6.65804 11.2794 6.5 10.8978 6.5 10.5V4.5C6.5 3.83696 6.76339 3.20107 7.23223 2.73223C7.70107 2.26339 8.33696 2 9 2C9.66304 2 10.2989 2.26339 10.7678 2.73223C11.2366 3.20107 11.5 3.83696 11.5 4.5V10.5C11.5 11.4283 11.1313 12.3185 10.4749 12.9749C9.8185 13.6313 8.92826 14 8 14C7.07174 14 6.1815 13.6313 5.52513 12.9749C4.86875 12.3185 4.5 11.4283 4.5 10.5V5.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </Svg>
+            </TouchableOpacity>
+            <View style={styles.spacer} />
+            <TouchableOpacity style={styles.micBtn} onPress={handleVoiceNote}>
+              <Svg width="14" height="14" viewBox="0 0 22 22" fill="none">
+                <Path d="M11 2C9.89543 2 9 2.89543 9 4V11C9 12.1046 9.89543 13 11 13C12.1046 13 13 12.1046 13 11V4C13 2.89543 12.1046 2 11 2Z" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M16 10C16 11.3261 15.4732 12.5979 14.5355 13.5355C13.5979 14.4732 12.3261 15 11 15C9.67392 15 8.40215 14.4732 7.46447 13.5355C6.52678 12.5979 6 11.3261 6 10" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M11 18V20" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <Path d="M8 20H14" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </Svg>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend(inputText)}>
+              <Svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <Path d="M17.5 10L2.5 10M17.5 10L12 4.5M17.5 10L12 15.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </Svg>
             </TouchableOpacity>
           </View>
         </View>
       </Animated.View>
+
+      {/* Attach Modal */}
+      <Modal visible={showAttachModal} transparent animationType="none" onRequestClose={closeAttachModal}>
+        <TouchableOpacity style={styles.attachOverlay} activeOpacity={1} onPress={closeAttachModal}>
+          <Animated.View style={[styles.attachSheet, { transform: [{ translateY: attachSlideAnim }] }]}>
+            <View style={styles.attachHandle} />
+            <Text style={styles.attachSheetTitle}>Attach</Text>
+            <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
+              <View style={[styles.attachOptionIcon, { backgroundColor: '#F59E0B15' }]}>
+                <Svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                  <Rect x="1" y="1" width="20" height="20" rx="3" stroke="#F59E0B" strokeWidth="1.5"/>
+                  <Circle cx="7" cy="7" r="2" stroke="#F59E0B" strokeWidth="1.5"/>
+                  <Path d="M1 16L6 11L11 16L16 11L21 16" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </Svg>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attachOptionTitle}>Upload from gallery</Text>
+                <Text style={styles.attachOptionSub}>Choose an image from your library</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.attachOption} onPress={handleCaptureImage}>
+              <View style={[styles.attachOptionIcon, { backgroundColor: '#DC262615' }]}>
+                <Svg width="18" height="18" viewBox="0 0 22 22" fill="none">
+                  <Path d="M2 7C2 5.89543 2.89543 5 4 5H5.38197C5.70515 5 5.99277 4.78929 6.09202 4.48683L6.61732 2.80428C6.79354 2.27572 7.29613 1.91603 7.8541 1.91603H14.1459C14.7039 1.91603 15.2065 2.27572 15.3827 2.80428L15.908 4.48683C16.0072 4.78929 16.2948 5 16.618 5H18C19.1046 5 20 5.89543 20 7V17C20 18.1046 19.1046 19 18 19H4C2.89543 19 2 18.1046 2 17V7Z" stroke="#DC2626" strokeWidth="1.5"/>
+                  <Circle cx="11" cy="12" r="4" stroke="#DC2626" strokeWidth="1.5"/>
+                </Svg>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attachOptionTitle}>Capture image</Text>
+                <Text style={styles.attachOptionSub}>Take a photo with your camera</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.attachCancel} onPress={closeAttachModal}>
+              <Text style={styles.attachCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
 
     </View>
   );
@@ -348,64 +511,90 @@ export function ChatbotScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#FAFAF8',
+  },
+  contentArea: {
+    flex: 1,
+    position: 'relative',
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   topBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 122,
+    height: 110,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 24,
-    paddingTop: 21,
-    paddingBottom: 57,
+    paddingHorizontal: 20,
+    paddingTop: 16,
     gap: 12,
     backgroundColor: 'transparent',
     zIndex: 2,
   },
   backButton: {
-    width: 44,
-    height: 44,
+    width: 36,
+    height: 36,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
+    borderColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 999,
-    padding: 4,
+  },
+  headerInfo: {
+    paddingTop: 4,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: fontFamily.bodySemiBold,
+    color: '#111827',
+    lineHeight: 22,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    fontWeight: '400',
+    fontFamily: fontFamily.body,
+    color: '#9CA3AF',
+    lineHeight: 16,
   },
   scrollContent: {
-    paddingTop: 96,
-    paddingBottom: 200,
-    gap: 40,
+    paddingTop: 100,
+    paddingBottom: 180,
+    gap: 32,
     alignItems: 'center',
   },
   greeting: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '400',
-    lineHeight: 22,
+    lineHeight: 21,
     fontFamily: fontFamily.body,
     textAlign: 'center',
-    color: '#000000',
-    paddingHorizontal: 24,
+    color: '#111827',
+    paddingHorizontal: 32,
   },
   chipsContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     paddingHorizontal: 0,
-    gap: 12,
+    gap: 10,
   },
   chip: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderColor: '#E5E7EB',
     borderRadius: 999,
     alignSelf: 'center',
   },
@@ -415,173 +604,151 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontFamily: fontFamily.body,
     textAlign: 'center',
-    color: '#000000',
+    color: '#374151',
   },
   chatContent: {
-    paddingTop: 96,
-    paddingBottom: 200,
-    paddingHorizontal: 4,
-    gap: 24,
+    paddingTop: 100,
+    paddingBottom: 180,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
   },
   aiRow: {
     alignSelf: 'stretch',
+    justifyContent: 'flex-start',
   },
   userRow: {
     alignSelf: 'stretch',
     justifyContent: 'flex-end',
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    zIndex: 1,
   },
   bubble: {
-    padding: 16,
-    gap: 10,
+    padding: 12,
   },
   aiBubble: {
-    flex: 1,
+    maxWidth: '82%',
+    backgroundColor: '#F0F2F5',
     borderTopLeftRadius: 0,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 0,
+    borderTopRightRadius: 14,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   userBubble: {
-    borderRadius: 12,
-    height: 48,
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 32,
-    elevation: 4,
-    maxWidth: '80%',
+    borderRadius: 14,
+    borderBottomRightRadius: 0,
+    backgroundColor: '#F7B11A',
+    maxWidth: '78%',
   },
   bubbleText: {
     fontSize: 14,
     fontWeight: '400',
-    lineHeight: 22,
+    lineHeight: 21,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: '#111827',
   },
   userBubbleText: {
     fontSize: 14,
     fontWeight: '400',
-    lineHeight: 19,
+    lineHeight: 21,
     fontFamily: fontFamily.body,
-    color: '#000000',
-    textAlign: 'right',
+    color: '#FFFFFF',
   },
   saveNoteBtn: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: 'transparent',
     borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 4,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
     alignSelf: 'flex-start',
-    height: 32,
+    height: 26,
+    marginTop: 4,
   },
   saveNoteText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '500',
-    lineHeight: 19,
+    lineHeight: 15,
     fontFamily: fontFamily.bodyMedium,
-    color: '#000000',
+    color: '#6B7280',
   },
   inputArea: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    shadowColor: '#000',
-    shadowOffset: { width: 7, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 98.5,
-    elevation: 8,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    paddingHorizontal: 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
     zIndex: 1,
-    overflow: 'hidden',
   },
-  gradientGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 16,
-    height: 48,
+  composer: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 8,
+    borderColor: '#E5E7EB',
+    borderRadius: 18,
+    padding: 10,
+    marginHorizontal: 8,
+    marginBottom: Platform.OS === 'ios' ? 8 : 8,
+    ...Platform.select({
+      web: { boxShadow: '0 4px 16px rgba(0,0,0,.06)' },
+      default: { elevation: 3 },
+    }),
   },
-  inputActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  inputText: {
-    flex: 1,
-    fontSize: 14,
+  prompt: {
+    minHeight: 36,
+    maxHeight: 120,
+    paddingHorizontal: 6,
+    paddingTop: 4,
+    paddingBottom: 6,
+    fontSize: 15,
+    lineHeight: 21,
     fontWeight: '400',
-    lineHeight: 19,
     fontFamily: fontFamily.body,
-    color: '#000000',
-    opacity: 0.75,
-    padding: 0,
-    outlineWidth: 0,
+    color: '#111827',
     outlineStyle: 'none',
+    outlineWidth: 0,
   },
-  actionButtons: {
+  toolbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 0,
-    width: 88,
     height: 44,
+    paddingHorizontal: 4,
+    marginTop: 4,
   },
-  attachButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
+  attachBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  mikeButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
+  micBtn: {
+    width: 34,
+    height: 34,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
-  sendButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F7B11A',
+  sendBtn: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    padding: 0,
+    backgroundColor: '#F7B11A',
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0 4px 10px rgba(247,177,26,.3)' },
+      default: { elevation: 3 },
+    }),
+  },
+  spacer: {
+    flex: 1,
   },
 
   modalOverlay: {
@@ -594,7 +761,7 @@ const styles = StyleSheet.create({
   modalCardScrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 38.5,
+    padding: 32,
   },
   modalCard: {
     width: '100%',
@@ -756,10 +923,75 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  typingText: {
-    fontSize: 14,
-    color: '#999',
-    fontFamily: fontFamily.body,
-    marginTop: 4,
+  typingBubble: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
+  typingDots: {
+    fontSize: 18,
+    fontWeight: '400',
+    fontFamily: fontFamily.body,
+    color: '#6B7280',
+    lineHeight: 20,
+    letterSpacing: 2,
+  },
+
+  attachOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'flex-end',
+  },
+  attachSheet: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    gap: 12,
+  },
+  attachHandle: {
+    width: 36, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB',
+    alignSelf: 'center', marginBottom: 4,
+  },
+  attachSheetTitle: {
+    fontSize: 17, fontWeight: '600', fontFamily: fontFamily.bodySemiBold,
+    color: '#111827', textAlign: 'center', marginBottom: 4,
+  },
+  attachOption: {
+    flexDirection: 'row', alignItems: 'center', padding: 16,
+    backgroundColor: '#F6F6F4', borderRadius: 12, gap: 16,
+  },
+  attachOptionIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  attachOptionTitle: {
+    fontSize: 14, fontWeight: '600', fontFamily: fontFamily.bodyMedium,
+    color: '#111827',
+  },
+  attachOptionSub: {
+    fontSize: 12, fontWeight: '400', fontFamily: fontFamily.body,
+    color: '#6B7280', marginTop: 2,
+  },
+  attachCancel: {
+    alignItems: 'center', paddingVertical: 12, marginTop: 4,
+  },
+  attachCancelText: {
+    fontSize: 14, fontWeight: '500', fontFamily: fontFamily.bodyMedium,
+    color: '#6B7280',
+  },
+
+  recordingBanner: {
+    position: 'absolute', top: 108, left: 16, right: 16,
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: '#DC2626', borderRadius: 12, zIndex: 20,
+    ...Platform.select({ web: { boxShadow: '0 4px 16px rgba(220,38,38,0.25)' }, default: { elevation: 6 } }),
+  },
+  recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  recordingBannerText: {
+    fontSize: 13, fontWeight: '600', fontFamily: fontFamily.bodyMedium,
+    color: '#FFFFFF', flex: 1,
+  },
+
 });

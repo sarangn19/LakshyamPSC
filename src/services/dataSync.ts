@@ -54,11 +54,13 @@ export async function getProfileId(): Promise<string | null> {
 export async function saveUserProfile(data: ProfileData): Promise<void> {
   if (!supabase) return;
   const payload = { ...data };
-  if (payload.exam_date && !/^\d{4}-\d{2}-\d{2}$/.test(payload.exam_date)) {
+  if (!payload.exam_date) {
+    payload.exam_date = null as any;
+  } else if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.exam_date)) {
     try {
       payload.exam_date = new Date(payload.exam_date).toISOString().split('T')[0];
     } catch {
-      payload.exam_date = '';
+      payload.exam_date = null as any;
     }
   }
   const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'auth_user_id' });

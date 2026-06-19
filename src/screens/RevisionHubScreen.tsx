@@ -10,21 +10,13 @@ import { orchestrateSession, logOrchestratedSessionStart } from '../services/ses
 export function RevisionHubScreen({ navigation }: any) {
   const { t } = useTranslation();
   const getDueCount = useFlashcardStore((s) => s.getDueCount);
-  const mistakes = useMCQStore((s) => s.mistakes);
   const flashcards = useFlashcardStore((s) => s.flashcards);
   const profile = usePerformanceStore((s) => s.profile);
 
   const dueCount = getDueCount();
-  const unreviewedMistakes = mistakes.filter((m) => !m.reviewed);
   const totalCards = flashcards.length;
   const masteredCount = useFlashcardStore((s) => s.getMasteredCount)();
   const accuracy = profile ? Math.round(profile.averageAccuracy * 100) : 0;
-
-  const subjectMistakes: Record<string, number> = {};
-  unreviewedMistakes.forEach((m) => { subjectMistakes[m.subject] = (subjectMistakes[m.subject] || 0) + 1; });
-  const weakSubjects = Object.entries(subjectMistakes)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
 
   const handleStartRevision = () => {
     const p = refreshProfile();
@@ -56,9 +48,9 @@ export function RevisionHubScreen({ navigation }: any) {
     }
   };
 
-  const primaryCount = dueCount > 0 ? dueCount : unreviewedMistakes.length;
-  const primaryLabel = dueCount > 0 ? 'card(s) ready for review' : 'mistake(s) to revisit';
-  const startLabel = dueCount > 0 ? 'Start Review' : 'Review Mistakes';
+  const primaryCount = dueCount;
+  const primaryLabel = 'card(s) ready for review';
+  const startLabel = 'Start Review';
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -73,12 +65,10 @@ export function RevisionHubScreen({ navigation }: any) {
         <Text style={styles.reviewDesc}>
           {dueCount > 0
             ? `You have ${dueCount} flashcards ready for spaced repetition. Reviewing now will strengthen long-term retention.`
-            : unreviewedMistakes.length > 0
-              ? `You have ${unreviewedMistakes.length} mistakes to revisit. Addressing them will solidify your understanding.`
-              : 'All caught up! Your review queue is clear.'}
+            : 'All caught up! Your review queue is clear.'}
         </Text>
 
-        {(dueCount > 0 || unreviewedMistakes.length > 0) && (
+        {dueCount > 0 && (
           <TouchableOpacity style={styles.startBtn} onPress={handleStartRevision} activeOpacity={0.9}>
             <Text style={styles.startBtnText}>{startLabel}</Text>
           </TouchableOpacity>
@@ -101,18 +91,6 @@ export function RevisionHubScreen({ navigation }: any) {
             <Text style={styles.statValue}>{accuracy}%</Text>
             <Text style={styles.statLabel}>Accuracy</Text>
           </View>
-        </View>
-      )}
-
-      {weakSubjects.length > 0 && (
-        <View style={styles.weakListCard}>
-          <Text style={styles.weakListTitle}>Topics with mistakes</Text>
-          {weakSubjects.map(([subject, count]) => (
-            <View key={subject} style={styles.weakRow}>
-              <Text style={styles.weakSubject}>{subject}</Text>
-              <Text style={styles.weakCount}>{count} mistake{count > 1 ? 's' : ''}</Text>
-            </View>
-          ))}
         </View>
       )}
 
@@ -163,22 +141,4 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 17, fontWeight: '700', color: colors.text, fontFamily: fontFamily.bodyBold },
   statLabel: { fontSize: 11, color: colors.textTertiary, fontWeight: '500', marginTop: spacing.xs, fontFamily: fontFamily.body },
   statDivider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
-
-  weakListCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: spacing.xl,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  weakListTitle: { fontSize: 13, fontWeight: '700', color: colors.textTertiary, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: spacing.md, fontFamily: fontFamily.bodyBold },
-  weakRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  weakSubject: { fontSize: 14, fontWeight: '600', color: colors.text, fontFamily: fontFamily.bodyMedium },
-  weakCount: { fontSize: 12, color: colors.textTertiary, fontWeight: '500', fontFamily: fontFamily.body },
 });

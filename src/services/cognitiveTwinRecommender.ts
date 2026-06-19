@@ -1,9 +1,13 @@
 import { useCognitiveTwinStore, GapRecord } from '../store/cognitiveTwinStore';
-import { getNode, getNodePath, getChildren, getAncestors, getNodesByLevel, getAllNodes } from '../data/knowledgeTree';
+import { getNode, getNodePath, getChildren, getAncestors, getNodesByLevel, getAllNodes, getPrerequisites, arePrerequisitesMet } from '../data/knowledgeTree';
 import { useBKTStore } from '../store/bktStore';
 import { computePriorities } from './revisionEngine';
 import { useAdminStore } from '../store/adminStore';
 import { getRetentionFailures } from './retentionAssessmentService';
+import { getLearnerProfile, getStageConfig } from './learnerStage';
+import { getCompositeExamWeight } from '../data/examBlueprints';
+import { useUserStore } from '../store/userStore';
+import type { LearnerStage } from './learnerStage';
 
 export interface GapRecommendation {
   gap: GapRecord;
@@ -39,21 +43,40 @@ export function getGapRecommendations(): GapRecommendation[] {
   const config = useAdminStore.getState().cognitiveTwinConfig;
   const gaps = state.getOpenGaps();
   const masteryMap = state.masteryMap;
+  const stageConfig = (() => {
+    try { const p = getLearnerProfile(); return getStageConfig(p.stage); } catch { return getStageConfig('discovering'); }
+  })();
 
   return gaps.map((gap) => {
     const nodePath = getNodePath(gap.nodeId);
     const mastery = masteryMap[gap.nodeId];
-    const weaknessFactor = Math.max(0, (50 - gap.currentMastery) / 50) * (config.weaknessWeight / 100);
-    const forgettingFactor = (mastery?.forgettingScore ?? 0) * (config.forgettingWeight / 100);
+    // Stage-aware weakness weight: early users get lower weakness penalty (more forgiving)
+    const effectiveWeaknessWeight = Math.max(config.weaknessWeight, stageConfig.weaknessWeight);
+    const weaknessFactor = Math.max(0, (50 - gap.currentMastery) / 50) * (effectiveWeaknessWeight / 100);
+    // Stage-aware forgetting weight: advanced users penalized more for forgetting
+    const effectiveForgettingWeight = Math.max(config.forgettingWeight, stageConfig.forgettingWeight);
+    const forgettingFactor = (mastery?.forgettingScore ?? 0) * (effectiveForgettingWeight / 100);
     const recencyDays = mastery?.lastPracticed ? daysSince(mastery.lastPracticed) : 999;
     const recencyFactor = recencyDays > RECENCY_DAYS_THRESHOLD
-      ? Math.min(1, recencyDays / 30) * (config.coverageWeight / 100)
+      ? Math.min(1, recencyDays / 30) * (stageConfig.coverageWeight / 100)
       : 0;
     // Priority: subtopic first (Part 5)
     const baseWeightFactor = gap.level === 'subtopic' ? 0.4 : gap.level === 'topic' ? 0.35 : 0.25;
-    const weightFactor = baseWeightFactor * (config.coverageWeight / 100);
+    let weightFactor = baseWeightFactor * (stageConfig.coverageWeight / 100);
+    // Prerequisite boost: if this topic has unmet prerequisites, boost their priority
+    const prereqCheck = arePrerequisitesMet(gap.nodeId, masteryMap, 60);
+    if (!prereqCheck.met) {
+      weightFactor += 0.15; // boost to direct attention to prerequisite gaps
+    }
+    // Exam weight boost from Kerala PSC blueprints
+    const targetExams = useUserStore.getState().targetExams;
+    const examWeight = targetExams.length > 0
+      ? getCompositeExamWeight(targetExams, gap.subject, gap.topic)
+      : 5;
+    const examBoost = (examWeight / 20) * 0.1; // scale to 0-0.1 range
+
     const priorityScore = Math.round(
-      weaknessFactor * 40 + forgettingFactor * 20 + recencyFactor * 20 + weightFactor * 20
+      weaknessFactor * 40 + forgettingFactor * 20 + recencyFactor * 20 + weightFactor * 20 + examBoost * 20
     );
 
     return { gap, nodePath, priorityScore, weaknessFactor, forgettingFactor, recencyFactor, weightFactor };
@@ -117,12 +140,15 @@ export function getSubjectGapReport(subject: string): { topic: string; gapCount:
       const ancestors = getAncestors(g.nodeId);
       return ancestors.some((a) => a.id === topicNode.id) && g.status !== 'closed';
     });
-    // Subtopic-level attention (Part 5)
+    // Subtopic-level attention (Part 5) — dynamic thresholds
+    const stageConfig = (() => {
+      try { const p = getLearnerProfile(); return getStageConfig(p.stage); } catch { return getStageConfig('discovering'); }
+    })();
     const subtopicNodes = getChildren(topicNode.id);
     const subtopicGaps = subtopicNodes
       .filter((st) => {
         const m = state.masteryMap[st.id];
-        return m && (m.accuracy < 40 || m.forgettingScore > 0.6);
+        return m && (m.accuracy < stageConfig.gapAccuracyThreshold || m.forgettingScore > stageConfig.forgettingThreshold);
       })
       .map((st) => st.name);
     const avgMastery = topicGaps.length > 0
@@ -247,6 +273,25 @@ export function getNextCognitiveGapTopic(
   });
 
   if (prioritized.length === 0) return null;
+
+  // Prerequisite check: if the top target has unmet prerequisites, defer to them
+  const topTarget = prioritized.find((gs) => gs.node.level === 'subtopic') || prioritized[0];
+  const prereqCheck = arePrerequisitesMet(topTarget.node.id, twin.masteryMap, 60);
+  if (!prereqCheck.met) {
+    const prereqNodeId = topTarget.node.prerequisites?.[0];
+    if (prereqNodeId) {
+      const prereqGap = prioritized.find((gs) => gs.node.id === prereqNodeId);
+      if (prereqGap) {
+        const pPath = getNodePath(prereqNodeId);
+        return {
+          subject: pPath[0] || '',
+          topic: pPath.length >= 2 ? pPath[1] : '',
+          subtopic: prereqGap.node.level === 'subtopic' ? prereqGap.node.name : '',
+          score: prereqGap.score,
+        };
+      }
+    }
+  }
 
   // Pick subtopic-level gap first
   const subtopicGap = prioritized.find((gs) => gs.node.level === 'subtopic');

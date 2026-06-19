@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ConfidenceRecord } from '../services/confidenceCalibration';
 
 export interface InteractionSignal {
   id: string;
@@ -106,6 +107,7 @@ interface PerformanceState {
   sessionSignals: SessionSignal[];
   sessionOutcomes: SessionOutcome[];
   recommendations: RecommendationRecord[];
+  confidenceRecords: ConfidenceRecord[];
   profile: UserProfile | null;
   lastProfileBuild: number | null;
   addInteractionSignal: (signal: Omit<InteractionSignal, 'id'>) => void;
@@ -114,6 +116,7 @@ interface PerformanceState {
   addSessionOutcome: (outcome: SessionOutcome) => void;
   addRecommendation: (rec: Omit<RecommendationRecord, 'id' | 'timestamp' | 'status'>) => string;
   markRecommendation: (id: string, status: 'accepted' | 'skipped') => void;
+  addConfidenceRecord: (record: Omit<ConfidenceRecord, 'timestamp'>) => void;
   setProfile: (profile: UserProfile) => void;
   setLastProfileBuild: (timestamp: number) => void;
   clearSignals: () => void;
@@ -133,6 +136,7 @@ export const usePerformanceStore = create<PerformanceState>()(
       sessionSignals: [],
       sessionOutcomes: [],
       recommendations: [],
+      confidenceRecords: [],
       profile: null,
       lastProfileBuild: null,
 
@@ -181,6 +185,14 @@ export const usePerformanceStore = create<PerformanceState>()(
           recommendations: state.recommendations.map((r) =>
             r.id === id ? { ...r, status } : r
           ),
+        })),
+
+      addConfidenceRecord: (record) =>
+        set((state) => ({
+          confidenceRecords: [
+            ...state.confidenceRecords,
+            { ...record, timestamp: new Date().toISOString() },
+          ],
         })),
 
       setProfile: (profile) => set({ profile }),

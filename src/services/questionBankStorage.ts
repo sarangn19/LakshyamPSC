@@ -112,3 +112,60 @@ export async function storeGeneratedFlashcardsBatch(requests: StoreFlashcardRequ
 
   return { success: stored > 0, stored, failed };
 }
+
+export interface BatchUploadResult {
+  success: boolean;
+  total: number;
+  stored: number;
+  failed: number;
+  errors: { index: number; error: string }[];
+}
+
+export async function storeGeneratedMCQsBatchDirect(
+  requests: StoreMCQRequest[],
+  onProgress?: (stored: number, failed: number, total: number) => void,
+): Promise<BatchUploadResult> {
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/store-mcq-batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        questions: requests.map((r) => ({
+          questionText: r.questionText,
+          options: r.options,
+          correctAnswer: r.correctAnswer,
+          explanation: r.explanation || '',
+          subject: r.subject,
+          topic: r.topic,
+          subtopic: r.subtopic || '',
+          difficulty: r.difficulty,
+          examType: r.examType,
+          language: r.language || 'en',
+          sourceType: r.sourceType || 'admin_uploaded',
+          tags: r.tags || [],
+        })),
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      return { success: false, total: requests.length, stored: 0, failed: requests.length, errors: [{ index: -1, error: data.error || 'Batch upload failed' }] };
+    }
+    if (onProgress) onProgress(data.stored, data.failed, data.total);
+    return data;
+  } catch {
+    // Fallback: send one-by-one via store-mcq if batch endpoint unavailable
+    let stored = 0;
+    let failed = 0;
+    const errors: { index: number; error: string }[] = [];
+    for (let i = 0; i < requests.length; i++) {
+      const result = await storeGeneratedMCQ(requests[i]);
+      if (result.success) stored++;
+      else { failed++; errors.push({ index: i, error: result.error || 'Unknown error' }); }
+      if (onProgress) onProgress(stored, failed, requests.length);
+    }
+    return { success: stored > 0, total: requests.length, stored, failed, errors };
+  }
+}

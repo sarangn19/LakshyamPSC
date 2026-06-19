@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Image, Modal, TouchableWithoutFeedback, Linking } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, Image, TouchableWithoutFeedback, Linking, useWindowDimensions } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { fontFamily } from '../theme';
+import { fontFamily, spacing, typography } from '../theme';
 import { useUserStore } from '../store/userStore';
 import { usePerformanceStore } from '../store/performanceStore';
 import { mockCurrentAffairs, CurrentAffair } from '../data/mockData';
 import { syllabus } from '../data/syllabus';
+import { getLearnerProfile } from '../services/learnerStage';
+import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
+import { getDueSummary } from '../services/spacedRepetition';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -117,16 +120,83 @@ function OverallAccuracyCard({ data, overallAccuracy }: { data: number[]; overal
 export function HomeScreen({ navigation }: any) {
   const userName = useUserStore((s) => s.userName);
   const storeCurrentAffairs = useUserStore((s) => s.currentAffairs);
+  const lastFetch = useUserStore((s) => s.lastCurrentAffairsFetch);
+  const setLastFetch = useUserStore((s) => s.setLastCurrentAffairsFetch);
   const [dbAffairs, setDbAffairs] = useState<CurrentAffair[] | null>(null);
   const [selectedNews, setSelectedNews] = useState<CurrentAffair | null>(null);
   const currentAffairs = dbAffairs ?? (storeCurrentAffairs.length > 0 ? storeCurrentAffairs : mockCurrentAffairs);
+  const { width: screenW, height: screenH } = useWindowDimensions();
+  const cardRefs = useRef<(View | null)[]>([]);
+  const cardStartLayout = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const expandX = useRef(new Animated.Value(0)).current;
+  const expandY = useRef(new Animated.Value(0)).current;
+  const expandScaleX = useRef(new Animated.Value(1)).current;
+  const expandScaleY = useRef(new Animated.Value(1)).current;
+  const expandOpacity = useRef(new Animated.Value(0)).current;
+  const [expandedNews, setExpandedNews] = useState<CurrentAffair | null>(null);
+  const navSlideAnim = useRef(new Animated.Value(0)).current;
+
+  const handleCardPress = (item: CurrentAffair, index: number) => {
+    const node = cardRefs.current[index];
+    if (!node) return;
+    node.measureInWindow((x, y, w, h) => {
+      if (w === 0 || h === 0) return;
+      const fw = screenW - 48;
+      const fh = screenH - 160;
+      const fx = 24;
+      const fy = 80;
+      const startCx = x + w / 2;
+      const startCy = y + h / 2;
+      const finalCx = fx + fw / 2;
+      const finalCy = fy + fh / 2;
+      cardStartLayout.current = { x, y, w, h };
+      expandX.setValue(startCx - finalCx);
+      expandY.setValue(startCy - finalCy);
+      expandScaleX.setValue(w / fw);
+      expandScaleY.setValue(h / fh);
+      expandOpacity.setValue(0);
+      setExpandedNews(item);
+      setSelectedNews(item);
+      Animated.parallel([
+        Animated.spring(expandX, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 280 }),
+        Animated.spring(expandY, { toValue: 0, useNativeDriver: true, damping: 22, stiffness: 280 }),
+        Animated.spring(expandScaleX, { toValue: 1, useNativeDriver: true, damping: 22, stiffness: 280 }),
+        Animated.spring(expandScaleY, { toValue: 1, useNativeDriver: true, damping: 22, stiffness: 280 }),
+        Animated.timing(expandOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(navSlideAnim, { toValue: 100, duration: 200, useNativeDriver: true }),
+      ]).start();
+    });
+  };
+
+  const handleCloseNews = () => {
+    const { x, y, w, h } = cardStartLayout.current;
+    if (w === 0 || h === 0) { setSelectedNews(null); setExpandedNews(null); return; }
+    const fw = screenW - 48;
+    const fh = screenH - 160;
+    const fx = 24;
+    const fy = 80;
+    const startCx = x + w / 2;
+    const startCy = y + h / 2;
+    const finalCx = fx + fw / 2;
+    const finalCy = fy + fh / 2;
+    Animated.parallel([
+      Animated.timing(expandX, { toValue: startCx - finalCx, duration: 150, useNativeDriver: true }),
+      Animated.timing(expandY, { toValue: startCy - finalCy, duration: 150, useNativeDriver: true }),
+      Animated.timing(expandScaleX, { toValue: w / fw, duration: 150, useNativeDriver: true }),
+      Animated.timing(expandScaleY, { toValue: h / fh, duration: 150, useNativeDriver: true }),
+      Animated.timing(expandOpacity, { toValue: 0, duration: 150, useNativeDriver: true }),
+      Animated.timing(navSlideAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+    ]).start(() => { setSelectedNews(null); setExpandedNews(null); });
+  };
 
   useEffect(() => {
+    const ONE_DAY = 86400000;
+    if (Date.now() - lastFetch < ONE_DAY) return;
     import('../services/supabase').then(({ supabase }) => {
       if (!supabase) return;
       supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data }) => {
         if (data && data.length > 0) {
-          setDbAffairs(data.map((r: any) => ({
+          const mapped = data.map((r: any) => ({
             id: r.id,
             title: r.title,
             summary: r.summary,
@@ -136,28 +206,27 @@ export function HomeScreen({ navigation }: any) {
             isImportant: false,
             url: r.url || '',
             image_url: r.image_url || '',
-          })));
+          }));
+          setDbAffairs(mapped);
+          setLastFetch(Date.now());
         }
       });
     });
   }, []);
 
-  const interactionCount = usePerformanceStore((s) => s.interactionSignals.length);
   const getInteractionAccuracy = usePerformanceStore((s) => s.getInteractionAccuracy);
   const getSubjectAccuracy = usePerformanceStore((s) => s.getSubjectAccuracy);
-  const recentSessions = usePerformanceStore((s) => s.sessionSignals).filter(
-    (sig) => Date.now() - new Date(sig.date).getTime() < 7 * 86400000,
-  );
+  const interactionSignals = usePerformanceStore((s) => s.interactionSignals);
   const sessionOutcomes = usePerformanceStore((s) => s.sessionOutcomes);
 
   const weeklyQuestions: number[] = (() => {
     const days: number[] = [0, 0, 0, 0, 0, 0, 0];
     const now = new Date();
-    for (const sig of recentSessions) {
-      const d = new Date(sig.date);
+    for (const sig of interactionSignals) {
+      const d = new Date(sig.sessionTime);
       const diff = Math.floor((now.getTime() - d.getTime()) / 86400000);
       if (diff >= 0 && diff < 7) {
-        days[6 - diff] += sig.questionsAttempted || 0;
+        days[6 - diff]++;
       }
     }
     return days;
@@ -188,6 +257,10 @@ export function HomeScreen({ navigation }: any) {
     };
   });
 
+  const learnerProfile = getLearnerProfile();
+  const cognitiveSummary = getCognitiveTwinSummary();
+  const dueSummary = getDueSummary();
+
   const hour = new Date().getHours();
   const greetingText = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
   const displayName = userName || 'there';
@@ -195,12 +268,39 @@ export function HomeScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header + Today's Focus */}
+        {/* Quick Access Row */}
+        <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg }}>
+          <TouchableOpacity
+            style={[styles.quickCard, { backgroundColor: '#2563EB10' }]}
+            onPress={() => navigation.navigate('Retention')}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>📊</Text>
+            <Text style={[typography.caption, { color: '#2563EB', fontWeight: '700' }]}>Retention</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickCard, { backgroundColor: '#8B5CF610' }]}
+            onPress={() => navigation.navigate('Bookmarks')}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>🔖</Text>
+            <Text style={[typography.caption, { color: '#8B5CF6', fontWeight: '700' }]}>Bookmarks</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Today's Focus */}
         <View style={styles.headerBlock}>
           <View style={styles.headerRow}>
             <View style={styles.headerText}>
               <Text style={styles.greeting}>{greetingText}, {displayName}</Text>
-              <Text style={styles.subtitle}>Here's what we recommend for today.</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <Text style={styles.subtitle}>Here's what we recommend for today.</Text>
+                {dueSummary.count > 0 && (
+                  <View style={styles.dueBadge}>
+                    <Text style={styles.dueBadgeText}>{dueSummary.count} due</Text>
+                  </View>
+                )}
+              </View>
             </View>
             <TouchableOpacity style={styles.avatar} onPress={() => navigation.navigate('Profile')}>
               <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -210,44 +310,31 @@ export function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Current Affairs */}
-          <View style={styles.caSection}>
-            <Text style={styles.caSectionTitle}>Current Affairs</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.caScroll}>
-              {currentAffairs.map((item) => (
-                <TouchableOpacity key={item.id} style={styles.caCard} onPress={() => setSelectedNews(item)}>
-                  {item.image_url ? (
-                    <Image source={{ uri: item.image_url }} style={styles.caImage} />
-                  ) : (
-                    <View style={styles.caImagePlaceholder}>
-                      <Text style={styles.caImagePlaceholderText}>{item.category[0].toUpperCase()}</Text>
-                    </View>
-                  )}
-                  <Text style={styles.caCategory}>{item.category}</Text>
-                  <Text style={styles.caTitle} numberOfLines={2}>{item.title}</Text>
-                  <Text style={styles.caSummary} numberOfLines={2}>{item.summary}</Text>
-                  <Text style={styles.caSource}>{item.source} · {item.date}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.focusCard}>
-            <View style={styles.focusTag}>
-              <Text style={styles.focusTagText}>Today's Focus</Text>
+          <TouchableOpacity style={styles.focusCard} activeOpacity={0.9} onPress={() => {}}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={styles.focusTag}>
+                <Text style={styles.focusTagText}>TODAY'S FOCUS</Text>
+              </View>
+              <View style={styles.stageBadge}>
+                <Text style={styles.stageBadgeText}>{learnerProfile.stage}</Text>
+              </View>
             </View>
-            <Text style={styles.focusDescription}>
-              Based on your recent performance, {subjects.reduce((a, b) => a.percent < b.percent ? a : b).subject} is the highest-impact area to review today.
+            <Text style={styles.focusTitle}>
+              Review <Text style={styles.focusHighlight}>{subjects.reduce((a, b) => a.percent < b.percent ? a : b).subject}</Text> today.
             </Text>
-
-          </View>
+            <Text style={styles.focusSubtext}>
+              {learnerProfile.totalQuestions >= 5
+                ? `This is your weakest area at ${subjects.reduce((a, b) => a.percent < b.percent ? a : b).percent}% accuracy with ${cognitiveSummary.openGaps} open gaps. ${learnerProfile.totalQuestions} questions answered across ${learnerProfile.sessionCount} sessions.`
+                : 'Based on your recent performance and accuracy trends, this topic is likely to deliver the highest score improvement.'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* This Week Section */}
         <View style={styles.weekSection}>
           <Text style={styles.sectionTitle}>This Week</Text>
           <View style={styles.weekCards}>
-            <QuestionsPracticedCard total={interactionCount} weekly={weeklyQuestions} />
+            <QuestionsPracticedCard total={interactionSignals.length} weekly={weeklyQuestions} />
             <OverallAccuracyCard data={dailyAccuracy} overallAccuracy={accuracy} />
           </View>
         </View>
@@ -268,41 +355,95 @@ export function HomeScreen({ navigation }: any) {
             ))}
           </View>
         </View>
+
+        {/* Current Affairs */}
+        <View style={styles.caSection}>
+          <Text style={styles.caSectionTitle}>Current Affairs</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.caScroll}>
+            {currentAffairs.map((item, index) => (
+              <TouchableOpacity key={item.id} style={styles.caCard} onPress={() => handleCardPress(item, index)} activeOpacity={0.95}>
+                <View ref={el => { cardRefs.current[index] = el; }} collapsable={false} style={{ flex: 1 }}>
+                  <View style={styles.caImageWrap}>
+                    {item.image_url ? (
+                      <Image source={{ uri: item.image_url }} style={styles.caImage} />
+                    ) : (
+                      <View style={styles.caImagePlaceholder}>
+                        <Text style={styles.caImagePlaceholderText}>{item.category[0].toUpperCase()}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.caContentWrap}>
+                    <Text style={styles.caCategory}>{item.category}</Text>
+                    <Text style={styles.caTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.caMeta}>{item.source} · {item.date}</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </ScrollView>
 
-      {/* News Detail Modal */}
-      <Modal visible={!!selectedNews} transparent animationType="slide" onRequestClose={() => setSelectedNews(null)}>
-        <TouchableWithoutFeedback onPress={() => setSelectedNews(null)}>
-          <View style={styles.modalOverlay} />
-        </TouchableWithoutFeedback>
-        {selectedNews && (
-          <View style={styles.modalContent}>
-            {selectedNews.image_url ? (
-              <Image source={{ uri: selectedNews.image_url }} style={styles.modalImage} />
-            ) : (
-              <View style={styles.modalImagePlaceholder}>
-                <Text style={styles.modalImagePlaceholderText}>{selectedNews.category[0].toUpperCase()}</Text>
-              </View>
-            )}
-            <View style={styles.modalBody}>
-              <View style={styles.modalMeta}>
-                <Text style={styles.modalCategory}>{selectedNews.category}</Text>
-                <Text style={styles.modalSource}>{selectedNews.source} · {selectedNews.date}</Text>
-              </View>
-              <Text style={styles.modalTitle}>{selectedNews.title}</Text>
-              <Text style={styles.modalSummary}>{selectedNews.summary}</Text>
-              {selectedNews.url ? (
-                <TouchableOpacity style={styles.modalLink} onPress={() => { Linking.openURL(selectedNews.url!); setSelectedNews(null); }}>
-                  <Text style={styles.modalLinkText}>Read full article</Text>
+      {/* News Detail Expansion Overlay */}
+      {(expandedNews || selectedNews) && (
+        <View style={StyleSheet.absoluteFill} pointerEvents={selectedNews ? 'auto' : 'none'}>
+          <Animated.View style={[styles.expandOverlay, { opacity: expandOpacity }]}>
+            <TouchableWithoutFeedback onPress={handleCloseNews}>
+              <View style={{ flex: 1 }} />
+            </TouchableWithoutFeedback>
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.expandContent,
+              {
+                left: 24,
+                top: 80,
+                width: screenW - 48,
+                height: screenH - 160,
+                transform: [
+                  { translateX: expandX },
+                  { translateY: expandY },
+                  { scaleX: expandScaleX },
+                  { scaleY: expandScaleY },
+                ],
+              },
+            ]}
+          >
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={handleCloseNews}>
+              <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <Path d="M15 5L5 15M5 5L15 15" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+            {(expandedNews || selectedNews) && (
+              <>
+                {(expandedNews?.image_url || selectedNews?.image_url) ? (
+                  <Image source={{ uri: (expandedNews || selectedNews)!.image_url }} style={styles.modalImage} />
+                ) : (
+                  <View style={styles.modalImagePlaceholder}>
+                    <Text style={styles.modalImagePlaceholderText}>{(expandedNews || selectedNews)!.category[0].toUpperCase()}</Text>
+                  </View>
+                )}
+                <View style={styles.modalBody}>
+                  <View style={styles.modalMeta}>
+                    <Text style={styles.modalCategory}>{(expandedNews || selectedNews)!.category}</Text>
+                    <Text style={styles.modalSource}>{(expandedNews || selectedNews)!.source} · {(expandedNews || selectedNews)!.date}</Text>
+                  </View>
+                  <Text style={styles.modalTitle}>{(expandedNews || selectedNews)!.title}</Text>
+                  <Text style={styles.modalSummary}>{(expandedNews || selectedNews)!.summary}</Text>
+                  {(expandedNews || selectedNews)!.url ? (
+                <TouchableOpacity onPress={() => { Linking.openURL((expandedNews || selectedNews)!.url!); }}>
+                  <Text style={styles.modalLinkText}>Read full article →</Text>
                 </TouchableOpacity>
-              ) : null}
-            </View>
-          </View>
-        )}
-      </Modal>
+                  ) : null}
+                </View>
+              </>
+            )}
+          </Animated.View>
+        </View>
+      )}
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
+      <Animated.View style={[styles.bottomNav, { transform: [{ translateY: navSlideAnim }] }]}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
           <View style={styles.navIconActive}>
             <Svg width="16" height="16" viewBox="0 0 16 18" fill="none">
@@ -326,7 +467,7 @@ export function HomeScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
 
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -354,7 +495,7 @@ function SubjectProgress({ name, percentage, color }: { name: string; percentage
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#F4F0EF',
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -399,7 +540,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 0, 0, 0.1)',
   },
   caSection: {
-    gap: 12,
+    gap: 10,
     alignSelf: 'stretch',
   },
   caSectionTitle: {
@@ -409,91 +550,98 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bodyMedium,
   },
   caScroll: {
-    gap: 12,
+    gap: 10,
     paddingRight: 24,
   },
   caCard: {
     width: 200,
+    height: 270,
     backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 8,
-    padding: 14,
-    gap: 6,
+    borderWidth: 1,
+    borderColor: '#e8e8e8',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  caImageWrap: {
+    height: 167,
+    backgroundColor: '#4b5d80',
+  },
+  caContentWrap: {
+    height: 103,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
   caCategory: {
-    fontSize: 10,
-    fontWeight: '500',
-    color: '#42526E',
-    textTransform: 'capitalize',
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#5f6f8c',
     fontFamily: fontFamily.bodyMedium,
+    marginBottom: 3,
   },
   caTitle: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 18,
-    fontFamily: fontFamily.bodyMedium,
+    fontWeight: '600',
+    color: '#111111',
+    lineHeight: 17,
+    fontFamily: fontFamily.bodySemiBold,
+    marginBottom: 3,
   },
-  caSummary: {
+  caMeta: {
     fontSize: 11,
-    fontWeight: '300',
-    color: 'rgba(0, 0, 0, 0.6)',
-    lineHeight: 15,
-    fontFamily: fontFamily.body,
-  },
-  caSource: {
-    fontSize: 10,
     fontWeight: '400',
-    color: 'rgba(0, 0, 0, 0.35)',
+    color: '#9a9a9a',
     fontFamily: fontFamily.body,
   },
   caImage: {
     width: '100%',
-    height: 90,
-    borderRadius: 6,
+    height: '100%',
     backgroundColor: '#F0F0F0',
   },
   caImagePlaceholder: {
     width: '100%',
-    height: 90,
-    borderRadius: 6,
-    backgroundColor: '#42526E',
+    height: '100%',
+    backgroundColor: '#4b5d80',
     justifyContent: 'center',
     alignItems: 'center',
   },
   caImagePlaceholderText: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 40,
+    fontWeight: '700',
     color: '#FFFFFF',
-    fontFamily: fontFamily.bodyMedium,
+    fontFamily: fontFamily.bodyBold,
   },
-  modalOverlay: {
-    flex: 1,
+  expandOverlay: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  modalContent: {
+  expandContent: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '85%',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalCloseBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalImage: {
     width: '100%',
     height: 200,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
     backgroundColor: '#F0F0F0',
   },
   modalImagePlaceholder: {
     width: '100%',
     height: 200,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
     backgroundColor: '#42526E',
     justifyContent: 'center',
     alignItems: 'center',
@@ -540,51 +688,94 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontFamily: fontFamily.body,
   },
-  modalLink: {
-    backgroundColor: '#42526E',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignSelf: 'flex-start',
-  },
   modalLinkText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '500',
-    color: '#FFFFFF',
+    color: '#42526E',
     fontFamily: fontFamily.bodyMedium,
+    textDecorationLine: 'underline',
   },
   focusCard: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 8,
-    padding: 24,
-    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 0, 0, 0.06)',
+    borderRadius: 28,
+    padding: 20,
+    gap: 14,
     alignSelf: 'stretch',
   },
   focusTag: {
     alignSelf: 'flex-start',
-    backgroundColor: '#42526E',
+    backgroundColor: '#4D5F81',
     borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    height: 22,
+    height: 28,
   },
   focusTagText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '500',
     color: '#FFFFFF',
-    lineHeight: 14,
+    letterSpacing: 0.88,
     fontFamily: fontFamily.bodyMedium,
   },
-  focusDescription: {
+  focusTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1D1D1F',
+    lineHeight: 24,
+    letterSpacing: -0.16,
+    fontFamily: fontFamily.bodyMedium,
+  },
+  focusHighlight: {
+    fontWeight: '500',
+    color: '#1D1D1F',
+  },
+  focusSubtext: {
     fontSize: 14,
-    fontWeight: '300',
-    color: '#000000',
-    lineHeight: 19,
+    fontWeight: '400',
+    color: '#6E6E73',
+    lineHeight: 21.7,
     fontFamily: fontFamily.body,
+  },
+  stageBadge: {
+    backgroundColor: '#E8EDF5',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    height: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stageBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#4D5F81',
+    letterSpacing: 0.5,
+    textTransform: 'capitalize',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  dueBadge: {
+    backgroundColor: '#2563EB20',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dueBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2563EB',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  quickCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 70,
   },
   weekSection: {
     gap: 24,
@@ -601,6 +792,53 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     height: 180,
+  },
+  questionsCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    borderRadius: 8,
+    padding: 16,
+    gap: 10,
+    height: 180,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+  },
+  questionsLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#000000',
+    lineHeight: 16,
+    fontFamily: fontFamily.body,
+    alignSelf: 'stretch',
+  },
+  questionsValue: {
+    fontSize: 32,
+    fontWeight: '500',
+    color: '#000000',
+    lineHeight: 43,
+    fontFamily: fontFamily.bodyMedium,
+    alignSelf: 'stretch',
+  },
+  barChartWrapper: {
+    gap: 4,
+    width: 112,
+  },
+  daysRow: {
+    flexDirection: 'row',
+    height: 16,
+    width: 112,
+  },
+  dayLabel: {
+    width: 16,
+    height: 16,
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#000000',
+    textAlign: 'center',
+    lineHeight: 14,
+    fontFamily: fontFamily.body,
   },
   accuracyCard: {
     flex: 1,
@@ -750,51 +988,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
-  questionsCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 8,
-    padding: 16,
-    gap: 10,
-    height: 180,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  questionsLabel: {
-    fontSize: 12,
-    fontWeight: '400',
-    color: '#000000',
-    lineHeight: 16,
-    fontFamily: fontFamily.body,
-    alignSelf: 'stretch',
-  },
-  questionsValue: {
-    fontSize: 32,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 43,
-    fontFamily: fontFamily.bodyMedium,
-    alignSelf: 'stretch',
-  },
-  barChartWrapper: {
-    gap: 4,
-    width: 112,
-  },
-  daysRow: {
-    flexDirection: 'row',
-    height: 16,
-    width: 112,
-  },
-  dayLabel: {
-    width: 16,
-    height: 16,
-    fontSize: 10,
-    fontWeight: '400',
-    color: '#000000',
-    textAlign: 'center',
-    lineHeight: 14,
-    fontFamily: fontFamily.body,
-  },
 });

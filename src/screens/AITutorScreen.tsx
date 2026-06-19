@@ -415,7 +415,7 @@ export function AITutorScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: '#f8fafc' },
+  wrapper: { flex: 1, backgroundColor: '#F4F0EF' },
 
   // Toast
   toast: {

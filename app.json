@@ -14,10 +14,6 @@
     },
     "web": {},
     "plugins": [
-      "expo-speech",
-      "expo-camera",
-      "expo-image-picker",
-      "expo-asset",
       "expo-font"
     ]
   }
