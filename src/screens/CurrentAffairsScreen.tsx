@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore } from '../store';
@@ -59,6 +59,9 @@ export function CurrentAffairsScreen() {
                 <Text style={[typography.small, { color: colors.textMuted }]}>{item.date}</Text>
               </View>
             </View>
+            {item.image_url && (
+              <Image source={{ uri: item.image_url }} style={styles.newsImage} resizeMode="cover" />
+            )}
             <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.sm }]}>{item.title}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>{item.summary}</Text>
             <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>{t('currentAffairs.source', { source: item.source })}</Text>
@@ -99,6 +102,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   importantCard: { borderLeftWidth: 3, borderLeftColor: colors.warning },
+  newsImage: { width: '100%', height: 180, borderRadius: borderRadius.md, marginTop: spacing.sm },
   newsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   newsActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md },
   actionChip: {
