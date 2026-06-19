@@ -6,6 +6,7 @@ import { typography } from '../theme/typography';
 import { useUserStore } from '../store';
 import { Badge } from '../components/common/StyledComponents';
 import { CurrentAffair, mockCurrentAffairs } from '../data/mockData';
+import { supabase } from '../services/supabase';
 
 const CATEGORIES = [
   { key: 'all', label: 'All', icon: '📰' },
@@ -24,25 +25,23 @@ export function CurrentAffairsScreen() {
   const [activeCategory, setActiveCategory] = useState('all');
 
   useEffect(() => {
-    import('../services/supabase').then(({ supabase }) => {
-      if (!supabase) { setLoading(false); return; }
-      supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(50).then(({ data }) => {
-        if (data && data.length > 0) {
-          const mapped = data.map((r: any) => ({
-            id: r.id,
-            title: r.title,
-            summary: r.summary,
-            category: r.category,
-            date: r.published_at ? r.published_at.split('T')[0] : '',
-            source: r.source || '',
-            isImportant: false,
-            url: r.url || '',
-            image_url: r.image_url || '',
-          }));
-          setDbAffairs(mapped);
-        }
-        setLoading(false);
-      }).catch(() => setLoading(false));
+    if (!supabase) { setLoading(false); return; }
+    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(50).then(({ data }) => {
+      if (data && data.length > 0) {
+        const mapped = data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          summary: r.summary,
+          category: r.category,
+          date: r.published_at ? r.published_at.split('T')[0] : '',
+          source: r.source || '',
+          isImportant: false,
+          url: r.url || '',
+          image_url: r.image_url || '',
+        }));
+        setDbAffairs(mapped);
+      }
+      setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 

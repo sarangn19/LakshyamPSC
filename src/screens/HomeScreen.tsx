@@ -5,6 +5,7 @@ import { fontFamily, spacing, typography } from '../theme';
 import { useUserStore } from '../store/userStore';
 import { usePerformanceStore } from '../store/performanceStore';
 import { mockCurrentAffairs, CurrentAffair } from '../data/mockData';
+import { supabase } from '../services/supabase';
 import { syllabus } from '../data/syllabus';
 import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
@@ -192,25 +193,23 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => {
     const ONE_DAY = 86400000;
     if (Date.now() - lastFetch < ONE_DAY) return;
-    import('../services/supabase').then(({ supabase }) => {
-      if (!supabase) return;
-      supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data }) => {
-        if (data && data.length > 0) {
-          const mapped = data.map((r: any) => ({
-            id: r.id,
-            title: r.title,
-            summary: r.summary,
-            category: r.category,
-            date: r.published_at ? r.published_at.split('T')[0] : '',
-            source: r.source || '',
-            isImportant: false,
-            url: r.url || '',
-            image_url: r.image_url || '',
-          }));
-          setDbAffairs(mapped);
-          setLastFetch(Date.now());
-        }
-      });
+    if (!supabase) return;
+    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data }) => {
+      if (data && data.length > 0) {
+        const mapped = data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          summary: r.summary,
+          category: r.category,
+          date: r.published_at ? r.published_at.split('T')[0] : '',
+          source: r.source || '',
+          isImportant: false,
+          url: r.url || '',
+          image_url: r.image_url || '',
+        }));
+        setDbAffairs(mapped);
+        setLastFetch(Date.now());
+      }
     });
   }, []);
 
