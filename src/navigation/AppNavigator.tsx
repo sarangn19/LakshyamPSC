@@ -35,7 +35,6 @@ async function getUserRole(userId: string): Promise<Role> {
   }
 }
 
-import { LoginScreen } from '../screens/LoginScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LearnScreen } from '../screens/LearnScreen';
 import { ChatbotScreen } from '../screens/ChatbotScreen';
@@ -89,7 +88,6 @@ const screenHeaderStyle = {
 
 export function AppNavigator() {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     if (!supabase) return;
@@ -115,7 +113,6 @@ export function AppNavigator() {
   }, []);
 
   if (!supabase) {
-    // No Supabase configured — skip auth, go straight to main app
     return (
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -145,30 +142,24 @@ export function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isAuthenticated ? (
-          <>
-            <Stack.Screen name="MainTabs" component={HomeTabs} />
-            <Stack.Screen name="MCQ" component={MCQEngineScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
-          <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
-            <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-            <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />
-            <Stack.Screen name="CreateNote" component={CreateNoteScreen} options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="PostSession" component={PostSessionScreen} options={{ animation: 'slide_from_bottom' }} />
-            <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ ...screenHeaderStyle, title: 'Admin Portal', animation: 'slide_from_right' }} />
-            <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ ...screenHeaderStyle, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
-            <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
-          </>
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
+        <Stack.Screen name="MainTabs" component={HomeTabs} />
+        <Stack.Screen name="MCQ" component={MCQEngineScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="CreateNote" component={CreateNoteScreen} options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="PostSession" component={PostSessionScreen} options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ ...screenHeaderStyle, title: 'Admin Portal', animation: 'slide_from_right' }} />
+        <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ ...screenHeaderStyle, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
+        <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

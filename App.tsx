@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { SetupScreen } from './src/screens/SetupScreen';
+import { LoginScreen } from './src/screens/LoginScreen';
 import { useUserStore, useKnowledgeStore, usePerformanceStore } from './src/store';
 import { useAuthStore } from './src/store/authStore';
 import { colors, spacing } from './src/theme';
@@ -59,7 +60,9 @@ export default function App() {
   const [checking, setChecking] = useState(true);
   const [restoring, setRestoring] = useState(true);
   const [restored, setRestored] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const initDone = useRef(false);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useSyncSubscriptions();
   useOfflineQueueFlush();
@@ -105,6 +108,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubAuth = useAuthStore.subscribe((state) => {
+      setAuthChecked(true);
       if (state.isAuthenticated) {
         const userState = useUserStore.getState();
         setSetupDone(userState.setupComplete);
@@ -127,13 +131,24 @@ export default function App() {
       if (hasCache) setRestoring(false);
       restoreFromRemote().finally(() => setRestoring(false));
       startPeriodicSync();
-      // Notifications: install expo-notifications and uncomment below to enable
-      // requestNotificationPermission().then((granted) => { ... });
     }
   }, [setupDone, hydrated, restored]);
 
-  if (!fontsLoaded || checking || (setupDone && restoring)) {
+  if (!fontsLoaded || checking) {
     return <LoadingScreen />;
+  }
+
+  const needsAuth = supabase !== null;
+
+  if (needsAuth && !isAuthenticated) {
+    return (
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <LoginScreen />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    );
   }
 
   if (!setupDone) {
