@@ -1,6 +1,6 @@
 {
   "buildCommand": "npx expo export --platform web",
-  "outputDirectory": "dist/client",
+  "outputDirectory": "dist",
   "devCommand": "expo start --web",
   "framework": null,
   "rewrites": [
