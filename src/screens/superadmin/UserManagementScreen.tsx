@@ -17,6 +17,10 @@ interface ManagedUser {
   lastActive: string;
   totalSessions: number;
   totalAttempts: number;
+  subStatus: string | null;
+  subPlan: string | null;
+  subTrialEnd: string | null;
+  subPeriodEnd: string | null;
 }
 
 export function UserManagementScreen() {
@@ -29,14 +33,28 @@ export function UserManagementScreen() {
   const [fetchingAttempts, setFetchingAttempts] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      fetchAllProfiles(),
-      fetchRoles(),
-    ]).then(([profiles, roles]) => {
+    (async () => {
+      const [profiles, roles] = await Promise.all([
+        fetchAllProfiles(),
+        fetchRoles(),
+      ]);
       const map: Record<string, string> = {};
       for (const r of roles) map[r.name as string] = r.id;
       setRolesMap(map);
+
+      // Fetch subscriptions
+      let subsMap: Record<string, any> = {};
+      try {
+        if (supabase) {
+          const { data: subs } = await supabase.from('subscriptions').select('*');
+          if (subs) {
+            for (const s of subs) subsMap[s.user_id] = s;
+          }
+        }
+      } catch {}
+
       const mapped: ManagedUser[] = profiles.map((p: any) => {
+        const sub = subsMap[p.auth_user_id] || subsMap[p.id] || null;
         return {
           id: p.id,
           authUserId: p.auth_user_id,
@@ -47,10 +65,14 @@ export function UserManagementScreen() {
           lastActive: p.updated_at ? new Date(p.updated_at).toISOString().split('T')[0] : '--',
           totalSessions: p.total_sessions || 0,
           totalAttempts: 0,
+          subStatus: sub?.status || null,
+          subPlan: sub?.plan || null,
+          subTrialEnd: sub?.trial_end || null,
+          subPeriodEnd: sub?.current_period_end || null,
         };
       });
       setUsers(mapped);
-    });
+    })();
   }, []);
 
   const filtered = users.filter((u) =>
@@ -174,6 +196,39 @@ export function UserManagementScreen() {
               {fetchingAttempts ? '...' : selectedUser.totalAttempts}
             </Text>
           </View>
+          {selectedUser.subStatus && (
+            <>
+              <View style={styles.detailRow}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Subscription</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={[styles.subBadge, { backgroundColor: subColor(selectedUser.subStatus) + '20' }]}>
+                    <Text style={[typography.small, { color: subColor(selectedUser.subStatus), fontWeight: '600' }]}>
+                      {selectedUser.subStatus}
+                    </Text>
+                  </View>
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {selectedUser.subPlan || 'premium'}
+                  </Text>
+                </View>
+              </View>
+              {selectedUser.subTrialEnd && (
+                <View style={styles.detailRow}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Trial Ends</Text>
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {new Date(selectedUser.subTrialEnd).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+              {selectedUser.subPeriodEnd && (
+                <View style={styles.detailRow}>
+                  <Text style={[typography.caption, { color: colors.textSecondary }]}>Period Ends</Text>
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {new Date(selectedUser.subPeriodEnd).toLocaleDateString()}
+                  </Text>
+                </View>
+              )}
+            </>
+          )}
           <View style={styles.detailActions}>
             <TouchableOpacity
               style={[styles.actionBtn, {
@@ -209,6 +264,13 @@ export function UserManagementScreen() {
                   {user.role}
                 </Text>
               </View>
+              {user.subStatus && (
+                <View style={[styles.subBadge, { backgroundColor: subColor(user.subStatus) + '20' }]}>
+                  <Text style={[typography.small, { color: subColor(user.subStatus), fontWeight: '600' }]}>
+                    {user.subStatus}
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.userMeta}>
               <Text style={[typography.small, { color: user.status === 'active' ? colors.success : colors.error }]}>
@@ -227,6 +289,18 @@ export function UserManagementScreen() {
   );
 }
 
+function subColor(status: string): string {
+  const map: Record<string, string> = {
+    trialing: '#2563EB',
+    active: '#22C55E',
+    expired: '#6B7280',
+    canceled: '#DC2626',
+    past_due: '#F59E0B',
+    incomplete: '#9CA3AF',
+  };
+  return map[status] || '#9CA3AF';
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   summaryRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
@@ -243,5 +317,6 @@ const styles = StyleSheet.create({
   userHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   roleBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.sm },
+  subBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.sm, marginLeft: spacing.xs },
   userMeta: { flexDirection: 'row', gap: spacing.md, marginLeft: 40 + spacing.md },
 });
