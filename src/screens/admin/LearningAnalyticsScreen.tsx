@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   toggleBtn: { flex: 1, paddingVertical: spacing.sm, alignItems: 'center', borderRadius: borderRadius.sm },
   toggleBtnActive: { backgroundColor: colors.primary },
   section: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg,
     marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border,
   },
   sectionHeader: { marginBottom: spacing.md },

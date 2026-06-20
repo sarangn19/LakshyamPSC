@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
   section: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg,
     marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border,
   },
   itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border },

@@ -900,7 +900,7 @@ function SubjectProgress({ name, percentage, color }: { name: string; percentage
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.xl, paddingTop: spacing.huge + spacing.md, paddingBottom: spacing.huge },
+  content: { padding: spacing.lg, paddingTop: spacing.huge + spacing.md, paddingBottom: spacing.huge },
 
   sectionTitle: {
     fontSize: 20,
@@ -932,8 +932,8 @@ const styles = StyleSheet.create({
 
   insightCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: spacing.xl,
+    borderRadius: 24,
+    padding: spacing.lg,
     marginTop: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -961,8 +961,8 @@ const styles = StyleSheet.create({
 
   sectionCard: {
     backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: spacing.xl,
+    borderRadius: 24,
+    padding: spacing.lg,
     marginTop: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,

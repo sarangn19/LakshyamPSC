@@ -444,8 +444,17 @@ const styles = StyleSheet.create({
   parseBtnDisabled: { opacity: 0.5 },
   parseBtnText: { fontSize: 15, fontWeight: '600', color: colors.white, fontFamily: fontFamily.bodySemiBold },
   fileUploadArea: {
-    borderWidth: 2, borderColor: colors.border, borderStyle: 'dashed', borderRadius: radius.lg,
+    borderWidth: 2, borderColor: colors.border, borderStyle: 'dashed', borderRadius: radius.xxl,
     padding: spacing.xxl, alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface,
+  },
+  tableWrap: {
+    backgroundColor: colors.surface, borderRadius: radius.xxl,
+    borderWidth: 1, borderColor: colors.border,
+    marginBottom: spacing.md, overflow: 'hidden',
+  },
+  resultCard: {
+    backgroundColor: colors.surface, borderRadius: radius.xxl, padding: spacing.lg, marginTop: spacing.md,
+    borderWidth: 1, borderColor: colors.borderLight,
   },
   fileUploadText: { fontSize: 14, color: colors.textSecondary, fontFamily: fontFamily.body },
   fileBtn: {

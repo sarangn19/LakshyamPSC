@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   },
   list: { gap: spacing.sm },
   subCard: {
-    backgroundColor: colors.bgCard, borderRadius: 14, padding: spacing.md,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.md,
     borderWidth: 1, borderColor: colors.border,
   },
   subHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },

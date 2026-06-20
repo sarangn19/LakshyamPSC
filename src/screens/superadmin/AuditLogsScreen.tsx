@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   filterBtn: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.round, borderWidth: 1, borderColor: colors.border },
   filterBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   logCard: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border,
   },
   logHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },

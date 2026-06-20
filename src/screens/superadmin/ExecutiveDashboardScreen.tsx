@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border,
   },
   section: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg,
     marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border,
   },
   actionRow: {

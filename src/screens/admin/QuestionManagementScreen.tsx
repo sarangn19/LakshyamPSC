@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', borderWidth: 1, borderColor: colors.border,
   },
   questionCard: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.md,
     marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border,
   },
   questionHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.sm },

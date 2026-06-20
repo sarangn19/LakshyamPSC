@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.border, borderLeftWidth: 3,
   },
   section: {
-    backgroundColor: colors.bgCard, borderRadius: 14, padding: spacing.xl,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg,
     marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border,
   },
   projRow: {

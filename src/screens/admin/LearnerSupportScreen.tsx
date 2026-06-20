@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg, flexWrap: 'wrap' },
   summaryCard: { backgroundColor: colors.bgCard, padding: spacing.sm, borderRadius: borderRadius.md, alignItems: 'center', minWidth: 60, flex: 1, borderWidth: 1, borderColor: colors.border },
   summaryCardActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  detailCard: { backgroundColor: colors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl, borderWidth: 1, borderColor: colors.border },
+  detailCard: { backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
   detailHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   ticketMeta: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center', marginBottom: spacing.sm },
   priorityBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.sm },

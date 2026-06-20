@@ -143,7 +143,7 @@ export function AccessControlScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   section: {
-    backgroundColor: colors.bgCard, borderRadius: borderRadius.lg, padding: spacing.xl,
+    backgroundColor: colors.bgCard, borderRadius: 24, padding: spacing.lg,
     marginBottom: spacing.lg, borderWidth: 1, borderColor: colors.border,
   },
   roleToggle: { flexDirection: 'row', marginBottom: spacing.md },
