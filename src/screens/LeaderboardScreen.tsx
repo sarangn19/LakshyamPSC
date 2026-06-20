@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   rankLabel: { fontSize: 16, fontWeight: '600', color: 'rgba(255,255,255,0.9)', marginTop: 4 },
   rankNote: { fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 8, textAlign: 'center' },
   scoreCard: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   scoreItem: { alignItems: 'center' },
   section: { marginBottom: spacing.lg },
   statsCard: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: spacing.md,
   },
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   countdownBlock: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
     borderRadius: 12,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   countdownLabel: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   countdownSeparator: { fontSize: 28, fontWeight: '800', color: colors.textMuted },
   archiveCard: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.sm,

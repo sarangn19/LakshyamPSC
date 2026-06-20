@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
   },
   confidenceBtnActive: {
     backgroundColor: colors.primary + '15',

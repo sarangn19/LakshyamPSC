@@ -404,3 +404,117 @@ export async function reportQuestionToBackend(
     return false;
   }
 }
+
+// ─── Subscription Management ──────────────────────────────────────────────────
+
+export interface SubscriptionRecord {
+  user_id: string;
+  status: string;
+  plan: string;
+  trial_start: string | null;
+  trial_end: string | null;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  razorpay_subscription_id: string | null;
+  razorpay_payment_id: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+  user_email?: string;
+  user_name?: string;
+}
+
+export async function fetchAllSubscriptions(): Promise<SubscriptionRecord[]> {
+  try {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select(`
+        *,
+        profiles:user_id ( email, user_name )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map((sub: any) => ({
+      ...sub,
+      user_email: sub.profiles?.email || '',
+      user_name: sub.profiles?.user_name || '',
+    }));
+  } catch (err) {
+    console.error('fetchAllSubscriptions error:', err);
+    return [];
+  }
+}
+
+export async function fetchSubscriptionStats(): Promise<{
+  total: number;
+  trialing: number;
+  active: number;
+  expired: number;
+  canceled: number;
+  pastDue: number;
+  estimatedMonthlyRevenue: number;
+}> {
+  try {
+    if (!supabase) return { total: 0, trialing: 0, active: 0, expired: 0, canceled: 0, pastDue: 0, estimatedMonthlyRevenue: 0 };
+    const { data, error } = await supabase.from('subscriptions').select('status');
+    if (error) throw error;
+
+    const total = data?.length || 0;
+    const trialing = data?.filter((s: any) => s.status === 'trialing').length || 0;
+    const active = data?.filter((s: any) => s.status === 'active').length || 0;
+    const expired = data?.filter((s: any) => s.status === 'expired').length || 0;
+    const canceled = data?.filter((s: any) => s.status === 'canceled').length || 0;
+    const pastDue = data?.filter((s: any) => s.status === 'past_due').length || 0;
+    const estimatedMonthlyRevenue = active * 199;
+
+    return { total, trialing, active, expired, canceled, pastDue, estimatedMonthlyRevenue };
+  } catch (err) {
+    console.error('fetchSubscriptionStats error:', err);
+    return { total: 0, trialing: 0, active: 0, expired: 0, canceled: 0, pastDue: 0, estimatedMonthlyRevenue: 0 };
+  }
+}
+
+export async function updateSubscriptionStatus(userId: string, status: string): Promise<boolean> {
+  try {
+    if (!supabase) return false;
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ status })
+      .eq('user_id', userId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('updateSubscriptionStatus error:', err);
+    return false;
+  }
+}
+
+export async function cancelSubscriptionByAdmin(userId: string): Promise<boolean> {
+  return updateSubscriptionStatus(userId, 'canceled');
+}
+
+export async function extendTrial(userId: string, days: number = 7): Promise<boolean> {
+  try {
+    if (!supabase) return false;
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('trial_end')
+      .eq('user_id', userId)
+      .single();
+
+    const currentEnd = sub?.trial_end ? new Date(sub.trial_end) : new Date();
+    currentEnd.setDate(currentEnd.getDate() + days);
+
+    const { error } = await supabase
+      .from('subscriptions')
+      .update({ trial_end: currentEnd.toISOString() })
+      .eq('user_id', userId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('extendTrial error:', err);
+    return false;
+  }
+}

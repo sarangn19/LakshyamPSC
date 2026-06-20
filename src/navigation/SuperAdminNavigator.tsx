@@ -12,6 +12,7 @@ import { AccessControlScreen } from '../screens/superadmin/AccessControlScreen';
 import { SystemMonitoringScreen } from '../screens/superadmin/SystemMonitoringScreen';
 import { ExperimentCenterScreen } from '../screens/superadmin/ExperimentCenterScreen';
 import { AuditLogsScreen } from '../screens/superadmin/AuditLogsScreen';
+import { BillingDashboardScreen } from '../screens/superadmin/BillingDashboardScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,6 +22,7 @@ const SUPER_ADMIN_TABS = [
   { name: 'RecEngine', component: RecommendationEngineAnalyticsScreen, icon: '🎯', labelKey: 'superadmin.recTab' },
   { name: 'UserManagement', component: UserManagementScreen, icon: '👥', labelKey: 'superadmin.usersTab' },
   { name: 'AccessControl', component: AccessControlScreen, icon: '🔐', labelKey: 'superadmin.accessTab' },
+  { name: 'Billing', component: BillingDashboardScreen, icon: '💰', labelKey: 'superadmin.billingTab' },
   { name: 'SystemMonitoring', component: SystemMonitoringScreen, icon: '⚙️', labelKey: 'superadmin.systemTab' },
   { name: 'ExperimentCenter', component: ExperimentCenterScreen, icon: '🧪', labelKey: 'superadmin.expTab' },
   { name: 'AuditLogs', component: AuditLogsScreen, icon: '📋', labelKey: 'superadmin.auditTab' },

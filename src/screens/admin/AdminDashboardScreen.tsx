@@ -4,7 +4,7 @@ import { colors, spacing, borderRadius, fontFamily } from '../../theme';
 import { typography } from '../../theme/typography';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAuthStore } from '../../store';
-import { fetchTotalLearners, fetchActiveLearnersToday, fetchSessionCompletionRate, fetchAverageAccuracy, fetchTotalAttempts, fetchTotalSessions, fetchPendingFlaggedCount, fetchDraftCACount, fetchOpenTicketCount, fetchCriticalTicketCount, fetchRevisionAdherenceRate, fetchRecommendationsAccepted } from '../../services/adminDataService';
+import { fetchTotalLearners, fetchActiveLearnersToday, fetchSessionCompletionRate, fetchAverageAccuracy, fetchTotalAttempts, fetchTotalSessions, fetchPendingFlaggedCount, fetchDraftCACount, fetchOpenTicketCount, fetchCriticalTicketCount, fetchRevisionAdherenceRate, fetchRecommendationsAccepted, fetchSubscriptionStats } from '../../services/adminDataService';
 
 export function AdminDashboardScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -24,11 +24,12 @@ export function AdminDashboardScreen({ navigation }: any) {
   const [draftCA, setDraftCA] = useState(0);
   const [openTickets, setOpenTickets] = useState(0);
   const [criticalTickets, setCriticalTickets] = useState(0);
+  const [subStats, setSubStats] = useState({ total: 0, trialing: 0, active: 0, estimatedMonthlyRevenue: 0 });
   const [refreshing, setRefreshing] = useState(false);
 
   const loadDashboard = async () => {
     try {
-      const [tl, al, sc, aa, ta, ts, ra, rec, pf, dc, ot, ct] = await Promise.all([
+      const [tl, al, sc, aa, ta, ts, ra, rec, pf, dc, ot, ct, ss] = await Promise.all([
         fetchTotalLearners(),
         fetchActiveLearnersToday(),
         fetchSessionCompletionRate(),
@@ -41,6 +42,7 @@ export function AdminDashboardScreen({ navigation }: any) {
         fetchDraftCACount(),
         fetchOpenTicketCount(),
         fetchCriticalTicketCount(),
+        fetchSubscriptionStats(),
       ]);
       setTotalLearners(tl);
       setActiveLearners(al);
@@ -54,6 +56,7 @@ export function AdminDashboardScreen({ navigation }: any) {
       setDraftCA(dc);
       setOpenTickets(ot);
       setCriticalTickets(ct);
+      setSubStats(ss);
     } catch (err) {
       console.error('Failed to fetch KPIs:', err);
     } finally {
@@ -97,6 +100,8 @@ export function AdminDashboardScreen({ navigation }: any) {
     { label: t('admin.recommendationsAccepted'), value: recommendationsAccepted !== null ? `${recommendationsAccepted}` : '--', icon: '🎯', color: colors.accent, action: 'Tune' },
     { label: 'Stored MCQs', value: questionBankStats?.mcqCount?.toString() || '0', icon: '📝', color: colors.primary, action: 'View bank' },
     { label: 'Stored Flashcards', value: questionBankStats?.flashcardCount?.toString() || '0', icon: '🎴', color: colors.success, action: 'View bank' },
+    { label: 'Subscriptions', value: `${subStats.trialing + subStats.active}`, icon: '💳', color: '#22C55E', action: 'Manage' },
+    { label: 'Est. MRR', value: `₹${subStats.estimatedMonthlyRevenue}`, icon: '💰', color: '#2563EB', action: 'Details' },
   ];
 
   return (
@@ -147,6 +152,16 @@ export function AdminDashboardScreen({ navigation }: any) {
           <View style={[styles.badge, { backgroundColor: draftCA > 0 ? colors.warning : colors.textTertiary }]}>
             <Text style={[typography.small, { color: '#fff', fontWeight: '700', fontFamily: fontFamily.bodyBold }]}>{draftCA}</Text>
           </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('SubscriptionMgmt')}>
+          <Text style={{ fontSize: 20 }}>💳</Text>
+          <View style={styles.actionText}>
+            <Text style={[typography.body, { color: colors.text }]}>Subscriptions</Text>
+            <Text style={[typography.small, { color: colors.textSecondary }]}>
+              {subStats.active} active · {subStats.trialing} trialing · ₹{subStats.estimatedMonthlyRevenue}/mo
+            </Text>
+          </View>
+          <Text style={[typography.small, { color: colors.primary }]}>View →</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('LearnerSupport')}>
           <Text style={{ fontSize: 20 }}>🎫</Text>

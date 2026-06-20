@@ -340,7 +340,8 @@
     "caTab": "കറന്റ് അഫയേഴ്സ്",
     "qualityTab": "ഗുണനിലവാരം",
     "supportTab": "പിന്തുണ",
-    "analyticsTab": "അനലിറ്റിക്സ്",
+      "analyticsTab": "അനലിറ്റിക്സ്",
+      "subscriptionTab": "സബ്‌സ്‌ക്രിപ്‌ഷനുകൾ",
     "questionManagement": "ചോദ്യ പരിപാലനം",
     "createQuestion": "പുതിയത്",
     "searchQuestions": "ചോദ്യങ്ങൾ തിരയുക...",
@@ -530,7 +531,8 @@
     "accessTab": "ആക്സസ്",
     "systemTab": "സിസ്റ്റം",
     "expTab": "പരീക്ഷണങ്ങൾ",
-    "auditTab": "ഓഡിറ്റ്"
+      "auditTab": "ഓഡിറ്റ്",
+      "billingTab": "ബില്ലിംഗ്"
   },
   "home": {
     "greeting": {
@@ -544,7 +546,8 @@
     "quickAccess": {
       "retention": "നിലനിർത്തൽ",
       "bookmarks": "ബുക്ക്മാർക്കുകൾ",
-      "leaderboard": "ലീഡർബോർഡ്"
+      "leaderboard": "ലീഡർബോർഡ്",
+      "subscription": "പ്രീമിയം"
     },
     "focus": {
       "tag": "ഇന്നത്തെ ഫോക്കസ്",

@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   practiceAllText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   card: {
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.bgCard,
     borderRadius: 16,
     padding: spacing.md,
     marginBottom: spacing.sm,

@@ -340,7 +340,8 @@
     "caTab": "Affairs",
     "qualityTab": "Quality",
     "supportTab": "Support",
-    "analyticsTab": "Analytics",
+      "analyticsTab": "Analytics",
+      "subscriptionTab": "Subscriptions",
     "questionManagement": "Question Management",
     "createQuestion": "New",
     "searchQuestions": "Search questions...",
@@ -530,7 +531,8 @@
     "accessTab": "Access",
     "systemTab": "System",
     "expTab": "Experiments",
-    "auditTab": "Audit"
+      "auditTab": "Audit",
+      "billingTab": "Billing"
   },
   "home": {
     "greeting": {
@@ -544,7 +546,8 @@
     "quickAccess": {
       "retention": "Retention",
       "bookmarks": "Bookmarks",
-      "leaderboard": "Leaderboard"
+      "leaderboard": "Leaderboard",
+      "subscription": "Premium"
     },
     "focus": {
       "tag": "TODAY'S FOCUS",

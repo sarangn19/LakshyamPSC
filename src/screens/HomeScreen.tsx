@@ -296,6 +296,14 @@ export function HomeScreen({ navigation }: any) {
             <Text style={{ fontSize: 20, marginBottom: 4 }}>🏆</Text>
             <Text style={[tx.caption, { color: '#F59E0B', fontWeight: '700' }]}>{t('home.quickAccess.leaderboard')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickCard, { backgroundColor: '#22C55E10' }]}
+            onPress={() => navigation.navigate('Subscription')}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>⭐</Text>
+            <Text style={[tx.caption, { color: '#22C55E', fontWeight: '700' }]}>{t('home.quickAccess.subscription')}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Today's Focus */}

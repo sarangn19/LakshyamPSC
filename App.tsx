@@ -8,6 +8,7 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { SetupScreen } from './src/screens/SetupScreen';
 import { LoginScreen } from './src/screens/LoginScreen';
 import { useUserStore, useKnowledgeStore, usePerformanceStore } from './src/store';
+import { useSubscriptionStore } from './src/store/subscriptionStore';
 import { useAuthStore } from './src/store/authStore';
 import { colors, spacing } from './src/theme';
 import { typography } from './src/theme/typography';
@@ -132,6 +133,7 @@ export default function App() {
       if (hasCache) setRestoring(false);
       restoreFromRemote().finally(() => setRestoring(false));
       startPeriodicSync();
+      useSubscriptionStore.getState().initialize();
     }
   }, [setupDone, hydrated, restored]);
 

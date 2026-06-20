@@ -115,6 +115,17 @@ export function ExecutiveDashboardScreen({ navigation }: any) {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionRow}
+          onPress={() => navigation.navigate('Billing')}
+        >
+          <Text style={{ fontSize: 20 }}>💰</Text>
+          <View style={styles.actionText}>
+            <Text style={[typography.body, { color: colors.text }]}>Billing & Revenue</Text>
+            <Text style={[typography.small, { color: colors.textSecondary }]}>MRR, churn, subscription management</Text>
+          </View>
+          <Text style={[typography.bodyBold, { color: colors.primary }]}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionRow}
           onPress={() => navigation.navigate('SystemMonitoring')}
         >
           <Text style={{ fontSize: 20 }}>⚙️</Text>
