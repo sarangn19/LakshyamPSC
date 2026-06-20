@@ -6,7 +6,7 @@ import { getCompositeExamWeight } from '../data/examBlueprints';
 import { getBlueprintBoost } from './blueprintAlignment';
 import { getDueSummary } from './spacedRepetition';
 
-interface StudyPathRecommendation {
+export interface StudyPathRecommendation {
   subject: string;
   topic: string;
   score: number;

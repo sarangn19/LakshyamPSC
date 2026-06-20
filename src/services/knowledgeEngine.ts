@@ -14,6 +14,7 @@ export interface BKTFittedParams {
   pSlip: number;
   pLearn: number;
   pL0: number;
+  pForget: number;
 }
 
 export interface ScorableSubtopic {
@@ -56,6 +57,7 @@ export const DEFAULT_BKT_PARAMS: BKTFittedParams = {
   pSlip: 0.10,
   pLearn: 0.18,
   pL0: 0.15,
+  pForget: 0.05,
 };
 
 const MASTERY_THRESHOLD = 0.92;

@@ -24,11 +24,20 @@ function getWeekLabels(): string[] {
     const d = new Date(now);
     d.setDate(d.getDate() - (6 - i));
     return DAY_ABBR[d.getDay()];
-      });
-    }
-    setPathRecs(getStudyPathRecommendations(5));
-  }, []);
+  });
+}
 
+function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: number[] }) {
+  const BAR_COLORS = ["#1E90FF", "#00CED1", "#32CD32", "#FFD700", "#FF8C00", "#FF6347", "#9370DB"];
+  const maxVal = Math.max(...weekly, 1);
+  const days = getWeekLabels();
+  const barAnimRefs = useRef(weekly.map(() => new Animated.Value(0)));
+  useEffect(() => {
+    barAnimRefs.current.forEach((anim, i) => {
+      Animated.timing(anim, { toValue: weekly[i], duration: 600, useNativeDriver: false }).start();
+    });
+  }, []);
+  if (barAnimRefs.current.length === 0) return null;
   return (
     <View style={styles.questionsCard}>
       <Text style={styles.questionsLabel}>Questions practiced</Text>
@@ -43,7 +52,7 @@ function getWeekLabels(): string[] {
                 style={[
                   styles.bar,
                   {
-                    height: barAnims[index].interpolate({
+                    height: barAnimRefs.current[index].interpolate({
                       inputRange: [0, weekly[index]],
                       outputRange: [1, barH],
                       extrapolate: 'clamp',

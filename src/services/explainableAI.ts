@@ -1,7 +1,7 @@
 import { usePerformanceStore } from '../store/performanceStore';
 import { useBKTStore } from '../store/bktStore';
 import { useCognitiveTwinStore } from '../store/cognitiveTwinStore';
-import { getUserExamTargets } from '../store/userStore';
+import { useUserStore } from '../store/userStore';
 import { getCompositeExamWeight } from '../data/examBlueprints';
 
 export interface FeatureAttribution {
@@ -55,7 +55,7 @@ function computeForgettingAttribution(subject: string, topic: string): number {
 }
 
 function computeExamWeightAttribution(subject: string, _topic: string): number {
-  const targets = getUserExamTargets();
+  const targets = useUserStore.getState().targetExams;
   const weight = getCompositeExamWeight(targets, subject, _topic);
   return weight;
 }

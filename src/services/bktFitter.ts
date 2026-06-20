@@ -29,7 +29,7 @@ export function forwardLogLikelihood(obs: boolean[], params: BKTFittedParams): n
 
 function gridSearch(observations: boolean[]): BKTFittedParams {
   let bestLL = -Infinity;
-  let best: BKTFittedParams = { pGuess: 0.15, pSlip: 0.10, pLearn: 0.18, pL0: 0.15 };
+  let best: BKTFittedParams = { pGuess: 0.15, pSlip: 0.10, pLearn: 0.18, pL0: 0.15, pForget: 0.05 };
 
   for (const pL0 of GRID_P_L0) {
     for (const pT of GRID_P_T) {
@@ -38,7 +38,7 @@ function gridSearch(observations: boolean[]): BKTFittedParams {
           const ll = forwardLogLikelihood(observations, { pGuess: pG, pSlip: pS, pLearn: pT, pL0 });
           if (ll > bestLL) {
             bestLL = ll;
-            best = { pGuess: pG, pSlip: pS, pLearn: pT, pL0 };
+            best = { pGuess: pG, pSlip: pS, pLearn: pT, pL0, pForget: 0.05 };
           }
         }
       }

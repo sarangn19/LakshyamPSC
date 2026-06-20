@@ -33,16 +33,16 @@ interface PersistedState {
 }
 
 const DEFAULT_WEIGHTS = [
-  -2.5,   0: intercept
-  0.35,   1: daysSinceLastSession
-  -0.15,  2: totalSessions
-  -0.40,  3: accuracyTrend
-  -0.10,  4: avgSessionDurationMin
-  -0.30,  5: weeklySessionCount
-  -0.25,  6: gapClosureRate
-  -0.20,  7: streak
-  -0.10,  8: totalQuestions
-  -0.30,  9: avgAccuracy
+  -2.5,  // intercept
+  0.35,  // daysSinceLastSession
+  -0.15,  // totalSessions
+  -0.40,  // accuracyTrend
+  -0.10,  // avgSessionDurationMin
+  -0.30,  // weeklySessionCount
+  -0.25,  // gapClosureRate
+  -0.20,  // streak
+  -0.10,  // totalQuestions
+  -0.30,  // avgAccuracy
 ];
 
 function sigmoid(x: number): number {

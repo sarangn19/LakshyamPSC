@@ -156,7 +156,7 @@ export function getReviewState(nodeId: string): 'due' | 'upcoming' | 'new' | 'un
   return isDueForReview(nodeId) ? 'due' : 'upcoming';
 }
 
-export function getDueSubtopics(): { nodeId: string; name: string; path: string[]; daysOverdue: number; masteryScore: number; priorityScore: number; subject: string; topic: string }[] {
+export function getDueSubtopics(): { nodeId: string; name: string; path: string[]; daysOverdue: number; masteryScore: number; priorityScore: number; subject: string; topic: string; status: string }[] {
   const state = useCognitiveTwinStore.getState();
   const twin = useCognitiveTwinStore.getState();
   const result: any[] = [];
