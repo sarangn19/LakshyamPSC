@@ -667,6 +667,8 @@
       "subtextNew": "Based on your recent performance and accuracy trends, this topic is likely to deliver the highest score improvement."
     },
     "thisWeek": "This Week",
+    "statistics": "Statistics",
+    "detailedStatistics": "Detailed Statistics",
     "questionsPracticed": "Questions practiced",
     "overallAccuracy": "Overall accuracy",
     "subjectAccuracy": "Subject Accuracy",

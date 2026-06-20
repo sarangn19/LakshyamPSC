@@ -353,9 +353,19 @@ export function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* This Week Section */}
+        {/* Statistics Section */}
         <View style={styles.weekSection}>
-          <Text style={styles.sectionTitle}>{t('home.thisWeek')}</Text>
+          <View style={styles.statHeader}>
+            <Text style={styles.statTitle}>{t('home.statistics')}</Text>
+            <TouchableOpacity
+              style={styles.statLink}
+              onPress={() => navigation.navigate('Analytics')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.statLinkText}>{t('home.detailedStatistics')}</Text>
+              <Text style={styles.statArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
           <View style={styles.weekCards}>
             <QuestionsPracticedCard total={interactionSignals.length} weekly={weeklyQuestions} />
             <OverallAccuracyCard data={dailyAccuracy} overallAccuracy={accuracy} />
@@ -810,6 +820,36 @@ const styles = StyleSheet.create({
     color: '#000000',
     lineHeight: 22,
     fontFamily: fontFamily.bodyMedium,
+  },
+  statHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  statTitle: {
+    fontFamily: fontFamily.bodyMedium,
+    fontWeight: '500',
+    fontSize: 16,
+    lineHeight: 19,
+    color: '#000000',
+  },
+  statLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statLinkText: {
+    fontFamily: fontFamily.body,
+    fontWeight: '400',
+    fontSize: 12,
+    lineHeight: 14,
+    color: 'rgba(0, 0, 0, 0.5)',
+  },
+  statArrow: {
+    fontSize: 16,
+    lineHeight: 14,
+    color: '#000000',
+    opacity: 0.5,
   },
   weekCards: {
     flexDirection: 'row',
