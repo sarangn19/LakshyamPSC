@@ -11,6 +11,7 @@ import { syllabus } from '../data/syllabus';
 import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
 import { getDueSummary } from '../services/spacedRepetition';
+import { getChurnRisk, getRiskAction } from '../services/churnPrediction';
 import { useMCQStore } from '../store';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
@@ -144,6 +145,7 @@ export function HomeScreen({ navigation }: any) {
   const [caItems, setCaItems] = useState<CurrentAffair[]>([]);
   const [loadingCA, setLoadingCA] = useState(true);
   const [caError, setCaError] = useState<string | null>(null);
+  const [churnNudge, setChurnNudge] = useState<{ message: string; type: string } | null>(null);
 
   useEffect(() => {
     if (!supabase) { setLoadingCA(false); return; }
@@ -164,6 +166,12 @@ export function HomeScreen({ navigation }: any) {
       }
       setLoadingCA(false);
     }).catch((err) => { setCaError(err.message || 'Network error'); setLoadingCA(false); });
+    getChurnRisk().then((record) => {
+      if (record) {
+        const action = getRiskAction(record.riskScore, record.features);
+        if (action.type !== 'none') setChurnNudge(action);
+      }
+    });
   }, []);
 
   const weeklyQuestions: number[] = (() => {
@@ -266,6 +274,12 @@ export function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {churnNudge && (
+          <View style={styles.churnBanner}>
+            <Text style={styles.churnBannerText}>{churnNudge.message}</Text>
+          </View>
+        )}
 
         {/* Divider */}
         <View style={styles.divider} />
@@ -688,5 +702,19 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     color: 'rgba(0,0,0,0.4)',
     fontFamily: fontFamily.body,
+  },
+  churnBanner: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 16,
+    padding: 16,
+  },
+  churnBannerText: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+    color: '#92400E',
+    fontFamily: fontFamily.bodyMedium,
   },
 });

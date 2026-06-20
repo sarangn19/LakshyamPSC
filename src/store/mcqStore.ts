@@ -9,6 +9,7 @@ import { generateNextAdaptiveQuestion, makeAdaptiveState, AdaptiveState, recordA
 import { makeInitialDifficultyState, recordSessionAnswer, DifficultySessionState } from '../services/sessionDifficultyAdapter';
 import { bandit as diffBandit, buildBanditContext } from '../services/contextualBandit';
 import { recordQuestionQualityAnswer } from '../services/questionQuality';
+import { computeChurnRisk } from '../services/churnPrediction';
 import { useUserStore } from './userStore';
 import { useKnowledgeStore } from './knowledgeStore';
 import { storeGeneratedMCQ } from '../services/questionBankStorage';
@@ -1044,6 +1045,8 @@ export const useMCQStore = create<MCQState>()(
             accuracy: accuracy * 100,
           });
         }
+
+        computeChurnRisk();
       },
 
 
