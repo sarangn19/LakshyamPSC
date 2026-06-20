@@ -152,6 +152,7 @@ interface MCQState {
   reportQuestion: (id: string) => void;
   reportQuestionWithReason: (id: string, reason: string) => void;
   setSelectedExam: (exam: string) => void;
+  startCustomSession: (questions: Question[], startIndex?: number) => void;
   resetSession: () => void;
   startOrchestratedSession: (config: {
     subjects?: string[];
@@ -1036,6 +1037,23 @@ export const useMCQStore = create<MCQState>()(
       },
 
       setSelectedExam: (exam) => set({ selectedExam: exam }),
+
+      startCustomSession: (questions, startIndex) =>
+        set({
+          currentQuestions: questions,
+          currentIndex: startIndex ?? 0,
+          selectedAnswer: null,
+          isAnswered: false,
+          score: { correct: 0, total: 0 },
+          sessionActive: true,
+          drillMode: 'daily',
+          sessionSignals: [],
+          sessionCoveredTopics: [],
+          sessionReduced: false,
+          questionsSkipped: 0,
+          difficultySessionState: makeInitialDifficultyState(),
+          currentDifficulty: 'medium',
+        }),
 
       resetSession: () =>
         set({
