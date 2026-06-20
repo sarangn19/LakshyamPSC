@@ -296,9 +296,19 @@ export function HomeScreen({ navigation }: any) {
 
         {/* Current Affairs Section */}
         <View style={styles.caSection}>
-            <TouchableOpacity onPress={() => navigation.navigate('Affairs')} activeOpacity={0.8}>
+          <View style={styles.statHeader}>
             <Text style={styles.caTitle}>{t('home.currentAffairs')}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.statLink}
+              onPress={() => navigation.navigate('Affairs')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.statLinkText}>View More</Text>
+              <Svg width="6.35" height="12" viewBox="0 0 7 12" fill="none">
+                <Path d="M1 1L6 6L1 11" stroke="rgba(0,0,0,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
           {loadingCA ? (
             <ActivityIndicator color={colors.primary} size="small" />
           ) : caError ? (
@@ -666,7 +676,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#000000',
     fontFamily: fontFamily.bodyMedium,
-    marginBottom: 12,
   },
   caScroll: {
     marginLeft: -24,
