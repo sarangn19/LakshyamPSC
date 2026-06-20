@@ -6,18 +6,20 @@ import { useKnowledgeStore } from '../store/knowledgeStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, fontFamily } from '../theme';
 import { supabase } from '../services/supabase';
+import { useTranslation } from '../i18n/useTranslation';
 import { fetchUserProfile, fetchNotes } from '../services/dataSync';
 import type { Role } from '../store/authStore';
 
 const features = [
-  { icon: '🧠', label: 'AI Tutor' },
-  { icon: '📝', label: 'MCQs' },
-  { icon: '📰', label: 'Current Affairs' },
-  { icon: '📊', label: 'Analytics' },
+  { icon: '🧠', key: 'login.featureAiTutor' },
+  { icon: '📝', key: 'login.featureMCQs' },
+  { icon: '📰', key: 'login.featureCurrentAffairs' },
+  { icon: '📊', key: 'login.featureAnalytics' },
 ];
 
 function resetUserStores() {
   const setupComplete = useUserStore.getState().setupComplete;
+  const locale = useUserStore.getState().locale;
   useUserStore.setState({
     userName: '',
     targetExams: [],
@@ -32,7 +34,7 @@ function resetUserStores() {
     dailyGoal: null,
     examReadiness: [],
     setupComplete,
-    locale: 'en',
+    locale,
   });
   useKnowledgeStore.setState({
     notes: [],
@@ -77,6 +79,7 @@ async function getUserRole(userId: string): Promise<Role> {
 }
 
 export function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -98,9 +101,9 @@ export function LoginScreen() {
 
   const handleSubmit = async () => {
     setError('');
-    if (!email.trim()) { setError('Please enter your email'); return; }
-    if (!password || password.length < 6) { setError('Password must be at least 6 characters'); return; }
-    if (isSignup && !name.trim()) { setError('Please enter your name'); return; }
+    if (!email.trim()) { setError(t('login.errorEmailRequired')); return; }
+    if (!password || password.length < 6) { setError(t('login.errorPasswordLength')); return; }
+    if (isSignup && !name.trim()) { setError(t('login.errorNameRequired')); return; }
 
     setLoading(true);
     try {
@@ -111,7 +114,7 @@ export function LoginScreen() {
           options: { data: { user_name: name.trim() } },
         });
         if (signUpError) { setError(signUpError.message); return; }
-        if (!data?.user) { setError('Signup failed. Please try again.'); return; }
+        if (!data?.user) { setError(t('login.errorSignupFailed')); return; }
         const role = await getUserRole(data.user.id);
         await AsyncStorage.multiRemove(USER_SCOPED_STORAGE_KEYS);
         resetUserStores();
@@ -127,7 +130,7 @@ export function LoginScreen() {
           password,
         });
         if (signInError) { setError(signInError.message); return; }
-        if (!user) { setError('Login failed. Please try again.'); return; }
+        if (!user) { setError(t('login.errorLoginFailed')); return; }
         const role = await getUserRole(user.id);
         const displayName = user.user_metadata?.user_name || email.trim().split('@')[0];
         setUserName(displayName);
@@ -138,7 +141,7 @@ export function LoginScreen() {
         }).catch(() => {});
       }
     } catch (err: any) {
-      setError(err?.message || 'Authentication failed. Please try again.');
+      setError(err?.message || t('login.errorAuthFailed'));
     } finally {
       setLoading(false);
     }
@@ -156,21 +159,21 @@ export function LoginScreen() {
             <Text style={styles.appName}>Lakshyam</Text>
           </View>
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>Kerala PSC</Text>
+            <Text style={styles.badgeText}>{t('login.badge')}</Text>
           </View>
         </View>
 
         {/* Hero */}
         <Animated.View style={[styles.hero, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.heroTitle}>Your AI Coach for{'\n'}Kerala PSC Exams</Text>
-          <Text style={styles.heroSub}>Learn, practice, and track your progress — all in one place.</Text>
+          <Text style={styles.heroTitle}>{t('login.heroTitle')}</Text>
+          <Text style={styles.heroSub}>{t('login.heroSubtitle')}</Text>
 
           {/* Mini Features */}
           <View style={styles.featureRow}>
             {features.map((f) => (
-              <View key={f.label} style={styles.featurePill}>
+              <View key={f.key} style={styles.featurePill}>
                 <Text style={styles.featurePillIcon}>{f.icon}</Text>
-                <Text style={styles.featurePillLabel}>{f.label}</Text>
+                <Text style={styles.featurePillLabel}>{t(f.key)}</Text>
               </View>
             ))}
           </View>
@@ -178,12 +181,12 @@ export function LoginScreen() {
 
         {/* Auth Form */}
         <Animated.View style={[styles.formCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Text style={styles.formTitle}>{isSignup ? 'Create Account' : 'Welcome Back'}</Text>
+          <Text style={styles.formTitle}>{isSignup ? t('login.createAccount') : t('login.welcomeBack')}</Text>
 
           {isSignup && (
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder={t('login.namePlaceholder')}
               placeholderTextColor="rgba(0,0,0,0.35)"
               value={name}
               onChangeText={setName}
@@ -192,7 +195,7 @@ export function LoginScreen() {
           )}
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={t('login.emailPlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.35)"
             value={email}
             onChangeText={setEmail}
@@ -201,7 +204,7 @@ export function LoginScreen() {
           />
           <TextInput
             style={styles.input}
-            placeholder="Password (min 6 chars)"
+            placeholder={t('login.passwordPlaceholder')}
             placeholderTextColor="rgba(0,0,0,0.35)"
             value={password}
             onChangeText={setPassword}
@@ -214,13 +217,13 @@ export function LoginScreen() {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitText}>{isSignup ? 'Create Account' : 'Log In'}</Text>
+              <Text style={styles.submitText}>{isSignup ? t('login.createAccount') : t('login.logIn')}</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => { setIsSignup(!isSignup); setError(''); }}>
             <Text style={styles.switchText}>
-              {isSignup ? 'Already have an account?' : "Don't have an account?"} <Text style={styles.switchTextBold}>{isSignup ? 'Log In' : 'Sign Up'}</Text>
+              {isSignup ? t('login.alreadyHaveAccount') : t('login.dontHaveAccount')} <Text style={styles.switchTextBold}>{isSignup ? t('login.logIn') : t('login.signUp')}</Text>
             </Text>
           </TouchableOpacity>
         </Animated.View>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, fontFamily } from '../theme';
-import { typography } from '../theme/typography';
+import { useTranslation } from '../i18n/useTranslation';
 import { useMCQStore, useUserStore } from '../store';
 
 export function BookmarkedQuestionsScreen({ navigation }: any) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   const bookmarkedData = useMCQStore((s) => s.bookmarkedQuestionData);
   const bookmarkedIds = useMCQStore((s) => s.bookmarkedQuestions);
   const primaryExam = useUserStore((s) => s.primaryExam);
@@ -41,14 +42,14 @@ export function BookmarkedQuestionsScreen({ navigation }: any) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {Object.keys(bookmarkedData).length === 0 ? (
         <View style={styles.empty}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>No bookmarks yet</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Tap the bookmark icon on any question during practice to save it here.</Text>
+          <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('bookmarks.noBookmarksYet')}</Text>
+          <Text style={[tx.body, { color: colors.textSecondary, textAlign: 'center' }]}>{t('bookmarks.tapToSave')}</Text>
         </View>
       ) : (
         <>
           {bookmarkedIds.length > 1 && (
             <TouchableOpacity style={styles.practiceAllBtn} onPress={() => startBookmarkSession()}>
-              <Text style={styles.practiceAllText}>▶ Practice All ({bookmarkedIds.length})</Text>
+              <Text style={styles.practiceAllText}>{t('bookmarks.practiceAll', { count: bookmarkedIds.length })}</Text>
             </TouchableOpacity>
           )}
           {bookmarkedIds.map((id) => {
@@ -56,9 +57,9 @@ export function BookmarkedQuestionsScreen({ navigation }: any) {
             if (!q) return null;
             return (
               <TouchableOpacity key={id} style={styles.card} onPress={() => startBookmarkSession(id)} activeOpacity={0.7}>
-                <Text style={[typography.bodySmall, { color: colors.text }]} numberOfLines={3}>{q.text}</Text>
-                <Text style={[typography.tiny, { color: colors.textMuted, marginTop: 4 }]}>{q.subject} › {q.topic}</Text>
-                <Text style={[typography.tiny, { color: colors.primary, marginTop: 8 }]}>Tap to attempt →</Text>
+                <Text style={[tx.bodySmall, { color: colors.text }]} numberOfLines={3}>{q.text}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted, marginTop: 4 }]}>{q.subject} › {q.topic}</Text>
+                <Text style={[tx.tiny, { color: colors.primary, marginTop: 8 }]}>{t('bookmarks.tapToAttempt')}</Text>
               </TouchableOpacity>
             );
           })}

@@ -2,9 +2,11 @@ import React, { useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native';
 import { colors, spacing } from '../theme';
 import { typography } from '../theme/typography';
+import { useTranslation } from '../i18n/useTranslation';
 import { useSubscriptionStore, hasPremiumAccess, getTrialDaysRemaining } from '../store/subscriptionStore';
 
 export function SubscriptionScreen({ navigation }: any) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   const { status, plan, trialEnd, currentPeriodEnd, isLoading, initialize, subscribe, checkStatus } = useSubscriptionStore();
 
   useEffect(() => {
@@ -37,49 +39,49 @@ export function SubscriptionScreen({ navigation }: any) {
       <View style={[styles.banner, isPremium ? styles.bannerActive : styles.bannerExpired]}>
         <Text style={styles.bannerEmoji}>{isPremium ? '⭐' : '🔒'}</Text>
         <Text style={styles.bannerTitle}>
-          {isTrialing ? 'Free Trial' : isPremium ? 'Premium Active' : 'Premium Expired'}
+          {isTrialing ? t('subscription.freeTrial') : isPremium ? t('subscription.premiumActive') : t('subscription.premiumExpired')}
         </Text>
         <Text style={styles.bannerSubtitle}>
           {isTrialing
-            ? `${daysLeft} day${daysLeft !== 1 ? 's' : ''} remaining`
+            ? t('subscription.daysRemaining', { count: daysLeft })
             : isPremium
-              ? `Renews ${formatDate(currentPeriodEnd)}`
-              : 'Subscribe to continue using premium features'}
+              ? t('subscription.renewsOn', { date: formatDate(currentPeriodEnd) })
+              : t('subscription.subscribeToContinue')}
         </Text>
       </View>
 
       {/* Features comparison */}
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Plan Comparison</Text>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('subscription.planComparison')}</Text>
 
         <View style={styles.planRow}>
           <View style={[styles.planCard, isPremium && styles.planCardDimmed]}>
-            <Text style={[typography.h4, { color: colors.text }]}>Free</Text>
-            <Text style={[typography.h2, { color: colors.textMuted, marginVertical: spacing.sm }]}>₹0</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted, marginBottom: spacing.sm }]}>Limited access</Text>
+            <Text style={[tx.h4, { color: colors.text }]}>{t('subscription.freePlan')}</Text>
+            <Text style={[tx.h2, { color: colors.textMuted, marginVertical: spacing.sm }]}>₹0</Text>
+            <Text style={[tx.tiny, { color: colors.textMuted, marginBottom: spacing.sm }]}>{t('subscription.limitedAccess')}</Text>
             <View style={styles.featureList}>
-              <FeatureItem text="AI-generated questions" included={isTrialing || !isPremium} dimmed={isPremium} />
-              <FeatureItem text="Basic analytics" included={isTrialing || !isPremium} dimmed={isPremium} />
-              <FeatureItem text="Daily current affairs" included={true} />
-              <FeatureItem text="Offline question bank" included={false} />
-              <FeatureItem text="Priority AI generation" included={false} />
-              <FeatureItem text="Ad-free experience" included={false} />
-              <FeatureItem text="Detailed analytics" included={false} />
+              <FeatureItem text={t('subscription.featureAiGenerated')} included={isTrialing || !isPremium} dimmed={isPremium} />
+              <FeatureItem text={t('subscription.featureBasicAnalytics')} included={isTrialing || !isPremium} dimmed={isPremium} />
+              <FeatureItem text={t('subscription.featureDailyCurrentAffairs')} included={true} />
+              <FeatureItem text={t('subscription.featureOfflineBank')} included={false} />
+              <FeatureItem text={t('subscription.featurePriorityAi')} included={false} />
+              <FeatureItem text={t('subscription.featureAdFree')} included={false} />
+              <FeatureItem text={t('subscription.featureDetailedAnalytics')} included={false} />
             </View>
           </View>
 
           <View style={[styles.planCard, styles.planCardHighlighted]}>
-            <Text style={[typography.h4, { color: colors.primary }]}>Premium</Text>
-            <Text style={[typography.h2, { color: colors.text, marginVertical: spacing.sm }]}>₹199</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted, marginBottom: spacing.sm }]}>per month</Text>
+            <Text style={[tx.h4, { color: colors.primary }]}>{t('subscription.premiumPlan')}</Text>
+            <Text style={[tx.h2, { color: colors.text, marginVertical: spacing.sm }]}>₹199</Text>
+            <Text style={[tx.tiny, { color: colors.textMuted, marginBottom: spacing.sm }]}>{t('subscription.perMonth')}</Text>
             <View style={styles.featureList}>
-              <FeatureItem text="AI-generated questions" included={true} />
-              <FeatureItem text="Basic analytics" included={true} />
-              <FeatureItem text="Daily current affairs" included={true} />
-              <FeatureItem text="Offline question bank" included={true} />
-              <FeatureItem text="Priority AI generation" included={true} />
-              <FeatureItem text="Ad-free experience" included={true} />
-              <FeatureItem text="Detailed analytics" included={true} />
+              <FeatureItem text={t('subscription.featureAiGenerated')} included={true} />
+              <FeatureItem text={t('subscription.featureBasicAnalytics')} included={true} />
+              <FeatureItem text={t('subscription.featureDailyCurrentAffairs')} included={true} />
+              <FeatureItem text={t('subscription.featureOfflineBank')} included={true} />
+              <FeatureItem text={t('subscription.featurePriorityAi')} included={true} />
+              <FeatureItem text={t('subscription.featureAdFree')} included={true} />
+              <FeatureItem text={t('subscription.featureDetailedAnalytics')} included={true} />
             </View>
           </View>
         </View>
@@ -94,7 +96,7 @@ export function SubscriptionScreen({ navigation }: any) {
           activeOpacity={0.8}
         >
           <Text style={styles.subscribeBtnText}>
-            {isLoading ? 'Processing...' : status === 'incomplete' ? 'Complete Payment' : 'Subscribe Now — ₹199/mo'}
+            {isLoading ? t('subscription.processing') : status === 'incomplete' ? t('subscription.completePayment') : t('subscription.subscribeNow')}
           </Text>
         </TouchableOpacity>
       )}
@@ -107,13 +109,13 @@ export function SubscriptionScreen({ navigation }: any) {
           }}
           activeOpacity={0.7}
         >
-          <Text style={styles.manageBtnText}>Manage Subscription</Text>
+          <Text style={styles.manageBtnText}>{t('subscription.manageSubscription')}</Text>
         </TouchableOpacity>
       )}
 
       {/* Terms note */}
       <Text style={[typography.tiny, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.lg }]}>
-        Cancel anytime. First month is on us — no charges until your trial ends.
+        {t('subscription.cancelAnytime')}
       </Text>
     </ScrollView>
   );

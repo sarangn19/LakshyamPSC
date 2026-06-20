@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { colors, spacing, borderRadius, fontFamily } from '../theme';
-import { typography } from '../theme/typography';
+import { useTranslation } from '../i18n/useTranslation';
 import { useCognitiveTwinStore, KnowledgeMastery } from '../store/cognitiveTwinStore';
 import { getNodesByLevel, getChildren, getNodePath, getAncestors, KnowledgeNode, getSiblings, getNode, getPrerequisites, arePrerequisitesMet } from '../data/knowledgeTree';
 import { getLearnerProfile } from '../services/learnerStage';
@@ -59,6 +59,7 @@ interface KnowledgeMapNodeCardProps {
 }
 
 function KnowledgeMapNodeCard({ node, mastery, depth, isExpanded, onToggle, onDetail, childCount, isLastChild }: KnowledgeMapNodeCardProps) {
+  const { t, typography: tx } = useTranslation();
   const state = getMasteryState(mastery);
   const { color } = getStateTheme(state);
   const hasChildren = childCount > 0;
@@ -81,7 +82,7 @@ function KnowledgeMapNodeCard({ node, mastery, depth, isExpanded, onToggle, onDe
             <View style={styles.nodeNameRow}>
               <View style={[styles.masteryDotSm, { backgroundColor: color }]} />
               <Text
-                style={[typography.bodySmall, { color: mastery.attempts > 0 ? colors.text : colors.textTertiary, fontWeight: '600' }]}
+                style={[tx.bodySmall, { color: mastery.attempts > 0 ? colors.text : colors.textTertiary, fontWeight: '600' }]}
                 numberOfLines={1}
               >
                 {node.name}
@@ -102,18 +103,18 @@ function KnowledgeMapNodeCard({ node, mastery, depth, isExpanded, onToggle, onDe
           <View style={styles.nodeCardMeta}>
             <Badge label={state} color={color} />
             {masteryVal !== null && (
-              <Text style={[typography.tiny, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
+              <Text style={[tx.tiny, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
                 {masteryVal}% · {mastery.attempts}q
               </Text>
             )}
             {masteryVal === null && (
-              <Text style={[typography.tiny, { color: colors.textTertiary, marginLeft: spacing.sm }]}>
-                Not attempted
+              <Text style={[tx.tiny, { color: colors.textTertiary, marginLeft: spacing.sm }]}>
+                {t('knowledgeMap.notAttempted')}
               </Text>
             )}
             {hasChildren && (
-              <Text style={[typography.tiny, { color: colors.textMuted, marginLeft: 'auto' }]}>
-                {childCount} {childCount === 1 ? 'topic' : 'topics'}
+              <Text style={[tx.tiny, { color: colors.textMuted, marginLeft: 'auto' }]}>
+                {t('knowledgeMap.topicsCount', { count: childCount })}
               </Text>
             )}
           </View>
@@ -136,6 +137,7 @@ interface ConceptDetailPanelProps {
 }
 
 function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps) {
+  const { t, typography: tx } = useTranslation();
   const state = getMasteryState(mastery);
   const { color } = getStateTheme(state);
   const path = getNodePath(node.id);
@@ -152,8 +154,8 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
           <View style={[styles.detailIconDot, { backgroundColor: color }]} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[typography.h3, { color: colors.text }]}>{node.name}</Text>
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+          <Text style={[tx.h3, { color: colors.text }]}>{node.name}</Text>
+          <Text style={[tx.caption, { color: colors.textMuted, marginTop: 2 }]}>
             {node.level} · {path.join(' → ')}
           </Text>
         </View>
@@ -164,61 +166,61 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
 
       <View style={styles.detailRow}>
         <View style={styles.detailStat}>
-          <Text style={[typography.h2, { color }]}>{masteryVal !== null ? `${masteryVal}%` : '—'}</Text>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Mastery</Text>
+          <Text style={[tx.h2, { color }]}>{masteryVal !== null ? `${masteryVal}%` : '—'}</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('knowledgeMap.mastery')}</Text>
         </View>
         <View style={styles.detailStat}>
-          <Text style={[typography.h2, { color: colors.text }]}>{mastery.attempts || 0}</Text>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Attempts</Text>
+          <Text style={[tx.h2, { color: colors.text }]}>{mastery.attempts || 0}</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('knowledgeMap.attempts')}</Text>
         </View>
         <View style={styles.detailStat}>
-          <Text style={[typography.h2, { color: mastery.trend === 'improving' ? colors.status.strong : mastery.trend === 'declining' ? colors.status.weakArea : colors.textMuted }]}>
+          <Text style={[tx.h2, { color: mastery.trend === 'improving' ? colors.status.strong : mastery.trend === 'declining' ? colors.status.weakArea : colors.textMuted }]}>
             {mastery.trend !== 'unknown' ? mastery.trend.charAt(0).toUpperCase() + mastery.trend.slice(1) : '—'}
           </Text>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Trend</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('knowledgeMap.trend')}</Text>
         </View>
       </View>
 
       {mastery.attempts >= 2 && (
         <View style={styles.detailSection}>
-          <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '600' }]}>Score Breakdown</Text>
+          <Text style={[tx.small, { color: colors.textSecondary, fontWeight: '600' }]}>{t('knowledgeMap.scoreBreakdown')}</Text>
           <View style={styles.breakdownRow}>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Accuracy</Text>
+            <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('knowledgeMap.accuracy')}</Text>
             <View style={styles.breakdownBarBg}>
               <View style={[styles.breakdownBarFill, { width: `${mastery.accuracy}%`, backgroundColor: mastery.accuracy >= 60 ? colors.status.strong : colors.status.needsRevision }]} />
             </View>
-            <Text style={[typography.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.accuracy)}%</Text>
+            <Text style={[tx.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.accuracy)}%</Text>
           </View>
           <View style={styles.breakdownRow}>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Hesitation</Text>
+            <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('knowledgeMap.hesitation')}</Text>
             <View style={styles.breakdownBarBg}>
               <View style={[styles.breakdownBarFill, { width: `${Math.round((1 - mastery.hesitationScore) * 100)}%`, backgroundColor: mastery.hesitationScore < 0.3 ? colors.status.strong : colors.status.needsRevision }]} />
             </View>
-            <Text style={[typography.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.hesitationScore * 100)}%</Text>
+            <Text style={[tx.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.hesitationScore * 100)}%</Text>
           </View>
           <View style={styles.breakdownRow}>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Forgetting Risk</Text>
+            <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('knowledgeMap.forgettingRisk')}</Text>
             <View style={styles.breakdownBarBg}>
               <View style={[styles.breakdownBarFill, { width: `${Math.round((1 - mastery.forgettingScore) * 100)}%`, backgroundColor: mastery.forgettingScore < 0.3 ? colors.status.strong : colors.status.weakArea }]} />
             </View>
-            <Text style={[typography.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.forgettingScore * 100)}%</Text>
+            <Text style={[tx.tiny, { color: colors.textSecondary }]}>{Math.round(mastery.forgettingScore * 100)}%</Text>
           </View>
         </View>
       )}
 
       {parent && (
         <View style={styles.detailSection}>
-          <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '600' }]}>Parent</Text>
+          <Text style={[tx.small, { color: colors.textSecondary, fontWeight: '600' }]}>{t('knowledgeMap.parent')}</Text>
           <View style={styles.relatedChip}>
             <View style={[styles.relDot, { backgroundColor: colors.primary }]} />
-            <Text style={[typography.bodySmall, { color: colors.text }]}>{parent.name}</Text>
+            <Text style={[tx.bodySmall, { color: colors.text }]}>{parent.name}</Text>
           </View>
         </View>
       )}
 
       {siblings.length > 0 && (
         <View style={styles.detailSection}>
-          <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '600' }]}>Siblings ({siblings.length})</Text>
+          <Text style={[tx.small, { color: colors.textSecondary, fontWeight: '600' }]}>{t('knowledgeMap.siblingsCount', { count: siblings.length })}</Text>
           <View style={styles.relatedRow}>
             {siblings.slice(0, 5).map((sib) => {
               const sibMastery = useCognitiveTwinStore.getState().masteryMap[sib.id];
@@ -227,7 +229,7 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
               return (
                 <View key={sib.id} style={styles.relatedChip}>
                   <View style={[styles.relDot, { backgroundColor: sibColor }]} />
-                  <Text style={[typography.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{sib.name}</Text>
+                  <Text style={[tx.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{sib.name}</Text>
                 </View>
               );
             })}
@@ -242,8 +244,8 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
         const prereqCheck = arePrerequisitesMet(node.id, mm, 60);
         return (
           <View style={styles.detailSection}>
-            <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '600' }]}>
-              Prerequisites {prereqCheck.met ? '✓' : `(${prereqCheck.unmet.length} unmet)`}
+            <Text style={[tx.small, { color: colors.textSecondary, fontWeight: '600' }]}>
+              {prereqCheck.met ? t('knowledgeMap.prerequisitesMet') : t('knowledgeMap.prerequisitesUnmet', { count: prereqCheck.unmet.length })}
             </Text>
             <View style={styles.relatedRow}>
               {prereqs.map((p) => {
@@ -253,14 +255,14 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
                 return (
                   <View key={p.id} style={styles.relatedChip}>
                     <View style={[styles.relDot, { backgroundColor: pColor }]} />
-                    <Text style={[typography.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{p.name}</Text>
+                    <Text style={[tx.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{p.name}</Text>
                   </View>
                 );
               })}
             </View>
             {!prereqCheck.met && (
-              <Text style={[typography.tiny, { color: colors.status.weakArea, marginTop: 2 }]}>
-                Master {prereqCheck.unmet.join(', ')} first ({'>'}60%)
+              <Text style={[tx.tiny, { color: colors.status.weakArea, marginTop: 2 }]}>
+                {t('knowledgeMap.masterFirst', { names: prereqCheck.unmet.join(', ') })}
               </Text>
             )}
           </View>
@@ -269,7 +271,7 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
 
       {children.length > 0 && (
         <View style={styles.detailSection}>
-          <Text style={[typography.small, { color: colors.textSecondary, fontWeight: '600' }]}>Children ({children.length})</Text>
+          <Text style={[tx.small, { color: colors.textSecondary, fontWeight: '600' }]}>{t('knowledgeMap.childrenCount', { count: children.length })}</Text>
           <View style={styles.relatedRow}>
             {children.map((child) => {
               const childMastery = useCognitiveTwinStore.getState().masteryMap[child.id];
@@ -278,7 +280,7 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
               return (
                 <View key={child.id} style={styles.relatedChip}>
                   <View style={[styles.relDot, { backgroundColor: childColor }]} />
-                  <Text style={[typography.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{child.name}</Text>
+                  <Text style={[tx.tiny, { color: colors.textSecondary }]} numberOfLines={1}>{child.name}</Text>
                 </View>
               );
             })}
@@ -290,6 +292,7 @@ function ConceptDetailPanel({ node, mastery, onClose }: ConceptDetailPanelProps)
 }
 
 export function KnowledgeMapScreen() {
+  const { t, typography: tx } = useTranslation();
   const masteryMap = useCognitiveTwinStore((s) => s.masteryMap);
   const subjects = getNodesByLevel('subject');
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -331,7 +334,7 @@ export function KnowledgeMapScreen() {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <View style={[styles.masteryDot, { backgroundColor: color }]} />
-                <Text style={[typography.h3, { color: colors.text }]}>{subject.name}</Text>
+                <Text style={[tx.h3, { color: colors.text }]}>{subject.name}</Text>
                 <Badge label={state} color={color} />
               </View>
             </View>
@@ -346,13 +349,13 @@ export function KnowledgeMapScreen() {
             {mastery.attempts > 0 && (
               <>
                 <Text style={{ fontSize: 28, fontWeight: '700', color, fontFamily: fontFamily.bodyBold }}>{mastery.masteryScore}%</Text>
-                <Text style={[typography.tiny, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
-                  {mastery.attempts} questions
+                <Text style={[tx.tiny, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
+                  {t('knowledgeMap.questionsCount', { count: mastery.attempts })}
                 </Text>
               </>
             )}
             {mastery.attempts === 0 && (
-              <Text style={[typography.caption, { color: colors.textTertiary }]}>No practice data yet</Text>
+              <Text style={[tx.caption, { color: colors.textTertiary }]}>{t('knowledgeMap.noPracticeData')}</Text>
             )}
             {mastery.attempts >= 2 && (
               <View style={{ flex: 1, marginLeft: 'auto', maxWidth: 120 }}>
@@ -406,25 +409,28 @@ export function KnowledgeMapScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={[typography.h2, { color: colors.text }]}>Knowledge Map</Text>
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
+            <Text style={[tx.h2, { color: colors.text }]}>{t('knowledgeMap.title')}</Text>
+            <Text style={[tx.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>
               {isNewUser
-                ? 'Start practicing to build your knowledge map'
-                : `${learnerProfile.stage} stage · ${learnerProfile.totalQuestions} questions · ${learnerProfile.sessionCount} sessions`}
+                ? t('knowledgeMap.startPracticing')
+                : t('knowledgeMap.subtitleWithData', { stage: learnerProfile.stage, questions: learnerProfile.totalQuestions, sessions: learnerProfile.sessionCount })}
             </Text>
           </View>
           <View style={[styles.stagePill, { backgroundColor: colors.primary + '15' }]}>
-            <Text style={[typography.tiny, { color: colors.primary, fontWeight: '600', textTransform: 'capitalize' }]}>{learnerProfile.stage}</Text>
+            <Text style={[tx.tiny, { color: colors.primary, fontWeight: '600', textTransform: 'capitalize' }]}>{learnerProfile.stage}</Text>
           </View>
         </View>
 
         <View style={styles.legendRow}>
-          {(['strong', 'improving', 'weak', 'at_risk', 'unknown'] as MasteryState[]).map((s) => (
+          {(['strong', 'improving', 'weak', 'at_risk', 'unknown'] as MasteryState[]).map((s) => {
+            const stateKey = s === 'at_risk' ? 'atRisk' : s === 'unknown' ? 'notPracticed' : s;
+            return (
             <View key={s} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: getStateColor(s) }]} />
-              <Text style={[typography.tiny, { color: colors.textSecondary }]}>{getStateLabel(s)}</Text>
+              <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t(`knowledgeMap.state.${stateKey}`)}</Text>
             </View>
-          ))}
+            );
+          })}
         </View>
 
         <View style={styles.mapContainer}>
@@ -434,8 +440,8 @@ export function KnowledgeMapScreen() {
         {isNewUser && (
           <View style={styles.emptyHint}>
             <Text style={{ fontSize: 28, marginBottom: spacing.sm }}>🗺️</Text>
-            <Text style={[typography.body, { color: colors.textMuted, textAlign: 'center' }]}>
-              Your knowledge map will fill in as you practice. Each subject, topic, and subtopic gets a color based on your mastery level.
+            <Text style={[tx.body, { color: colors.textMuted, textAlign: 'center' }]}>
+              {t('knowledgeMap.emptyHint')}
             </Text>
           </View>
         )}

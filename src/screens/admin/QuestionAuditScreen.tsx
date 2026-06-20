@@ -3,8 +3,8 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Alert,
 } from 'react-native';
 import { colors, spacing, borderRadius } from '../../theme';
-import { typography } from '../../theme/typography';
 import { fetchAuditLogs } from '../../services/adminDataService';
+import { useTranslation } from '../../i18n/useTranslation';
 import { AuditEntry } from '../../services/questionAudit';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function QuestionAuditScreen() {
+  const { t, typography: tx } = useTranslation();
   const [auditQueue, setAuditQueue] = useState<AuditEntry[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const [filter, setFilter] = useState<AuditEntry['status'] | 'all'>('pending');
@@ -93,35 +94,35 @@ export function QuestionAuditScreen() {
       const recent = entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 10);
       sample.push(...recent);
     });
-    Alert.alert('Sample Export', `${sample.length} questions sampled for today (${today}). Check console.`);
+    Alert.alert(t('questionAudit.sampleExportTitle'), t('questionAudit.sampleExportMessage', { count: sample.length, date: today }));
     console.log('[AUDIT] daily sample:', today, sample.map((s) => ({ id: s.id, subject: s.subject, topic: s.topic, status: s.status })));
   };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={[typography.h2, { color: colors.text, flex: 1 }]}>Question Audit</Text>
+        <Text style={[tx.h2, { color: colors.text, flex: 1 }]}>{t('questionAudit.title')}</Text>
         <TouchableOpacity style={styles.sampleBtn} onPress={exportSampled}>
-          <Text style={[typography.bodyBold, { color: '#fff' }]}>Sample Today</Text>
+          <Text style={[tx.bodyBold, { color: '#fff' }]}>{t('questionAudit.sampleToday')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.metricsRow}>
         <View style={styles.metricCard}>
-          <Text style={[typography.h3, { color: colors.success }]}>{metrics.approvedRate}%</Text>
-          <Text style={[typography.small, { color: colors.textSecondary }]}>Approved</Text>
+          <Text style={[tx.h3, { color: colors.success }]}>{metrics.approvedRate}%</Text>
+          <Text style={[tx.small, { color: colors.textSecondary }]}>{t('questionAudit.approved')}</Text>
         </View>
         <View style={styles.metricCard}>
-          <Text style={[typography.h3, { color: colors.error }]}>{metrics.rejectedRate}%</Text>
-          <Text style={[typography.small, { color: colors.textSecondary }]}>Rejected</Text>
+          <Text style={[tx.h3, { color: colors.error }]}>{metrics.rejectedRate}%</Text>
+          <Text style={[tx.small, { color: colors.textSecondary }]}>{t('questionAudit.rejected')}</Text>
         </View>
         <View style={styles.metricCard}>
-          <Text style={[typography.h3, { color: colors.primary }]}>{metrics.editedRate}%</Text>
-          <Text style={[typography.small, { color: colors.textSecondary }]}>Edited</Text>
+          <Text style={[tx.h3, { color: colors.primary }]}>{metrics.editedRate}%</Text>
+          <Text style={[tx.small, { color: colors.textSecondary }]}>{t('questionAudit.edited')}</Text>
         </View>
         <View style={styles.metricCard}>
-          <Text style={[typography.h3, { color: '#6B7280' }]}>{metrics.disabledRate}%</Text>
-          <Text style={[typography.small, { color: colors.textSecondary }]}>Disabled</Text>
+          <Text style={[tx.h3, { color: '#6B7280' }]}>{metrics.disabledRate}%</Text>
+          <Text style={[tx.small, { color: colors.textSecondary }]}>{t('questionAudit.disabled')}</Text>
         </View>
       </View>
 
@@ -133,7 +134,7 @@ export function QuestionAuditScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)} ({f === 'all' ? auditQueue.length : auditQueue.filter((e) => e.status === f).length})
+              {t(`questionAudit.${f === 'all' ? 'all' : f}`)} ({f === 'all' ? auditQueue.length : auditQueue.filter((e) => e.status === f).length})
             </Text>
           </TouchableOpacity>
         ))}
@@ -141,10 +142,10 @@ export function QuestionAuditScreen() {
 
       {metrics.problematicSubjects.length > 0 && (
         <View style={styles.problemSection}>
-          <Text style={[typography.small, { color: colors.error, fontWeight: '700' }]}>Most Rejected Subjects:</Text>
+          <Text style={[tx.small, { color: colors.error, fontWeight: '700' }]}>{t('questionAudit.mostRejectedSubjects')}</Text>
           {metrics.problematicSubjects.map((s) => (
-            <Text key={s.subject} style={[typography.small, { color: colors.textSecondary }]}>
-              {s.subject}: {s.rejectCount} rejections
+            <Text key={s.subject} style={[tx.small, { color: colors.textSecondary }]}>
+              {t('questionAudit.rejectedSubject', { subject: s.subject, count: s.rejectCount })}
             </Text>
           ))}
         </View>
@@ -153,16 +154,16 @@ export function QuestionAuditScreen() {
       {current ? (
         <View style={styles.detailCard}>
           <View style={styles.detailHeader}>
-            <Text style={[typography.h4, { color: colors.text, flex: 1 }]}>Review Question</Text>
+            <Text style={[tx.h4, { color: colors.text, flex: 1 }]}>{t('questionAudit.reviewQuestion')}</Text>
             <TouchableOpacity onPress={() => { setSelected(null); setEditing(false); }}>
-              <Text style={[typography.bodyBold, { color: colors.primary }]}>Back</Text>
+              <Text style={[tx.bodyBold, { color: colors.primary }]}>{t('questionAudit.back')}</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.metaRow}>
             <Text style={styles.metaLabel}>{current.subject} › {current.topic}</Text>
             <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[current.status] + '20' }]}>
-              <Text style={[styles.statusText, { color: STATUS_COLORS[current.status] }]}>{current.status}</Text>
+              <Text style={[styles.statusText, { color: STATUS_COLORS[current.status] }]}>{t(`questionAudit.${current.status}`)}</Text>
             </View>
           </View>
 
@@ -174,7 +175,7 @@ export function QuestionAuditScreen() {
               multiline
             />
           ) : (
-            <Text style={[typography.body, { color: colors.text, marginBottom: spacing.md }]}>
+            <Text style={[tx.body, { color: colors.text, marginBottom: spacing.md }]}>
               {current.questionText}
             </Text>
           )}
@@ -188,7 +189,7 @@ export function QuestionAuditScreen() {
                   i === current.correctAnswer && styles.optionCorrect,
                 ]}
               >
-                <Text style={[typography.small, {
+                <Text style={[tx.small, {
                   color: i === current.correctAnswer ? colors.success : colors.text,
                   fontWeight: i === current.correctAnswer ? '700' : '400',
                 }]}>
@@ -200,27 +201,27 @@ export function QuestionAuditScreen() {
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Explanation:</Text>
-            <Text style={[typography.small, { color: colors.textSecondary }]}>{current.explanation}</Text>
+            <Text style={styles.infoLabel}>{t('questionAudit.explanation')}</Text>
+            <Text style={[tx.small, { color: colors.textSecondary }]}>{current.explanation}</Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Source: {current.generationSource}</Text>
-            <Text style={[typography.small, { color: colors.textMuted }]}>Alignment: {current.alignmentScore?.toFixed(2)} | Confidence: {current.confidenceScore}</Text>
+            <Text style={styles.infoLabel}>{t('questionAudit.source', { source: current.generationSource })}</Text>
+            <Text style={[tx.small, { color: colors.textMuted }]}>{t('questionAudit.alignmentConfidence', { alignment: current.alignmentScore?.toFixed(2), confidence: current.confidenceScore })}</Text>
           </View>
 
           {current.reportCount > 0 && (
             <View style={styles.infoRow}>
-              <Text style={[styles.infoLabel, { color: colors.error }]}>{current.reportCount} report(s)</Text>
+              <Text style={[styles.infoLabel, { color: colors.error }]}>{t('questionAudit.reportCount', { count: current.reportCount })}</Text>
             </View>
           )}
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.success }]} onPress={() => updateStatus(current.id, 'approved')}>
-              <Text style={styles.actionText}>Approve</Text>
+              <Text style={styles.actionText}>{t('questionAudit.approve')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.error }]} onPress={() => updateStatus(current.id, 'rejected')}>
-              <Text style={styles.actionText}>Reject</Text>
+              <Text style={styles.actionText}>{t('questionAudit.reject')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: colors.primary }]}
@@ -237,13 +238,13 @@ export function QuestionAuditScreen() {
                 }
               }}
             >
-              <Text style={styles.actionText}>{editing ? 'Save Edit' : 'Edit'}</Text>
+              <Text style={styles.actionText}>{editing ? t('questionAudit.saveEdit') : t('questionAudit.edit')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#6B7280' }]} onPress={() => updateStatus(current.id, 'disabled')}>
-              <Text style={styles.actionText}>Disable</Text>
+              <Text style={styles.actionText}>{t('questionAudit.disable')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#8B5CF6' }]} onPress={() => updateStatus(current.id, 'flagged')}>
-              <Text style={styles.actionText}>Flag</Text>
+              <Text style={styles.actionText}>{t('questionAudit.flag')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -251,25 +252,25 @@ export function QuestionAuditScreen() {
         <>
           {filtered.length === 0 ? (
             <View style={styles.emptyCard}>
-              <Text style={[typography.body, { color: colors.textSecondary }]}>No questions in this queue</Text>
+              <Text style={[tx.body, { color: colors.textSecondary }]}>{t('questionAudit.emptyQueue')}</Text>
             </View>
           ) : (
             filtered.map((entry) => (
               <TouchableOpacity key={entry.id} style={styles.entryCard} onPress={() => { setSelected(entry.id); setEditing(false); }}>
                 <View style={styles.entryHeader}>
-                  <Text style={[typography.body, { flex: 1, color: colors.text }]} numberOfLines={2}>{entry.questionText}</Text>
+                  <Text style={[tx.body, { flex: 1, color: colors.text }]} numberOfLines={2}>{entry.questionText}</Text>
                   <View style={[styles.statusBadge, { backgroundColor: STATUS_COLORS[entry.status] + '20' }]}>
-                    <Text style={[styles.statusText, { color: STATUS_COLORS[entry.status] }]}>{entry.status}</Text>
+                    <Text style={[styles.statusText, { color: STATUS_COLORS[entry.status] }]}>{t(`questionAudit.${entry.status}`)}</Text>
                   </View>
                 </View>
-                <Text style={[typography.small, { color: colors.textSecondary, marginTop: 4 }]}>
+                <Text style={[tx.small, { color: colors.textSecondary, marginTop: 4 }]}>
                   {entry.subject} › {entry.topic} | {entry.generationSource}
                 </Text>
                 <View style={styles.entryMeta}>
-                  <Text style={[typography.small, { color: colors.textMuted }]}>C: {entry.confidenceScore}</Text>
-                  <Text style={[typography.small, { color: colors.textMuted }]}>A: {entry.alignmentScore?.toFixed(2)}</Text>
-                  {entry.reportCount > 0 && <Text style={[typography.small, { color: colors.error }]}>{entry.reportCount} reports</Text>}
-                  <Text style={[typography.small, { color: colors.textMuted }]}>{entry.createdAt.slice(0, 10)}</Text>
+                  <Text style={[tx.small, { color: colors.textMuted }]}>{t('questionAudit.confidence', { score: entry.confidenceScore })}</Text>
+                  <Text style={[tx.small, { color: colors.textMuted }]}>{t('questionAudit.alignment', { score: entry.alignmentScore?.toFixed(2) })}</Text>
+                  {entry.reportCount > 0 && <Text style={[tx.small, { color: colors.error }]}>{t('questionAudit.reportCount', { count: entry.reportCount })}</Text>}
+                  <Text style={[tx.small, { color: colors.textMuted }]}>{entry.createdAt.slice(0, 10)}</Text>
                 </View>
               </TouchableOpacity>
             ))

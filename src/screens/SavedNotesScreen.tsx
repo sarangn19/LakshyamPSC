@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Platform, Animated } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fontFamily, spacing, radius, typography } from '../theme';
+import { colors, fontFamily, spacing, radius } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
+import { useTranslation } from '../i18n/useTranslation';
 
 const SearchIcon = () => (
   <Svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -45,6 +46,7 @@ const EmptyNotesIcon = () => (
 export function SavedNotesScreen({ navigation }: any) {
   const notes = useKnowledgeStore((s) => s.notes);
   const addNote = useKnowledgeStore((s) => s.addNote);
+  const { t, typography: tx } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTopic, setSelectedTopic] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -101,7 +103,7 @@ export function SavedNotesScreen({ navigation }: any) {
       const Audio = await import('expo-av').then(m => m.Audio);
       const { granted } = await Audio.requestPermissionsAsync();
       if (!granted) {
-        Alert.alert('Permission required', 'Microphone permission is needed to record voice notes.');
+        Alert.alert(t('savedNotes.permissionRequired'), t('savedNotes.microphonePermissionNeeded'));
         return;
       }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
@@ -112,7 +114,7 @@ export function SavedNotesScreen({ navigation }: any) {
       setIsRecording(true);
     } catch {
       setIsRecording(false);
-      Alert.alert('Not available', 'Voice recording is not supported in this environment.');
+      Alert.alert(t('savedNotes.notAvailable'), t('savedNotes.voiceRecordingNotSupported'));
     }
   };
 
@@ -121,9 +123,9 @@ export function SavedNotesScreen({ navigation }: any) {
     const now = new Date();
     const diff = now.getTime() - d.getTime();
     const days = Math.floor(diff / 86400000);
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Yesterday';
-    if (days < 7) return `${days}d ago`;
+    if (days === 0) return t('savedNotes.today');
+    if (days === 1) return t('savedNotes.yesterday');
+    if (days < 7) return t('savedNotes.daysAgo', { days });
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -141,15 +143,15 @@ export function SavedNotesScreen({ navigation }: any) {
           </Svg>
         </TouchableOpacity>
         <View style={styles.headerTextWrap}>
-          <Text style={styles.headerTitle}>My Notes</Text>
-          <Text style={styles.headerSub}>{notes.length} note{notes.length !== 1 ? 's' : ''}</Text>
+          <Text style={styles.headerTitle}>{t('savedNotes.myNotes')}</Text>
+          <Text style={styles.headerSub}>{t('savedNotes.notesCount', { count: notes.length })}</Text>
         </View>
       </LinearGradient>
 
       {isRecording && (
         <View style={styles.recordingBanner}>
           <View style={styles.recordingDot} />
-          <Text style={styles.recordingBannerText}>Recording... tap the mic button to stop</Text>
+          <Text style={styles.recordingBannerText}>{t('savedNotes.recordingBanner')}</Text>
         </View>
       )}
 
@@ -160,7 +162,7 @@ export function SavedNotesScreen({ navigation }: any) {
             <TextInput
               ref={searchRef}
               style={styles.searchInput}
-              placeholder="Search notes..."
+              placeholder={t('savedNotes.searchNotes')}
               placeholderTextColor={colors.textTertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -181,7 +183,7 @@ export function SavedNotesScreen({ navigation }: any) {
               style={[styles.topicChip, selectedTopic === '' && styles.topicChipActive]}
               onPress={() => setSelectedTopic('')}
             >
-              <Text style={[styles.topicChipText, selectedTopic === '' && styles.topicChipTextActive]}>All</Text>
+              <Text style={[styles.topicChipText, selectedTopic === '' && styles.topicChipTextActive]}>{t('savedNotes.all')}</Text>
             </TouchableOpacity>
             {allTopics.map((topic) => {
               const isActive = topic === selectedTopic;
@@ -222,12 +224,12 @@ export function SavedNotesScreen({ navigation }: any) {
           <View style={styles.emptyState}>
             <EmptyNotesIcon />
             <Text style={styles.emptyTitle}>
-              {searchQuery || selectedTopic ? 'No matching notes' : 'No notes yet'}
+              {searchQuery || selectedTopic ? t('savedNotes.noMatchingNotes') : t('savedNotes.noNotesYet')}
             </Text>
             <Text style={styles.emptySub}>
               {searchQuery || selectedTopic
-                ? 'Try a different search or filter'
-                : 'Tap the + button to create your first note'}
+                ? t('savedNotes.tryDifferentSearch')
+                : t('savedNotes.tapToCreateNote')}
             </Text>
           </View>
         )}
@@ -254,15 +256,15 @@ export function SavedNotesScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={closeCreateModal}>
           <Animated.View style={[styles.modalSheet, { transform: [{ translateY: createSlideAnim }] }]}>
             <View style={styles.modalHandle} />
-            <Text style={styles.modalTitle}>Create Note</Text>
+            <Text style={styles.modalTitle}>{t('savedNotes.createNote')}</Text>
 
             <TouchableOpacity style={styles.optionBtn} onPress={() => { closeCreateModal(); setTimeout(() => navigation.navigate('CreateNote'), 220); }}>
               <View style={[styles.optionIcon, { backgroundColor: `${BRAND_YELLOW}15` }]}>
                 <TextNoteIcon />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>Type a note</Text>
-                <Text style={styles.optionSub}>Write your note manually</Text>
+                <Text style={styles.optionTitle}>{t('savedNotes.typeANote')}</Text>
+                <Text style={styles.optionSub}>{t('savedNotes.writeNoteManually')}</Text>
               </View>
             </TouchableOpacity>
 
@@ -271,13 +273,13 @@ export function SavedNotesScreen({ navigation }: any) {
                 <VoiceIcon />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>{isRecording ? 'Recording... tap to stop' : 'Voice note'}</Text>
-                <Text style={styles.optionSub}>{isRecording ? 'Recording in progress' : 'Record a voice note'}</Text>
+                <Text style={styles.optionTitle}>{isRecording ? t('savedNotes.recordingTapToStop') : t('savedNotes.voiceNote')}</Text>
+                <Text style={styles.optionSub}>{isRecording ? t('savedNotes.recordingInProgress') : t('savedNotes.recordVoiceNote')}</Text>
               </View>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.cancelBtn} onPress={closeCreateModal}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </TouchableOpacity>

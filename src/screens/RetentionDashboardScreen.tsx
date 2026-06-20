@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { colors, spacing, fontFamily } from '../theme';
-import { typography } from '../theme/typography';
 import { useCognitiveTwinStore } from '../store/cognitiveTwinStore';
+import { useTranslation } from '../i18n/useTranslation';
 import { usePerformanceStore } from '../store/performanceStore';
 import { getDueSummary, getDueSubtopics } from '../services/spacedRepetition';
 import { computeCalibrationMetrics } from '../services/confidenceCalibration';
@@ -33,6 +33,7 @@ function Sparkline({ data, height = 24, width = 60, color = colors.primary }: { 
 }
 
 export function RetentionDashboardScreen({ navigation }: any) {
+  const { t, typography: tx } = useTranslation();
   const masteryMap = useCognitiveTwinStore((s) => s.masteryMap);
   const gapRecords = useCognitiveTwinStore((s) => s.gapRecords);
   const retentionRecords = useCognitiveTwinStore((s) => s.retentionRecords);
@@ -84,30 +85,30 @@ export function RetentionDashboardScreen({ navigation }: any) {
       {/* Summary Cards */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Due for Review</Text>
-          <Text style={[typography.h2, { color: colors.text }]}>{dueSummary.count}</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('retention.dueForReview')}</Text>
+          <Text style={[tx.h2, { color: colors.text }]}>{dueSummary.count}</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>At Risk</Text>
-          <Text style={[typography.h2, { color: colors.status.weakArea }]}>{atRiskTopics.length}</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('retention.atRisk')}</Text>
+          <Text style={[tx.h2, { color: colors.status.weakArea }]}>{atRiskTopics.length}</Text>
         </View>
         <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Calibration</Text>
-          <Text style={[typography.h2, { color: calMetrics.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea }]}>{calMetrics.totalRecords > 0 ? `${calMetrics.calibrationScore}%` : '—'}</Text>
+          <Text style={[tx.tiny, { color: colors.textSecondary }]}>{t('retention.calibration')}</Text>
+          <Text style={[tx.h2, { color: calMetrics.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea }]}>{calMetrics.totalRecords > 0 ? `${calMetrics.calibrationScore}%` : '—'}</Text>
         </View>
       </View>
 
       {/* Retention Heat Map */}
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Retention Heat Map</Text>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('retention.heatMap')}</Text>
         <View style={styles.heatTable}>
           <View style={styles.heatHeader}>
-            <Text style={[styles.heatHeaderText, { flex: 1.5 }]}>Subject</Text>
-            <Text style={styles.heatHeaderText}>7d</Text>
-            <Text style={styles.heatHeaderText}>30d</Text>
-            <Text style={styles.heatHeaderText}>90d</Text>
-            <Text style={styles.heatHeaderText}>Now</Text>
-            <Text style={[styles.heatHeaderText, { flex: 0.8 }]}>Trend</Text>
+            <Text style={[styles.heatHeaderText, { flex: 1.5 }]}>{t('retention.subject')}</Text>
+            <Text style={styles.heatHeaderText}>{t('retention.day7')}</Text>
+            <Text style={styles.heatHeaderText}>{t('retention.day30')}</Text>
+            <Text style={styles.heatHeaderText}>{t('retention.day90')}</Text>
+            <Text style={styles.heatHeaderText}>{t('retention.now')}</Text>
+            <Text style={[styles.heatHeaderText, { flex: 0.8 }]}>{t('retention.trend')}</Text>
           </View>
           {subjectRetention.map((s) => (
             <View key={s.subject} style={styles.heatRow}>
@@ -122,7 +123,7 @@ export function RetentionDashboardScreen({ navigation }: any) {
             </View>
           ))}
           {subjectRetention.length === 0 && (
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>Complete more sessions to see retention data.</Text>
+            <Text style={[tx.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>{t('retention.emptyHeatmap')}</Text>
           )}
         </View>
       </View>
@@ -130,16 +131,16 @@ export function RetentionDashboardScreen({ navigation }: any) {
       {/* Due Subtopics */}
       {dueSubtopics.length > 0 && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Due for Review</Text>
+          <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('retention.dueSection')}</Text>
           {dueSubtopics.map((item) => (
             <View key={item.nodeId} style={styles.dueRow}>
               <View style={{ flex: 1 }}>
-                <Text style={[typography.bodySmall, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-                <Text style={[typography.tiny, { color: colors.textMuted }]}>{item.path.join(' › ')}</Text>
+                <Text style={[tx.bodySmall, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{item.path.join(' › ')}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
-                <Text style={[typography.caption, { color: item.daysOverdue > 0 ? colors.status.weakArea : colors.textSecondary }]}>{item.daysOverdue > 0 ? `${item.daysOverdue}d overdue` : 'Due today'}</Text>
-                <Text style={[typography.tiny, { color: colors.textMuted }]}>Mastery: {item.masteryScore}%</Text>
+                <Text style={[tx.caption, { color: item.daysOverdue > 0 ? colors.status.weakArea : colors.textSecondary }]}>{item.daysOverdue > 0 ? t('retention.daysOverdue', { days: item.daysOverdue }) : t('retention.dueToday')}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('retention.masteryLabel', { score: item.masteryScore })}</Text>
               </View>
             </View>
           ))}
@@ -149,11 +150,11 @@ export function RetentionDashboardScreen({ navigation }: any) {
       {/* At-Risk Topics */}
       {atRiskTopics.length > 0 && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.status.weakArea, marginBottom: spacing.sm }]}>At Risk Topics</Text>
+          <Text style={[tx.h3, { color: colors.status.weakArea, marginBottom: spacing.sm }]}>{t('retention.atRiskTopics')}</Text>
           {atRiskTopics.map((r) => (
             <View key={r.gapId} style={styles.riskRow}>
-              <Text style={[typography.bodySmall, { color: colors.text, flex: 1 }]} numberOfLines={1}>{r.nodeName || r.topic}</Text>
-              <Text style={[typography.tiny, { color: colors.status.weakArea }]}>{r.retentionRate}% retention</Text>
+              <Text style={[tx.bodySmall, { color: colors.text, flex: 1 }]} numberOfLines={1}>{r.nodeName || r.topic}</Text>
+              <Text style={[tx.tiny, { color: colors.status.weakArea }]}>{t('retention.retentionPercent', { rate: r.retentionRate })}</Text>
             </View>
           ))}
         </View>

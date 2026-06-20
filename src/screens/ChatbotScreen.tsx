@@ -5,21 +5,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
+import { useTranslation } from '../i18n/useTranslation';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y3V0Y3FsaHBldWRtYWVid21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzAzNTcsImV4cCI6MjA5NzIwNjM1N30.2s-MMZa-gjJdOBGxOzXKftT-ZA0k6hfj3IoEm0gqaKI';
-
-const suggestions = [
-  { text: 'Make a note on Indian Freedom Struggle' },
-  { text: 'Summarise the Preamble of Indian Constitution' },
-  { text: 'Create a study note on key Geography facts' },
-  { text: 'Note down this week\'s important current affairs' },
-];
-
-const welcomeMessage = {
-  role: 'ai' as const,
-  text: "നമസ്കാരം! 👋 I'm your Lakshyam AI Tutor.\n\nI'll calibrate explanations to your exam level.\n\nI can help you with:\n• Explaining Kerala PSC topics\n• Creating study notes\n• Answering doubts\n• Simplifying difficult concepts\n• മലയാളത്തിലും ചോദിക്കാം\n\nWhat would you like to learn today?",
-};
 
 type Message = {
   role: 'ai' | 'user';
@@ -27,6 +16,13 @@ type Message = {
 };
 
 export function ChatbotScreen({ navigation }: any) {
+  const { t } = useTranslation();
+  const suggestions = [
+    { text: t('chatbot.suggestion1') },
+    { text: t('chatbot.suggestion2') },
+    { text: t('chatbot.suggestion3') },
+    { text: t('chatbot.suggestion4') },
+  ];
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
@@ -73,7 +69,7 @@ export function ChatbotScreen({ navigation }: any) {
   }, [messages.length]);
 
   async function getAIResponse(userMessage: string, history: { role: string; content: string }[]) {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return 'AI is not configured. Please check your Supabase environment variables.';
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return t('chatbot.aiNotConfigured');
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
         method: 'POST',
@@ -81,9 +77,9 @@ export function ChatbotScreen({ navigation }: any) {
         body: JSON.stringify({ message: userMessage, history, examType: 'LDC' }),
       });
       const data = await res.json();
-      return data.reply || 'Sorry, I could not generate a response.';
+      return data.reply || t('chatbot.noResponse');
     } catch {
-      return 'Network error. Please check your connection and try again.';
+      return t('chatbot.networkError');
     }
   }
 
@@ -95,7 +91,7 @@ export function ChatbotScreen({ navigation }: any) {
 
     if (!chatStarted) {
       setChatStarted(true);
-      setMessages([welcomeMessage, userMsg]);
+      setMessages([{ role: 'ai' as const, text: t('chatbot.welcomeMessage') }, userMsg]);
       setIsLoading(true);
       Animated.parallel([
         Animated.timing(greetingOpacity, { toValue: 0, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
@@ -132,7 +128,7 @@ export function ChatbotScreen({ navigation }: any) {
   function handleSaveNote(text: string) {
     const cleaned = cleanContent(text);
     const firstLine = cleaned.split('\n')[0].trim();
-    setSaveTitle(firstLine.slice(0, 60) || 'AI Tutor Response');
+    setSaveTitle(firstLine.slice(0, 60) || t('chatbot.noteTitleFallback'));
     setSaveContent(cleaned);
     setShowSaveModal(true);
   }
@@ -170,7 +166,7 @@ export function ChatbotScreen({ navigation }: any) {
     try {
       const ImagePicker = await import('expo-image-picker');
       const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!granted) { Alert.alert('Permission required', 'Gallery permission is needed.'); return; }
+      if (!granted) { Alert.alert(t('chatbot.permissionRequired'), t('chatbot.galleryPermissionNeeded')); return; }
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 0.8 });
       if (!result.canceled && result.assets[0]) {
         useKnowledgeStore.getState().addNote({
@@ -179,9 +175,9 @@ export function ChatbotScreen({ navigation }: any) {
           content: result.assets[0].uri, type: 'ocr', subject: 'General', topicIds: [],
           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), tags: ['image', 'chat'],
         });
-        Alert.alert('Saved', 'Image saved as a note.');
+        Alert.alert(t('chatbot.saved'), t('chatbot.imageSaved'));
       }
-    } catch { Alert.alert('Not available', 'Image picker not supported here.'); }
+    } catch { Alert.alert(t('chatbot.notAvailable'), t('chatbot.imagePickerNotSupported')); }
   }
 
   async function handleCaptureImage() {
@@ -189,7 +185,7 @@ export function ChatbotScreen({ navigation }: any) {
     try {
       const ImagePicker = await import('expo-image-picker');
       const { granted } = await ImagePicker.requestCameraPermissionsAsync();
-      if (!granted) { Alert.alert('Permission required', 'Camera permission is needed.'); return; }
+      if (!granted) { Alert.alert(t('chatbot.permissionRequired'), t('chatbot.cameraPermissionNeeded')); return; }
       const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
       if (!result.canceled && result.assets[0]) {
         useKnowledgeStore.getState().addNote({
@@ -198,9 +194,9 @@ export function ChatbotScreen({ navigation }: any) {
           content: result.assets[0].uri, type: 'ocr', subject: 'General', topicIds: [],
           createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), tags: ['image', 'chat'],
         });
-        Alert.alert('Saved', 'Photo saved as a note.');
+        Alert.alert(t('chatbot.saved'), t('chatbot.photoSaved'));
       }
-    } catch { Alert.alert('Not available', 'Camera not supported here.'); }
+    } catch { Alert.alert(t('chatbot.notAvailable'), t('chatbot.cameraNotSupported')); }
   }
 
   let speechRecognition: any = null;
@@ -208,7 +204,7 @@ export function ChatbotScreen({ navigation }: any) {
   function startListening() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      Alert.alert('Not available', 'Speech recognition is not supported on this device.');
+      Alert.alert(t('chatbot.notAvailable'), t('chatbot.speechNotSupported'));
       return;
     }
     speechRecognition = new SR();
@@ -230,7 +226,7 @@ export function ChatbotScreen({ navigation }: any) {
     speechRecognition.onerror = () => {
       setIsListening(false);
       speechRecognition = null;
-      Alert.alert('Error', 'Speech recognition failed. Please try again.');
+      Alert.alert(t('common.error'), t('chatbot.speechFailed'));
     };
 
     speechRecognition.onend = () => {
@@ -273,8 +269,8 @@ export function ChatbotScreen({ navigation }: any) {
           </Svg>
         </TouchableOpacity>
         <View style={styles.headerInfo}>
-          <Text style={styles.headerTitle}>AI Tutor</Text>
-          <Text style={styles.headerSubtitle}>Lakshyam PSC</Text>
+          <Text style={styles.headerTitle}>{t('chatbot.title')}</Text>
+          <Text style={styles.headerSubtitle}>{t('chatbot.headerSubtitle')}</Text>
         </View>
       </LinearGradient>
 
@@ -282,7 +278,7 @@ export function ChatbotScreen({ navigation }: any) {
         {isListening && (
           <View style={styles.recordingBanner}>
             <View style={styles.recordingDot} />
-            <Text style={styles.recordingBannerText}>Listening... tap mic to stop</Text>
+            <Text style={styles.recordingBannerText}>{t('chatbot.recordingBanner')}</Text>
           </View>
         )}
         {/* Chat conversation */}
@@ -306,7 +302,7 @@ export function ChatbotScreen({ navigation }: any) {
                   <Text style={msg.role === 'user' ? styles.userBubbleText : styles.bubbleText}>{sanitizeText(msg.text)}</Text>
                   {msg.role === 'ai' && (
                     <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
-                      <Text style={styles.saveNoteText}>Save as note</Text>
+                      <Text style={styles.saveNoteText}>{t('chatbot.saveAsNote')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -331,7 +327,7 @@ export function ChatbotScreen({ navigation }: any) {
             pointerEvents: chatStarted ? 'none' : 'auto',
           }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-              <Animated.Text style={[styles.greeting, { opacity: greetingAnim, transform: [{ translateY: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>Hi, what would you like to learn today?</Animated.Text>
+              <Animated.Text style={[styles.greeting, { opacity: greetingAnim, transform: [{ translateY: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>{t('chatbot.greeting')}</Animated.Text>
               <View style={styles.chipsContainer}>
                 {suggestions.map((item, i) => (
                   <Animated.View key={i} style={{ opacity: chipAnims[i], transform: [{ translateY: chipAnims[i].interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }}>
@@ -352,7 +348,7 @@ export function ChatbotScreen({ navigation }: any) {
           <ScrollView style={styles.modalCardOuterScroll} contentContainerStyle={styles.modalCardScrollContent} keyboardShouldPersistTaps="handled">
             <View style={styles.modalCard}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Save Note</Text>
+                <Text style={styles.modalTitle}>{t('chatbot.saveNote')}</Text>
                 <TouchableOpacity style={styles.modalClose} onPress={() => setShowSaveModal(false)}>
                   <View style={styles.modalCloseIcon}>
                     <Text style={styles.modalCloseX}>✕</Text>
@@ -361,7 +357,7 @@ export function ChatbotScreen({ navigation }: any) {
               </View>
 
               <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Title</Text>
+                <Text style={styles.modalLabel}>{t('chatbot.titleLabel')}</Text>
                 <TextInput
                   style={styles.modalInput}
                   value={saveTitle}
@@ -370,7 +366,7 @@ export function ChatbotScreen({ navigation }: any) {
               </View>
 
               <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Tags</Text>
+                <Text style={styles.modalLabel}>{t('chatbot.tagsLabel')}</Text>
                 <View style={styles.tagInputRow}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tagScrollContent}>
                     {saveTags.map((tag) => (
@@ -383,7 +379,7 @@ export function ChatbotScreen({ navigation }: any) {
                     ))}
                     <TextInput
                       style={styles.tagInputField}
-                      placeholder="Tags"
+                      placeholder={t('chatbot.tagsPlaceholder')}
                       placeholderTextColor="rgba(0,0,0,0.3)"
                       value={tagInput}
                       onChangeText={setTagInput}
@@ -395,7 +391,7 @@ export function ChatbotScreen({ navigation }: any) {
               </View>
 
               <View style={styles.modalField}>
-                <Text style={styles.modalLabel}>Content</Text>
+                <Text style={styles.modalLabel}>{t('chatbot.contentLabel')}</Text>
                 <View style={styles.modalContentArea}>
                   <ScrollView style={styles.modalContentScroll} showsVerticalScrollIndicator={true}>
                     <Text style={styles.modalContentText}>{saveContent}</Text>
@@ -407,7 +403,7 @@ export function ChatbotScreen({ navigation }: any) {
               <TouchableOpacity style={styles.modalSaveBtn} onPress={() => {
                 const note: Note = {
                   id: `note_${Date.now()}`,
-                  title: saveTitle || 'AI Tutor Response',
+                  title: saveTitle || t('chatbot.noteTitleFallback'),
                   content: saveContent,
                   type: 'text',
                   subject: saveTags[0] || 'General',
@@ -420,7 +416,7 @@ export function ChatbotScreen({ navigation }: any) {
                 setShowSaveModal(false);
                 navigation.navigate('SavedNotes');
               }}>
-                <Text style={styles.modalSaveBtnText}>Save Note</Text>
+                <Text style={styles.modalSaveBtnText}>{t('chatbot.saveNote')}</Text>
               </TouchableOpacity>
               </View>
             </View>
@@ -433,7 +429,7 @@ export function ChatbotScreen({ navigation }: any) {
         <View style={styles.composer}>
           <TextInput
             style={styles.prompt}
-            placeholder="Ask about anything..."
+            placeholder={t('chatbot.inputPlaceholder')}
             placeholderTextColor="#7f8795"
             value={inputText}
             onChangeText={setInputText}
@@ -471,7 +467,7 @@ export function ChatbotScreen({ navigation }: any) {
         <TouchableOpacity style={styles.attachOverlay} activeOpacity={1} onPress={closeAttachModal}>
           <Animated.View style={[styles.attachSheet, { transform: [{ translateY: attachSlideAnim }] }]}>
             <View style={styles.attachHandle} />
-            <Text style={styles.attachSheetTitle}>Attach</Text>
+            <Text style={styles.attachSheetTitle}>{t('chatbot.attach')}</Text>
             <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
               <View style={[styles.attachOptionIcon, { backgroundColor: '#F59E0B15' }]}>
                 <Svg width="18" height="18" viewBox="0 0 22 22" fill="none">
@@ -481,8 +477,8 @@ export function ChatbotScreen({ navigation }: any) {
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.attachOptionTitle}>Upload from gallery</Text>
-                <Text style={styles.attachOptionSub}>Choose an image from your library</Text>
+                <Text style={styles.attachOptionTitle}>{t('chatbot.uploadGallery')}</Text>
+                <Text style={styles.attachOptionSub}>{t('chatbot.uploadGallerySub')}</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.attachOption} onPress={handleCaptureImage}>
@@ -493,12 +489,12 @@ export function ChatbotScreen({ navigation }: any) {
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.attachOptionTitle}>Capture image</Text>
-                <Text style={styles.attachOptionSub}>Take a photo with your camera</Text>
+                <Text style={styles.attachOptionTitle}>{t('chatbot.captureImage')}</Text>
+                <Text style={styles.attachOptionSub}>{t('chatbot.captureImageSub')}</Text>
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.attachCancel} onPress={closeAttachModal}>
-              <Text style={styles.attachCancelText}>Cancel</Text>
+              <Text style={styles.attachCancelText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </TouchableOpacity>

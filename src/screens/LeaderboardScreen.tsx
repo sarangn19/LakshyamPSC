@@ -1,33 +1,35 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, fontFamily } from '../theme';
-import { typography } from '../theme/typography';
+import { colors, spacing } from '../theme';
+import { useTranslation } from '../i18n/useTranslation';
 import { getCurrentMonthStats, getAllTimeStats, getArchivedMonths, getMonthRemaining, MINIMUM_ATTEMPTS, MonthlyStats } from '../services/leaderboardService';
 
 function StatRow({ label, value, subtitle }: { label: string; value: string; subtitle?: string }) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   return (
     <View style={styles.statRow}>
-      <Text style={[typography.caption, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[tx.caption, { color: colors.textMuted }]}>{label}</Text>
       <View style={{ alignItems: 'flex-end' }}>
-        <Text style={[typography.h3, { color: colors.text }]}>{value}</Text>
-        {subtitle ? <Text style={[typography.tiny, { color: colors.textMuted }]}>{subtitle}</Text> : null}
+        <Text style={[tx.h3, { color: colors.text }]}>{value}</Text>
+        {subtitle ? <Text style={[tx.tiny, { color: colors.textMuted }]}>{subtitle}</Text> : null}
       </View>
     </View>
   );
 }
 
 function ArchivedMonthCard({ stats, expanded, onToggle }: { stats: MonthlyStats; expanded: boolean; onToggle: () => void }) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   const monthName = new Date(stats.year, stats.month).toLocaleString('default', { month: 'long' });
   return (
     <TouchableOpacity style={styles.archiveCard} onPress={onToggle} activeOpacity={0.7}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{monthName} {stats.year}</Text>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>#{stats.rank}</Text>
+        <Text style={[tx.body, { color: colors.text, fontWeight: '600' }]}>{monthName} {stats.year}</Text>
+        <Text style={[tx.caption, { color: colors.textMuted }]}>{t('leaderboard.rankFormat', { rank: stats.rank })}</Text>
       </View>
       {expanded && (
         <View style={{ marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm }}>
-          <StatRow label="Score" value={stats.score.toLocaleString()} />
-          <StatRow label="Accuracy" value={`${(stats.accuracy * 100).toFixed(1)}%`} subtitle={`${stats.correct} / ${stats.total} correct`} />
+          <StatRow label={t('leaderboard.score')} value={stats.score.toLocaleString()} />
+          <StatRow label={t('leaderboard.accuracy')} value={`${(stats.accuracy * 100).toFixed(1)}%`} subtitle={t('leaderboard.correctRatio', { correct: stats.correct, total: stats.total })} />
         </View>
       )}
     </TouchableOpacity>
@@ -35,6 +37,7 @@ function ArchivedMonthCard({ stats, expanded, onToggle }: { stats: MonthlyStats;
 }
 
 export function LeaderboardScreen({ navigation }: any) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   const [expandedArchive, setExpandedArchive] = useState<string | null>(null);
   const [remaining, setRemaining] = useState(getMonthRemaining());
 
@@ -52,66 +55,66 @@ export function LeaderboardScreen({ navigation }: any) {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.rankBanner}>
         <Text style={styles.rankNumber}>#{monthly.rank}</Text>
-        <Text style={styles.rankLabel}>Monthly Rank</Text>
+        <Text style={styles.rankLabel}>{t('leaderboard.monthlyRank')}</Text>
         {!eligible && (
-          <Text style={styles.rankNote}>Attempt {MINIMUM_ATTEMPTS - monthly.total} more questions to be eligible</Text>
+          <Text style={styles.rankNote}>{t('leaderboard.attemptMore', { count: MINIMUM_ATTEMPTS - monthly.total })}</Text>
         )}
       </View>
 
       <View style={styles.scoreCard}>
-        <Text style={[typography.h2, { color: colors.text, textAlign: 'center', marginBottom: spacing.md }]}>
-          {monthly.score.toLocaleString()}
-        </Text>
-        <View style={styles.scoreBreakdown}>
-          <View style={styles.scoreItem}>
-            <Text style={[typography.h4, { color: '#22C55E' }]}>{monthly.correct}</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Correct</Text>
-          </View>
-          <View style={styles.scoreItem}>
-            <Text style={[typography.h4, { color: '#EF4444' }]}>{monthly.wrong}</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Wrong</Text>
-          </View>
-          <View style={styles.scoreItem}>
-            <Text style={[typography.h4, { color: colors.text }]}>{(monthly.accuracy * 100).toFixed(1)}%</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Accuracy</Text>
-          </View>
-          <View style={styles.scoreItem}>
-            <Text style={[typography.h4, { color: colors.text }]}>{monthly.total}</Text>
-            <Text style={[typography.tiny, { color: colors.textMuted }]}>Attempted</Text>
-          </View>
-        </View>
+            <Text style={[tx.h2, { color: colors.text, textAlign: 'center', marginBottom: spacing.md }]}>
+              {monthly.score.toLocaleString()}
+            </Text>
+            <View style={styles.scoreBreakdown}>
+              <View style={styles.scoreItem}>
+                <Text style={[tx.h4, { color: '#22C55E' }]}>{monthly.correct}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.correct')}</Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={[tx.h4, { color: '#EF4444' }]}>{monthly.wrong}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.wrong')}</Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={[tx.h4, { color: colors.text }]}>{(monthly.accuracy * 100).toFixed(1)}%</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.accuracy')}</Text>
+              </View>
+              <View style={styles.scoreItem}>
+                <Text style={[tx.h4, { color: colors.text }]}>{monthly.total}</Text>
+                <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.attempted')}</Text>
+              </View>
+            </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Season Ends In</Text>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('leaderboard.seasonEndsIn')}</Text>
         <View style={styles.countdownRow}>
           <View style={styles.countdownBlock}>
             <Text style={styles.countdownNumber}>{remaining.days}</Text>
-            <Text style={styles.countdownLabel}>Days</Text>
+            <Text style={styles.countdownLabel}>{t('leaderboard.days')}</Text>
           </View>
           <Text style={styles.countdownSeparator}>:</Text>
           <View style={styles.countdownBlock}>
             <Text style={styles.countdownNumber}>{remaining.hours}</Text>
-            <Text style={styles.countdownLabel}>Hours</Text>
+            <Text style={styles.countdownLabel}>{t('leaderboard.hours')}</Text>
           </View>
         </View>
-        <Text style={[typography.tiny, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm }]}>
-          Resets on {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('default', { month: 'long', day: 'numeric' })}
+        <Text style={[tx.tiny, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm }]}>
+          {t('leaderboard.resetsOn', { date: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('default', { month: 'long', day: 'numeric' }) })}
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>All-Time Stats</Text>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('leaderboard.allTimeStats')}</Text>
         <View style={styles.statsCard}>
-          <StatRow label="Total Score" value={allTime.score.toLocaleString()} />
-          <StatRow label="Questions Attempted" value={allTime.total.toLocaleString()} />
-          <StatRow label="Overall Accuracy" value={`${(allTime.accuracy * 100).toFixed(1)}%`} />
+          <StatRow label={t('leaderboard.totalScore')} value={allTime.score.toLocaleString()} />
+          <StatRow label={t('leaderboard.questionsAttempted')} value={allTime.total.toLocaleString()} />
+          <StatRow label={t('leaderboard.overallAccuracy')} value={`${(allTime.accuracy * 100).toFixed(1)}%`} />
         </View>
       </View>
 
       {archived.length > 0 && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Previous Months</Text>
+          <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.sm }]}>{t('leaderboard.previousMonths')}</Text>
           {archived.map((s) => {
             const key = `${s.year}-${s.month}`;
             return (

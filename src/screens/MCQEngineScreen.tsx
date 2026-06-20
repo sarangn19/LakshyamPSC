@@ -7,6 +7,7 @@ import { useMCQStore, useUserStore, usePerformanceStore } from '../store';
 import { reportQuestionToBackend } from '../services/adminDataService';
 import { LoadingAnimation } from '../components/common/LoadingAnimation';
 import { getConfidenceLabel, ConfidenceLevel } from '../services/confidenceCalibration';
+import { useTranslation } from '../i18n/useTranslation';
 
 const FlagIcon = () => (
   <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -15,6 +16,7 @@ const FlagIcon = () => (
 );
 
 export function MCQEngineScreen({ route, navigation }: any) {
+  const { t, locale, setLocale, typography: tx, fontFamily } = useTranslation();
   const {
     currentQuestions, currentIndex, selectedAnswer, isAnswered, score,
     sessionActive, startDailyDrill, selectAnswer,
@@ -82,10 +84,10 @@ export function MCQEngineScreen({ route, navigation }: any) {
         >
           <Text style={styles.topBarCounter}>Q{score.total + 1}</Text>
           <TouchableOpacity onPress={() => { endSession(); navigation.goBack(); }} activeOpacity={0.7}>
-            <Text style={styles.endLink}>End practice</Text>
+            <Text style={styles.endLink}>{t('mcqEngine.endPractice')}</Text>
           </TouchableOpacity>
         </LinearGradient>
-        <LoadingAnimation message="Generating question..." subMessage="Please wait while AI prepares your question" />
+        <LoadingAnimation message={t('mcqEngine.generatingQuestion')} subMessage={t('mcqEngine.generatingQuestionSub')} />
       </View>
     );
   }
@@ -105,21 +107,21 @@ export function MCQEngineScreen({ route, navigation }: any) {
         >
           <Text style={styles.topBarCounter}>Q{score.total + 1}</Text>
           <TouchableOpacity onPress={() => { endSession(); navigation.goBack(); }} activeOpacity={0.7}>
-            <Text style={styles.endLink}>End practice</Text>
+            <Text style={styles.endLink}>{t('mcqEngine.endPractice')}</Text>
           </TouchableOpacity>
         </LinearGradient>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <Text style={{ fontSize: 19, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 8 }}>
-            AI service not available
+            {t('mcqEngine.aiNotAvailable')}
           </Text>
           <Text style={{ fontSize: 14, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 24, opacity: 0.7 }}>
-            Could not generate questions. Please check your internet connection and try again later.
+            {t('mcqEngine.couldNotGenerate')}
           </Text>
           <TouchableOpacity
             onPress={() => { endSession(); navigation.goBack(); }}
             style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
           >
-            <Text style={{ color: '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>Go Back</Text>
+            <Text style={{ color: '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.goBack')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -141,7 +143,7 @@ export function MCQEngineScreen({ route, navigation }: any) {
   return (
     <View style={styles.container}>
       {generatingNext && (
-        <LoadingAnimation message="Getting next question..." size="small" />
+        <LoadingAnimation message={t('mcqEngine.gettingNextQuestion')} size="small" />
       )}
       <LinearGradient
         colors={['#FFFFFF', 'rgba(255, 255, 255, 0.317308)', 'rgba(255, 255, 255, 0)']}
@@ -158,16 +160,16 @@ export function MCQEngineScreen({ route, navigation }: any) {
                 activeOpacity={0.6}
                 style={{ padding: 4 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{useMCQStore.getState().bookmarkedQuestions.includes(current.id) ? 'Saved' : 'Save'}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{useMCQStore.getState().bookmarkedQuestions.includes(current.id) ? t('mcqEngine.saved') : t('mcqEngine.save')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => {
                   if (reported === current.id) return;
-                  Alert.alert('Report Question', 'What is the issue?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Wrong answer', onPress: () => handleReport(current.id, 'wrong_answer_key') },
-                  { text: 'Bad explanation', onPress: () => handleReport(current.id, 'bad_explanation') },
-                  { text: 'Other issue', onPress: () => handleReport(current.id, 'other') },
+                  Alert.alert(t('mcqEngine.reportQuestion'), t('mcqEngine.whatIsTheIssue'), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('mcqEngine.wrongAnswer'), onPress: () => handleReport(current.id, 'wrong_answer_key') },
+                  { text: t('mcqEngine.badExplanation'), onPress: () => handleReport(current.id, 'bad_explanation') },
+                  { text: t('mcqEngine.otherIssue'), onPress: () => handleReport(current.id, 'other') },
                 ]);
               }}
               activeOpacity={0.6}
@@ -178,13 +180,13 @@ export function MCQEngineScreen({ route, navigation }: any) {
             </>
           )}
           <TouchableOpacity onPress={handleEnd} activeOpacity={0.7}>
-            <Text style={styles.endLink}>End practice</Text>
+            <Text style={styles.endLink}>{t('mcqEngine.endPractice')}</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
       {(recommendedSubject || recommendedTopic) && (
         <View style={styles.focusBanner}>
-          <Text style={styles.focusLabel}>Recommended Focus</Text>
+          <Text style={styles.focusLabel}>{t('mcqEngine.recommendedFocus')}</Text>
           <Text style={styles.focusValue}>{recommendedTopic || recommendedSubject}</Text>
         </View>
       )}
@@ -225,24 +227,24 @@ export function MCQEngineScreen({ route, navigation }: any) {
         {isAnswered && (
           <View style={styles.explanationCard}>
             <Text style={[styles.explanationStatus, { color: isCorrect ? colors.success : colors.error }]}>
-              {isCorrect ? 'Correct' : 'Incorrect'}
+              {isCorrect ? t('mcqEngine.correct') : t('mcqEngine.incorrect')}
             </Text>
             <Text style={styles.explanationText}>{current.explanation}</Text>
             <TouchableOpacity
               style={styles.reportBtn}
               onPress={() => {
                 if (reported === current.id) return;
-                Alert.alert('Report Question', 'What is the issue?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Wrong answer', onPress: () => handleReport(current.id, 'wrong_answer_key') },
-                  { text: 'Bad explanation', onPress: () => handleReport(current.id, 'bad_explanation') },
-                  { text: 'Other issue', onPress: () => handleReport(current.id, 'other') },
+                Alert.alert(t('mcqEngine.reportQuestion'), t('mcqEngine.whatIsTheIssue'), [
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('mcqEngine.wrongAnswer'), onPress: () => handleReport(current.id, 'wrong_answer_key') },
+                  { text: t('mcqEngine.badExplanation'), onPress: () => handleReport(current.id, 'bad_explanation') },
+                  { text: t('mcqEngine.otherIssue'), onPress: () => handleReport(current.id, 'other') },
                 ]);
               }}
               activeOpacity={0.7}
             >
               <Text style={[styles.reportBtnText, reported === current.id && styles.reportBtnDone]}>
-                {reported === current.id ? 'Reported' : 'Report Incorrect Question'}
+                {reported === current.id ? t('mcqEngine.reported') : t('mcqEngine.reportIncorrect')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -250,7 +252,7 @@ export function MCQEngineScreen({ route, navigation }: any) {
 
         {isAnswered && (
           <View style={styles.confidenceSection}>
-            <Text style={styles.confidenceLabel}>How sure were you?</Text>
+            <Text style={styles.confidenceLabel}>{t('mcqEngine.howSure')}</Text>
             <View style={styles.confidenceRow}>
               {([1, 2, 3, 4] as ConfidenceLevel[]).map((level) => {
                 const active = selectedConfidence === level;
@@ -275,7 +277,7 @@ export function MCQEngineScreen({ route, navigation }: any) {
       {isAnswered && (
         <View style={styles.bottomBar}>
           <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.9}>
-            <Text style={styles.nextBtnText}>Next question</Text>
+            <Text style={styles.nextBtnText}>{t('mcqEngine.nextQuestion')}</Text>
           </TouchableOpacity>
         </View>
       )}

@@ -8,6 +8,7 @@ import { useFlashcardStore } from '../store/flashcardStore';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import { syllabus } from '../data/syllabus';
 import { LoadingAnimation } from '../components/common/LoadingAnimation';
+import { useTranslation } from '../i18n/useTranslation';
 
 
 
@@ -26,6 +27,12 @@ export function LearnScreen({ navigation }: any) {
   const [chapterSearch, setChapterSearch] = useState('');
   const [noteSearch, setNoteSearch] = useState('');
   const notes = useKnowledgeStore((s) => s.notes);
+  const { t, typography: tx } = useTranslation();
+  const sourceLabels: Record<string, string> = {
+    'Chaptewise': t('learn.chaptewise'),
+    'Saved note': t('learn.savedNote'),
+    'Paste text': t('learn.pasteText'),
+  };
   const allSubjects = syllabus.map((s) => s.name);
   const filteredSubjects = allSubjects.filter((s) =>
     s.toLowerCase().includes(chapterSearch.toLowerCase())
@@ -237,7 +244,7 @@ export function LearnScreen({ navigation }: any) {
           navigation.navigate('MCQ');
         }}>
           <View style={styles.cardLeftLarge}>
-            <Text style={styles.cardTitleLarge}>Adaptive{'\n'}Learning</Text>
+            <Text style={styles.cardTitleLarge}>{t('learn.adaptiveLearning')}</Text>
           </View>
           <Image source={require('../../icons/adaptive learning image.png')} style={styles.cardImageLarge} />
         </TouchableOpacity>
@@ -246,8 +253,8 @@ export function LearnScreen({ navigation }: any) {
         <View style={styles.cardRow}>
           <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('SavedNotes')} activeOpacity={0.7}>
             <View style={styles.smallCardContent}>
-              <Text style={styles.smallCardTitle}>Notes</Text>
-              <Text style={styles.smallCardSubtitle}>View saved{'\n'}notes</Text>
+              <Text style={styles.smallCardTitle}>{t('learn.notes')}</Text>
+              <Text style={styles.smallCardSubtitle}>{t('learn.viewSavedNotes')}</Text>
             </View>
             <View style={styles.smallCardArrow}>
               <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -257,8 +264,8 @@ export function LearnScreen({ navigation }: any) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.smallCard} onPress={() => setShowTypeModal(true)} activeOpacity={0.7}>
             <View style={styles.smallCardContent}>
-              <Text style={styles.smallCardTitle}>Practice</Text>
-              <Text style={styles.smallCardSubtitle}>Practice MCQ,{'\n'}Flashcards</Text>
+              <Text style={styles.smallCardTitle}>{t('learn.practice')}</Text>
+              <Text style={styles.smallCardSubtitle}>{t('learn.practiceMCQFlashcards')}</Text>
             </View>
             <View style={styles.smallCardArrow}>
               <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -271,8 +278,8 @@ export function LearnScreen({ navigation }: any) {
         {/* Card 4: Knowledge Map */}
         <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('Map')} activeOpacity={0.7}>
           <View style={styles.smallCardContent}>
-            <Text style={styles.smallCardTitle}>Knowledge Map</Text>
-            <Text style={styles.smallCardSubtitle}>Visual concept{'\n'}mapping</Text>
+            <Text style={styles.smallCardTitle}>{t('learn.knowledgeMap')}</Text>
+            <Text style={styles.smallCardSubtitle}>{t('learn.visualConceptMapping')}</Text>
           </View>
           <View style={styles.smallCardArrow}>
             <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -287,7 +294,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTypeModal(false)}>
           <Animated.View style={[styles.sourceModal, { transform: [{ translateY: typeSlideAnim }] }]}>
             <View style={styles.sourceModalHeader}>
-              <Text style={styles.sourceModalTitle}>Select type</Text>
+              <Text style={styles.sourceModalTitle}>{t('learn.selectType')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowTypeModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -299,13 +306,13 @@ export function LearnScreen({ navigation }: any) {
                 style={styles.sourceOption}
                 onPress={() => { setPracticeType('mcq'); setShowTypeModal(false); setShowSourceModal(true); }}
               >
-                <Text style={styles.sourceOptionText}>MCQ</Text>
+                <Text style={styles.sourceOptionText}>{t('learn.mcq')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.sourceOption}
                 onPress={() => { setPracticeType('flashcard'); setShowTypeModal(false); setShowSourceModal(true); }}
               >
-                <Text style={styles.sourceOptionText}>Flashcard</Text>
+                <Text style={styles.sourceOptionText}>{t('learn.flashcard')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -317,7 +324,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowSourceModal(false)}>
           <Animated.View style={[styles.sourceModal, { transform: [{ translateY: sourceSlideAnim }] }]}>
             <View style={styles.sourceModalHeader}>
-              <Text style={styles.sourceModalTitle}>Select a source</Text>
+              <Text style={styles.sourceModalTitle}>{t('learn.selectSource')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowSourceModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -327,7 +334,7 @@ export function LearnScreen({ navigation }: any) {
             <View style={styles.sourceList}>
               {sources.map((source) => (
                 <TouchableOpacity key={source} style={styles.sourceOption} onPress={() => handleSourceSelect(source)}>
-                  <Text style={styles.sourceOptionText}>{source}</Text>
+                  <Text style={styles.sourceOptionText}>{sourceLabels[source]}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -340,7 +347,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowChapterModal(false)}>
           <Animated.View style={[styles.selectionModal, { transform: [{ translateY: chapterSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
-              <Text style={styles.selectionModalTitle}>Select a chapter</Text>
+              <Text style={styles.selectionModalTitle}>{t('learn.selectChapter')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowChapterModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -351,7 +358,7 @@ export function LearnScreen({ navigation }: any) {
             <View style={styles.searchRow}>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search"
+                placeholder={t('learn.search')}
                 placeholderTextColor="rgba(0,0,0,0.5)"
                 value={chapterSearch}
                 onChangeText={setChapterSearch}
@@ -395,7 +402,7 @@ export function LearnScreen({ navigation }: any) {
                 onPress={handleContinueChapter}
                 disabled={selectedChapter === null}
               >
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>{t('learn.continue')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -407,7 +414,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowNoteModal(false)}>
           <Animated.View style={[styles.selectionModal, { transform: [{ translateY: noteSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
-              <Text style={styles.selectionModalTitle}>Select a note</Text>
+              <Text style={styles.selectionModalTitle}>{t('learn.selectNote')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowNoteModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -418,7 +425,7 @@ export function LearnScreen({ navigation }: any) {
             <View style={styles.searchRow}>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search"
+                placeholder={t('learn.search')}
                 placeholderTextColor="rgba(0,0,0,0.5)"
                 value={noteSearch}
                 onChangeText={setNoteSearch}
@@ -462,7 +469,7 @@ export function LearnScreen({ navigation }: any) {
                 onPress={handleContinueNote}
                 disabled={selectedNote === null}
               >
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>{t('learn.continue')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -474,7 +481,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowPasteModal(false)}>
           <Animated.View style={[styles.selectionModal, { transform: [{ translateY: pasteSlideAnim }] }]}>
             <View style={styles.selectionModalHeader}>
-              <Text style={styles.selectionModalTitle}>Paste content</Text>
+              <Text style={styles.selectionModalTitle}>{t('learn.pasteContent')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowPasteModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -485,7 +492,7 @@ export function LearnScreen({ navigation }: any) {
             <View style={styles.pasteContentRow}>
               <TextInput
                 style={styles.pasteInput}
-                placeholder="Paste"
+                placeholder={t('learn.pastePlaceholder')}
                 placeholderTextColor="rgba(0,0,0,0.5)"
                 value={pasteContent}
                 onChangeText={setPasteContent}
@@ -500,7 +507,7 @@ export function LearnScreen({ navigation }: any) {
                 onPress={handleContinuePaste}
                 disabled={pasteContent.trim().length === 0}
               >
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>{t('learn.continue')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -512,7 +519,7 @@ export function LearnScreen({ navigation }: any) {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTasksModal(false)}>
           <Animated.View style={[styles.tasksModal, { transform: [{ translateY: tasksSlideAnim }] }]}>
             <View style={styles.tasksModalHeader}>
-              <Text style={styles.tasksModalTitle}>Number of tasks</Text>
+              <Text style={styles.tasksModalTitle}>{t('learn.numberOfTasks')}</Text>
               <TouchableOpacity style={styles.sourceModalClose} onPress={() => setShowTasksModal(false)}>
                 <View style={styles.sourceModalCloseIcon}>
                   <Text style={styles.sourceModalCloseX}>✕</Text>
@@ -524,7 +531,7 @@ export function LearnScreen({ navigation }: any) {
               <View style={styles.tasksInputRow}>
                 <TextInput
                   style={styles.tasksInput}
-                  placeholder="Paste"
+                  placeholder={t('learn.taskCountPlaceholder')}
                   placeholderTextColor="rgba(0,0,0,0.5)"
                   value={taskCount}
                   onChangeText={(t) => { setTaskCount(t); setSelectedTaskPreset(null); }}
@@ -554,7 +561,7 @@ export function LearnScreen({ navigation }: any) {
                 onPress={handleFinalContinue}
                 disabled={taskCount.trim().length === 0}
               >
-                <Text style={styles.continueBtnText}>Continue</Text>
+                <Text style={styles.continueBtnText}>{t('learn.continue')}</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -564,14 +571,14 @@ export function LearnScreen({ navigation }: any) {
       {/* Loading overlay for practice */}
       {isLoading && (
         <LoadingAnimation
-          message={generationProgress ? `Generating question ${generationProgress.current + 1} of ${generationProgress.total}` : "Preparing your practice session..."}
+          message={generationProgress ? t('learn.generatingQuestion', { current: generationProgress.current + 1, total: generationProgress.total }) : t('learn.preparingPractice')}
           progress={generationProgress ?? undefined}
         />
       )}
 
       {/* Loading overlay for adaptive learning */}
       {isAdaptiveLoading && (
-        <LoadingAnimation message="Generating your adaptive session..." />
+        <LoadingAnimation message={t('learn.generatingAdaptiveSession')} />
       )}
 
       {/* Bottom Navigation */}

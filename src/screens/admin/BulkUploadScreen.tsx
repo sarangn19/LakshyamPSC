@@ -5,6 +5,7 @@ import {
 import Svg, { Path, Circle } from 'react-native-svg';
 import { colors, spacing, radius, fontFamily } from '../../theme';
 import { storeGeneratedMCQsBatchDirect, StoreMCQRequest } from '../../services/questionBankStorage';
+import { useTranslation } from '../../i18n/useTranslation';
 
 type UploadMode = 'json' | 'csv' | 'file';
 type RowStatus = 'pending' | 'valid' | 'invalid';
@@ -82,13 +83,13 @@ function parseCSV(text: string): ParsedRow[] {
     const tags = tagsRaw ? tagsRaw.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const correctAnswer = parseInt(correctAnswerRaw, 10);
     const errors: string[] = [];
-    if (!questionText) errors.push('Missing question text');
-    if (options.length < 2) errors.push('Need at least 2 options');
-    if (isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) errors.push('Invalid correct answer');
-    if (!subject) errors.push('Missing subject');
-    if (!topic) errors.push('Missing topic');
-    if (!['easy', 'medium', 'hard'].includes(difficulty)) errors.push('Difficulty must be easy/medium/hard');
-    if (!examType) errors.push('Missing exam type');
+    if (!questionText) errors.push('errMissingQuestion');
+    if (options.length < 2) errors.push('errNeedOptions');
+    if (isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) errors.push('errInvalidAnswer');
+    if (!subject) errors.push('errMissingSubject');
+    if (!topic) errors.push('errMissingTopic');
+    if (!['easy', 'medium', 'hard'].includes(difficulty)) errors.push('errInvalidDifficulty');
+    if (!examType) errors.push('errMissingExamType');
     rows.push({
       index: i - 1,
       questionText,
@@ -125,13 +126,13 @@ function parseJSON(text: string): ParsedRow[] {
       const language = (q.language || q.lang || 'en') as string;
       const tags = (q.tags || q.tag || []) as string[];
       const errors: string[] = [];
-      if (!questionText) errors.push('Missing question text');
-      if (!Array.isArray(options) || options.length < 2) errors.push('Need at least 2 options');
-      if (typeof correctAnswer !== 'number' || isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) errors.push('Invalid correct answer');
-      if (!subject) errors.push('Missing subject');
-      if (!topic) errors.push('Missing topic');
-      if (!['easy', 'medium', 'hard'].includes(difficulty)) errors.push('Difficulty must be easy/medium/hard');
-      if (!examType) errors.push('Missing exam type');
+      if (!questionText) errors.push('errMissingQuestion');
+      if (!Array.isArray(options) || options.length < 2) errors.push('errNeedOptions');
+      if (typeof correctAnswer !== 'number' || isNaN(correctAnswer) || correctAnswer < 0 || correctAnswer >= options.length) errors.push('errInvalidAnswer');
+      if (!subject) errors.push('errMissingSubject');
+      if (!topic) errors.push('errMissingTopic');
+      if (!['easy', 'medium', 'hard'].includes(difficulty)) errors.push('errInvalidDifficulty');
+      if (!examType) errors.push('errMissingExamType');
       return {
         index: idx,
         questionText,
@@ -201,6 +202,7 @@ export function BulkUploadScreen() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadResult, setUploadResult] = useState<{ stored: number; failed: number; total: number } | null>(null);
   const fileRef = useRef<any>(null);
+  const { t, typography: tx } = useTranslation();
 
   const handleParse = useCallback(() => {
     let parsed: ParsedRow[] = [];
@@ -258,7 +260,7 @@ export function BulkUploadScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Bulk Upload</Text>
+        <Text style={styles.headerTitle}>{t('bulkUpload.title')}</Text>
       </View>
 
       {!showPreview && (
@@ -271,7 +273,7 @@ export function BulkUploadScreen() {
                 onPress={() => { setMode(m); setInputText(''); }}
               >
                 <Text style={[styles.modeBtnText, mode === m && styles.modeBtnTextActive]}>
-                  {m === 'json' ? 'JSON' : m === 'csv' ? 'CSV' : 'File'}
+                  {m === 'json' ? t('bulkUpload.modeJson') : m === 'csv' ? t('bulkUpload.modeCsv') : t('bulkUpload.modeFile')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -280,12 +282,12 @@ export function BulkUploadScreen() {
           {mode === 'file' ? (
             <View style={styles.fileUploadArea}>
               <UploadIcon />
-              <Text style={styles.fileUploadText}>Upload a .json or .csv file</Text>
+              <Text style={styles.fileUploadText}>{t('bulkUpload.fileUploadHint')}</Text>
               <TouchableOpacity
                 style={styles.fileBtn}
                 onPress={() => fileRef.current?.click()}
               >
-                <Text style={styles.fileBtnText}>Choose File</Text>
+                <Text style={styles.fileBtnText}>{t('bulkUpload.chooseFile')}</Text>
               </TouchableOpacity>
               {Platform.OS === 'web' && (
                 <input
@@ -303,8 +305,8 @@ export function BulkUploadScreen() {
                 style={styles.textArea}
                 multiline
                 placeholder={mode === 'json'
-                  ? 'Paste JSON array of questions...\n\n[{\n  "questionText": "...",\n  "options": ["A", "B", "C", "D"],\n  "correctAnswer": 0,\n  "explanation": "...",\n  "subject": "Kerala History",\n  "topic": "Ancient Kerala",\n  "difficulty": "easy",\n  "examType": "LDC"\n}]'
-                  : 'Paste CSV data...\n\nquestionText,options,correctAnswer,explanation,subject,topic,difficulty,examType\n"Question text?","Option A|Option B|Option C|Option D",0,"Explanation","Subject","Topic","easy","LDC"'}
+                  ? t('bulkUpload.jsonPlaceholder')
+                  : t('bulkUpload.csvPlaceholder')}
                 placeholderTextColor={colors.textTertiary}
                 value={inputText}
                 onChangeText={setInputText}
@@ -314,7 +316,7 @@ export function BulkUploadScreen() {
                 disabled={!inputText.trim()}
                 onPress={handleParse}
               >
-                <Text style={styles.parseBtnText}>Parse & Preview</Text>
+                <Text style={styles.parseBtnText}>{t('bulkUpload.parsePreview')}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -326,19 +328,19 @@ export function BulkUploadScreen() {
           <View style={styles.summaryRow}>
             <View style={styles.summaryCard}>
               <Text style={[styles.summaryNum, { color: colors.primary }]}>{rows.length}</Text>
-              <Text style={styles.summaryLabel}>Total</Text>
+              <Text style={styles.summaryLabel}>{t('bulkUpload.total')}</Text>
             </View>
             <View style={styles.summaryCard}>
               <Text style={[styles.summaryNum, { color: colors.success }]}>{validCount}</Text>
-              <Text style={styles.summaryLabel}>Valid</Text>
+              <Text style={styles.summaryLabel}>{t('bulkUpload.valid')}</Text>
             </View>
             <View style={styles.summaryCard}>
               <Text style={[styles.summaryNum, { color: colors.error }]}>{invalidCount}</Text>
-              <Text style={styles.summaryLabel}>Invalid</Text>
+              <Text style={styles.summaryLabel}>{t('bulkUpload.invalid')}</Text>
             </View>
             <View style={styles.summaryCard}>
               <Text style={[styles.summaryNum, { color: colors.warning }]}>{uploadProgress}%</Text>
-              <Text style={styles.summaryLabel}>Uploaded</Text>
+              <Text style={styles.summaryLabel}>{t('bulkUpload.uploaded')}</Text>
             </View>
           </View>
 
@@ -348,10 +350,10 @@ export function BulkUploadScreen() {
                 <View>
                   <View style={styles.tableHeader}>
                     <Text style={[styles.tableCell, styles.colStatus]}>#</Text>
-                    <Text style={[styles.tableCell, styles.colQuestion]}>Question</Text>
-                    <Text style={[styles.tableCell, styles.colSubject]}>Subject</Text>
-                    <Text style={[styles.tableCell, styles.colDifficulty]}>Diff</Text>
-                    <Text style={[styles.tableCell, styles.colErrors]}>Issues</Text>
+                    <Text style={[styles.tableCell, styles.colQuestion]}>{t('bulkUpload.colQuestion')}</Text>
+                    <Text style={[styles.tableCell, styles.colSubject]}>{t('bulkUpload.colSubject')}</Text>
+                    <Text style={[styles.tableCell, styles.colDifficulty]}>{t('bulkUpload.colDifficulty')}</Text>
+                    <Text style={[styles.tableCell, styles.colErrors]}>{t('bulkUpload.colIssues')}</Text>
                   </View>
                   {rows.slice(0, 50).map((row) => (
                     <View key={row.index} style={[styles.tableRow, row.status === 'invalid' && styles.tableRowInvalid]}>
@@ -364,12 +366,12 @@ export function BulkUploadScreen() {
                       <Text style={[styles.tableCell, styles.colSubject]}>{row.subject}</Text>
                       <Text style={[styles.tableCell, styles.colDifficulty]}>{row.difficulty}</Text>
                       <Text style={[styles.tableCell, styles.colErrors, { color: colors.error }]}>
-                        {row.errors.slice(0, 2).join('; ')}
+                        {row.errors.slice(0, 2).map(e => t(`bulkUpload.${e}`)).join('; ')}
                       </Text>
                     </View>
                   ))}
                   {rows.length > 50 && (
-                    <Text style={styles.moreText}>...and {rows.length - 50} more rows</Text>
+                    <Text style={styles.moreText}>{t('bulkUpload.moreRows', { count: rows.length - 50 })}</Text>
                   )}
                 </View>
               </ScrollView>
@@ -378,17 +380,17 @@ export function BulkUploadScreen() {
 
           {uploadResult ? (
             <View style={styles.resultCard}>
-              <Text style={styles.resultTitle}>Upload Complete</Text>
+              <Text style={styles.resultTitle}>{t('bulkUpload.uploadComplete')}</Text>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Stored:</Text>
+                <Text style={styles.resultLabel}>{t('bulkUpload.stored')}</Text>
                 <Text style={[styles.resultValue, { color: colors.success }]}>{uploadResult.stored}</Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Failed:</Text>
+                <Text style={styles.resultLabel}>{t('bulkUpload.failed')}</Text>
                 <Text style={[styles.resultValue, { color: colors.error }]}>{uploadResult.failed}</Text>
               </View>
               <View style={styles.resultRow}>
-                <Text style={styles.resultLabel}>Total:</Text>
+                <Text style={styles.resultLabel}>{t('bulkUpload.totalLabel')}</Text>
                 <Text style={[styles.resultValue, { color: colors.text }]}>{uploadResult.total}</Text>
               </View>
             </View>
@@ -401,12 +403,12 @@ export function BulkUploadScreen() {
                   disabled={uploading}
                 >
                   <Text style={styles.uploadBtnText}>
-                    {uploading ? `Uploading... ${uploadProgress}%` : `Upload ${validCount} Questions`}
+                    {uploading ? t('bulkUpload.uploading', { progress: uploadProgress }) : t('bulkUpload.uploadQuestions', { count: validCount })}
                   </Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-                <Text style={styles.resetBtnText}>Start Over</Text>
+                <Text style={styles.resetBtnText}>{t('bulkUpload.startOver')}</Text>
               </TouchableOpacity>
             </View>
           )}
