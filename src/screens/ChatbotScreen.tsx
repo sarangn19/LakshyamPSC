@@ -6,6 +6,7 @@ import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
+import { HomeIcon, LearnIcon, ChatbotIcon, SendArrowIcon, AttachIcon, NoteIcon, BackIcon } from '../components/Icons';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y3V0Y3FsaHBldWRtYWVid21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzAzNTcsImV4cCI6MjA5NzIwNjM1N30.2s-MMZa-gjJdOBGxOzXKftT-ZA0k6hfj3IoEm0gqaKI';
@@ -280,9 +281,7 @@ export function ChatbotScreen({ navigation }: any) {
         style={styles.topBar}
       >
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Svg width="9" height="17" viewBox="0 0 9 17" fill="none">
-            <Path fillRule="evenodd" clipRule="evenodd" d="M8.99892 15.938L7.95392 17L0.287919 9.21C0.10342 9.0197 0.000244141 8.76505 0.000244141 8.5C0.000244141 8.23495 0.10342 7.9803 0.287919 7.79L7.95392 0L8.99892 1.063L1.68092 8.5L8.99892 15.938Z" fill="black"/>
-          </Svg>
+          <BackIcon color="black" />
         </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle}>{t('chatbot.title')}</Text>
@@ -458,46 +457,30 @@ export function ChatbotScreen({ navigation }: any) {
         {/* Action Buttons Row - Frame 2511 */}
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.noteIconBtn} onPress={openAttachModal}>
-            <Svg width="10" height="14" viewBox="0 0 10 14" fill="none">
-              <Path d="M2 1h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="black"/>
-              <Path d="M4 4h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
-              <Path d="M4 6h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
-              <Path d="M4 8h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
-            </Svg>
+            <NoteIcon color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.attachButton} onPress={openAttachModal}>
-            <Svg width="6" height="12" viewBox="0 0 8 14" fill="none">
-              <Path d="M5 2v7a2.5 2.5 0 0 1-5 0V4.5" stroke="black" strokeWidth="1.2" strokeLinecap="round"/>
-              <Path d="M3.5 9.5V3a1 1 0 0 1 2 0v7" stroke="black" strokeWidth="1.2" strokeLinecap="round"/>
-            </Svg>
+            <AttachIcon color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.sendButton} onPress={() => handleSend(inputText)}>
-            <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <Path d="M8 3v10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <Path d="M13 8l-5-5-5 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </Svg>
+            <SendArrowIcon color="white" />
           </TouchableOpacity>
         </View>
       </Animated.View>
 
       {/* Bottom Pill Nav - Frame 2507 */}
       <View style={styles.bottomNav} onLayout={(e) => { setNavWidth(e.nativeEvent.layout.width); }}>
-        <Animated.View style={[styles.navIndicator, { left: indicatorAnim }]} />
-        <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(8, 'Home'); }}>
-          <Svg width="16.25" height="16" viewBox="0 0 18 18" fill="none">
-            <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </Svg>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator((w - 54.32) / 2, 'Learn'); }}>
-          <Svg width="18.97" height="16" viewBox="0 0 24 24" fill="black">
-            <Path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3ZM18.82 9L12 12.72L5.18 9L12 5.28L18.82 9ZM17 16L12 18.72L7 16V12.27L12 15L17 12.27V16Z" />
-          </Svg>
-        </TouchableOpacity>
-        <View style={[styles.navItem, styles.navItemActive]}>
-          <Svg width="19" height="16" viewBox="0 0 24 24" fill="none">
-            <Path d="M9.5 9H9.51M14.5 9H14.51M18 4C18.7956 4 19.5587 4.31607 20.1213 4.87868C20.6839 5.44129 21 6.20435 21 7V15C21 15.7956 20.6839 16.5587 20.1213 17.1213C19.5587 17.6839 18.7956 18 18 18H13L8 21V18H6C5.20435 18 4.44129 17.6839 3.87868 17.1213C3.31607 16.5587 3 15.7956 3 15V7C3 6.20435 3.31607 5.44129 3.87868 4.87868C4.44129 4.31607 5.20435 4 6 4H18Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <Path d="M9.5 13C9.82588 13.3326 10.2148 13.5968 10.6441 13.7772C11.0734 13.9576 11.5344 14.0505 12 14.0505C12.4656 14.0505 12.9266 13.9576 13.3559 13.7772C13.7852 13.5968 14.1741 13.3326 14.5 13" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
+        <Animated.View style={[styles.navActiveBg, { left: indicatorAnim }]} />
+        <View style={styles.navItems}>
+          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(8, 'Home'); }}>
+            <HomeIcon width={16.25} height={16} color="black" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator((w - 54.32) / 2, 'Learn'); }}>
+            <LearnIcon width={18.97} height={16} color="black" />
+          </TouchableOpacity>
+          <View style={[styles.navItem, styles.navItemActive]}>
+            <ChatbotIcon width={19} height={16} color="white" />
+          </View>
         </View>
       </View>
 
@@ -717,8 +700,9 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 24,
-    paddingBottom: 140,
+    paddingTop: 16,
+    paddingHorizontal: 24,
+    paddingBottom: 120,
     gap: 4,
     backgroundColor: '#FFFFFF',
     borderWidth: 0.5,
@@ -735,8 +719,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    height: 48,
+    height: 44,
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
   },
@@ -785,33 +770,24 @@ const styles = StyleSheet.create({
       default: { elevation: 2 },
     }),
   },
-  sendIconWrap: {
-    width: 12.44,
-    height: 13.07,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 
   bottomNav: {
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: 32,
+    bottom: 24,
     height: 72,
     backgroundColor: '#FFFFFF',
     borderRadius: 999,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 6,
+    justifyContent: 'center',
     zIndex: 10,
-    ...Platform.select({
-      web: { boxShadow: '0px 0px 24px rgba(0,0,0,0.12)' },
-      default: { elevation: 6 },
-    }),
   },
-  navIndicator: {
+  navActiveBg: {
     position: 'absolute',
     top: 8.84,
     width: 54.32,
@@ -819,10 +795,17 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: '#F7B11A',
   },
+  navItems: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
   navItem: {
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    height: 44,
   },
   navItemActive: {
     zIndex: 1,
