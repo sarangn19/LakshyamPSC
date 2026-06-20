@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import React, { useRef } from 'react';
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HomeIcon, LearnIcon, ChatbotIcon } from './Icons';
 
@@ -13,15 +13,21 @@ export function BottomNav({ activeTab }: Props) {
   const navigation = useNavigation<any>();
   const { width: screenW } = useWindowDimensions();
   const navWidth = screenW - 48;
+  const animLeft = useRef(new Animated.Value(getLeft(navWidth, activeTab))).current;
 
   const handlePress = (tab: TabName) => {
     if (tab === activeTab) return;
+    Animated.timing(animLeft, {
+      toValue: getLeft(navWidth, tab),
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
     navigation.navigate(tab);
   };
 
   return (
     <View style={styles.bottomNav}>
-      <View style={[styles.navActiveBg, { left: getLeft(navWidth, activeTab) }]} />
+      <Animated.View style={[styles.navActiveBg, { left: animLeft }]} />
       <View style={styles.navItems}>
         <TouchableOpacity style={[styles.navItem, activeTab === 'Home' && styles.navItemActive]} onPress={() => handlePress('Home')}>
           <HomeIcon width={16.25} height={16} color={activeTab === 'Home' ? 'white' : 'black'} />
