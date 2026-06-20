@@ -56,7 +56,7 @@ export function getLearningForecast(): LearningForecast {
   const blockedTopics: { subject: string; topic: string; mastery: number }[] = [];
 
   let masteredCount = 0;
-  let attemptedCount = 0;
+  let attemptedTopicsCount = 0;
   let totalMasterySum = 0;
   let totalMasteryCount = 0;
 
@@ -67,11 +67,11 @@ export function getLearningForecast(): LearningForecast {
     if (m.masteryScore >= 75) masteredCount++;
   }
 
-  overallMastery: for (const [subject, topics] of Object.entries(subjectTopicMap)) {
+  for (const [subject, topics] of Object.entries(subjectTopicMap)) {
     for (const topic of topics) {
       const topicKey = `${subject}::${topic}`;
       const m = twinState.masteryMap[topicKey];
-      if (m && m.attempts >= 1) attemptedCount++;
+      if (m && m.attempts >= 1) attemptedTopicsCount++;
       if (m && m.masteryScore < 40 && m.attempts >= 2) {
         blockedTopics.push({ subject, topic, mastery: m.masteryScore });
       }
@@ -81,12 +81,13 @@ export function getLearningForecast(): LearningForecast {
   blockedTopics.sort((a, b) => a.mastery - b.mastery);
   blockedTopics.splice(5);
 
-  const coveragePercent = totalSubtopics > 0 ? Math.round((attemptedCount / totalSubtopics) * 100) : 0;
+  const coveredNodes = Object.keys(twinState.masteryMap).filter((k) => twinState.masteryMap[k].attempts >= 1).length;
+  const coveragePercent = totalSubtopics > 0 ? Math.round((coveredNodes / totalSubtopics) * 100) : 0;
   const overallMastery = totalMasteryCount > 0 ? Math.round(totalMasterySum / totalMasteryCount) : 0;
 
   const dailyRate = getDailyQuestionRate();
   const questionsPerTopic = 10;
-  const remainingTopics = totalTopics - attemptedCount;
+  const remainingTopics = totalTopics - attemptedTopicsCount;
   const totalQuestionsNeeded = remainingTopics * questionsPerTopic;
   const daysAvailable = daysToExam;
   const recommendedDaily = Math.ceil(Math.max(5, totalQuestionsNeeded / Math.max(1, daysAvailable)));
@@ -106,9 +107,9 @@ export function getLearningForecast(): LearningForecast {
     projectedMastery,
     totalTopics,
     masteredTopics: masteredCount,
-    attemptedTopics: attemptedCount,
+    attemptedTopics: attemptedTopicsCount,
     recommendedDaily,
     onTrack,
-    blockingTopics,
+    blockingTopics: blockedTopics,
   };
 }
