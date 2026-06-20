@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, TextInput,
 import Svg, { Path } from 'react-native-svg';
 import { fontFamily } from '../theme';
 import { useMCQStore } from '../store/mcqStore';
+import { useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
 import { HomeIcon, LearnIcon, ChatbotIcon, Arrow45Icon } from '../components/Icons';
 
