@@ -235,7 +235,7 @@ export function HomeScreen({ navigation }: any) {
             <Text style={styles.greeting}>{greetingText}</Text>
             <Text style={styles.recommendSub}>{t('home.greeting.subtitle')}</Text>
           </View>
-          <View style={styles.recommendRow}>
+          <View style={styles.recommendColumn}>
             <Text style={styles.recommendSubject}>
               {dueSummary.count > 0
                 ? `${dueSummary.count} item${dueSummary.count > 1 ? 's' : ''} due`
@@ -256,9 +256,9 @@ export function HomeScreen({ navigation }: any) {
                 : t('home.focus.subtextNew')}
             </Text>
             {dueSummary.items.length > 0 && (
-              <View style={{ marginTop: 4 }}>
+              <View style={{ marginTop: 8 }}>
                 {dueSummary.items.slice(0, 3).map((item, i) => (
-                  <Text key={i} style={[styles.recommendDesc, { fontSize: 11, opacity: 0.8 }]}>
+                  <Text key={i} style={{ fontSize: 11, color: 'rgba(0,0,0,0.6)', lineHeight: 16 }}>
                     {['•', '◦', '▪'][i]} {item.path.slice(1).join(' › ')}: {item.name}
                   </Text>
                 ))}
@@ -461,18 +461,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 16,
   },
+  recommendColumn: {
+    alignSelf: 'stretch',
+  },
   recommendSubject: {
-    width: 152.12,
-    height: 38,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 19,
     color: '#000000',
     fontFamily: fontFamily.bodyMedium,
+    marginBottom: 6,
   },
   recommendDesc: {
-    flex: 1,
-    height: 85,
     fontSize: 14,
     fontWeight: '300',
     lineHeight: 17,
