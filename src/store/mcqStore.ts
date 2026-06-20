@@ -138,6 +138,7 @@ interface MCQState {
   coverageDashboard: CoverageDashboardEntry[];
   bookmarkedQuestions: string[];
   bookmarkedQuestionData: Record<string, Pick<Question, 'text' | 'subject' | 'topic' | 'subtopic' | 'options' | 'correctAnswer' | 'explanation'>>;
+  seenQuestionTexts: string[];
   toggleBookmark: (questionId: string) => void;
   getDiversityDashboard: () => DiversityDashboardEntry[];
   getCoverageDashboard: () => CoverageDashboardEntry[];
@@ -234,6 +235,7 @@ async function resolveValidQuestion(
   targetExams: string[],
   reportedQuestions: string[],
   locale: 'en' | 'ml',
+  seenQuestionTexts: string[] = [],
 ): Promise<{
   question: GeneratedQuestion | null;
   report: SessionValidationReport | null;
@@ -273,14 +275,21 @@ async function resolveValidQuestion(
   }
 
   // Attempt AI generation — returns whatever the adaptive engine picks
-  for (let retry = 0; retry < 2; retry++) {
+  for (let retry = 0; retry < 3; retry++) {
     const result = await generateNextAdaptiveQuestion(
-      weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect,
+      weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);
     if (!result?.question) break;
 
     recordGeneration(result.question);
+
+    // Dedup: skip if question text was already seen in a previous session
+    if (seenQuestionTexts.includes(result.question.text)) {
+      console.log('[DEDUP] seen before, regenerating:', result.question.text.substring(0, 60));
+      recordRejection(result.question);
+      continue;
+    }
 
     const integrity = validateQuestionIntegrity(result.question);
     if (!integrity.valid) {
@@ -430,6 +439,7 @@ export const useMCQStore = create<MCQState>()(
       coverageDashboard: [],
       bookmarkedQuestions: [],
       bookmarkedQuestionData: {},
+      seenQuestionTexts: [],
 
       toggleBookmark: (questionId) =>
         set((state) => {
@@ -465,6 +475,7 @@ export const useMCQStore = create<MCQState>()(
           weakSubjects, [], 0, 0, 'easy', get().adaptiveState, [],
           false, recommendedSubject, recommendedTopic, targetExams,
           get().reportedQuestions, useUserStore.getState().locale,
+          get().seenQuestionTexts,
         );
 
         if (question) {
@@ -473,11 +484,11 @@ export const useMCQStore = create<MCQState>()(
             currentIndex: 0, selectedAnswer: null, isAnswered: false,
             drillMode: 'daily', sessionActive: true,
             questionStartTime: Date.now(), sessionStartTime: Date.now(),
-            sessionSubjectAccuracy: {}, sessionType: 'daily_drill',
-            lastSessionOutcome: null, isGenerating: false, generationProgress: null,
-            adaptiveState: baseState,
-            alignmentReport: report,
-            showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
+          sessionSubjectAccuracy: {}, sessionType: 'daily_drill',
+          lastSessionOutcome: null, isGenerating: false, generationProgress: null,
+          adaptiveState: baseState,
+          alignmentReport: report,
+          showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
           });
         } else {
           set({ isGenerating: false, generationProgress: null, sessionReduced: true });
@@ -495,6 +506,7 @@ export const useMCQStore = create<MCQState>()(
           weakSubjects, [], 0, 0, 'medium', get().adaptiveState, [],
           false, recommendedSubject, undefined, targetExams,
           get().reportedQuestions, useUserStore.getState().locale,
+          get().seenQuestionTexts,
         );
 
         if (question) {
@@ -604,6 +616,9 @@ export const useMCQStore = create<MCQState>()(
             correct: newCorrect,
             total: newTotal,
           },
+          seenQuestionTexts: state.seenQuestionTexts.includes(current.text)
+            ? state.seenQuestionTexts
+            : [...state.seenQuestionTexts, current.text].slice(-500),
           sessionSubjectAccuracy: {
             ...state.sessionSubjectAccuracy,
             [subject]: {
@@ -848,6 +863,7 @@ export const useMCQStore = create<MCQState>()(
           state.recommendedSubject, state.recommendedTopic,
           targetExams, state.reportedQuestions,
           useUserStore.getState().locale,
+          state.seenQuestionTexts,
         );
 
         if (question) {
@@ -1257,6 +1273,7 @@ export const useMCQStore = create<MCQState>()(
           weakSubjects, [], 0, 0, diff, get().adaptiveState, [],
           false, recommendedSubject, recommendedTopic, targetExams,
           get().reportedQuestions, useUserStore.getState().locale,
+          get().seenQuestionTexts,
         );
 
         if (question) {
@@ -1376,6 +1393,7 @@ export const useMCQStore = create<MCQState>()(
         sessionFocusMetrics: state.sessionFocusMetrics,
         bookmarkedQuestions: state.bookmarkedQuestions,
         bookmarkedQuestionData: state.bookmarkedQuestionData,
+        seenQuestionTexts: state.seenQuestionTexts,
       }),
     }
   )

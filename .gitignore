@@ -12,3 +12,5 @@ web-build/
 *.tsbuildinfo
 *.log
 .env
+
+.vercel

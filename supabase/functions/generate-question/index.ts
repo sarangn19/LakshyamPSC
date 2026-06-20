@@ -6,6 +6,7 @@ const AI_MODEL = Deno.env.get('AI_MODEL') || 'gpt-4o-mini';
 const FALLBACK_API_KEY = Deno.env.get('FALLBACK_API_KEY') || '';
 const FALLBACK_API_URL = Deno.env.get('FALLBACK_API_URL') || '';
 const FALLBACK_MODEL = Deno.env.get('FALLBACK_MODEL') || '';
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') || '';
 
 interface RequestBody {
   subject: string;
@@ -18,6 +19,7 @@ interface RequestBody {
   syllabusItems?: string[];
   language?: 'en' | 'ml';
   topicConstraint?: string;
+  avoidTexts?: string[];
 }
 
 interface ParsedQuestion {
@@ -40,7 +42,7 @@ function buildPrompt(
   subject: string, topic: string, difficulty: string, examType: string,
   focusInstruction?: string, recentHistory?: { text: string; correct: boolean }[],
   syllabusItems?: string[], subtopic?: string, language?: 'en' | 'ml',
-  topicConstraint?: string,
+  topicConstraint?: string, avoidTexts?: string[],
 ): string {
   let instructionBlock = '';
 
@@ -129,6 +131,14 @@ The correctAnswer field must be the 0-based index of the correct option in the o
 
   if (language === 'ml') {
     instructionBlock += `\n\nIMPORTANT: Generate the ENTIRE question, options, and explanation in Malayalam (മലയാളം). The question text, all 4 options, and the explanation must be in Malayalam. Use standard Malayalam script.`;
+  }
+
+  if (avoidTexts && avoidTexts.length > 0) {
+    instructionBlock += `\n\nThe following question texts have been used before — do NOT generate any question with the same or very similar content:\n`;
+    for (const t of avoidTexts.slice(-20)) {
+      instructionBlock += `- ${t}\n`;
+    }
+    instructionBlock += `\nPick a completely different subtopic, fact, or angle that is NOT covered by any of the above.`;
   }
 
   return `Generate a high-quality multiple-choice question for Kerala PSC examination.
@@ -254,7 +264,7 @@ serve(async (req) => {
       return corsResponse({ error: 'subject and topic are required' }, 400);
     }
 
-    const prompt = buildPrompt(subject, topic, difficulty ?? 'medium', examType ?? 'LDC', focusInstruction, recentHistory, syllabusItems, subtopic, language, topicConstraint);
+    const prompt = buildPrompt(subject, topic, difficulty ?? 'medium', examType ?? 'LDC', focusInstruction, recentHistory, syllabusItems, subtopic, language, topicConstraint, body.avoidTexts);
 
     const isContentBased = focusInstruction && focusInstruction.startsWith('CONTENT-BASED:');
     const systemMessage = isContentBased
@@ -395,6 +405,60 @@ serve(async (req) => {
         }
       }
       const errText = await fallbackResponse.text().catch(() => '');
+      lastError = `All providers failed. Last error: ${errText.substring(0, 200)}`;
+    }
+
+    // Gemini provider (Google AI Studio free tier: 1,500 req/day)
+    if (GEMINI_API_KEY) {
+      const geminiModel = 'gemini-2.0-flash';
+      console.log('[GENERATE] trying Gemini:', geminiModel);
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GEMINI_API_KEY}`;
+      const geminiBody = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: systemMessage + '\n\n' + prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: isContentBased ? 1024 : 800,
+        },
+      };
+      const geminiResponse = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody),
+      });
+
+      if (geminiResponse.ok) {
+        const data = await geminiResponse.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+        const cleaned = content.replace(/```(?:json)?\s*/gi, '').trim();
+        const parsed = parseResponse(cleaned);
+        if (parsed) {
+          const alignmentWarning = parsed.topic !== topic || parsed.subject !== subject;
+          const confidence = difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75;
+          console.log('[GENERATE] Gemini succeeded');
+          return corsResponse({
+            subject: parsed.subject,
+            topic: parsed.topic,
+            subtopic: parsed.subtopic,
+            question: parsed.question,
+            options: parsed.options,
+            correctAnswer: parsed.correctAnswer,
+            explanation: parsed.explanation,
+            difficulty,
+            examType: [examType],
+            confidence,
+            source: 'ai_generated',
+            alignmentWarning,
+          });
+        }
+      }
+      const errText = await geminiResponse.text().catch(() => '');
       lastError = `All providers failed. Last error: ${errText.substring(0, 200)}`;
     }
 

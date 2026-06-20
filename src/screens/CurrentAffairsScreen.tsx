@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '../i18n/useTranslation';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
-import { useUserStore } from '../store';
 import { Badge } from '../components/common/StyledComponents';
-import { CurrentAffair, mockCurrentAffairs } from '../data/mockData';
+import { CurrentAffair } from '../data/mockData';
 import { supabase } from '../services/supabase';
 
 const CATEGORIES = [
@@ -19,14 +18,22 @@ const CATEGORIES = [
 
 export function CurrentAffairsScreen() {
   const { t } = useTranslation();
-  const storeCurrentAffairs = useUserStore((s) => s.currentAffairs);
   const [dbAffairs, setDbAffairs] = useState<CurrentAffair[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState('all');
 
-  useEffect(() => {
-    if (!supabase) { setLoading(false); return; }
-    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(50).then(({ data }) => {
+  const fetchNews = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    if (!supabase) { setLoading(false); setError('Supabase not configured'); return; }
+    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(50).then(({ data, error: fetchError }) => {
+      if (fetchError) {
+        console.error('[CA] fetch error:', fetchError.message);
+        setError(fetchError.message);
+        setLoading(false);
+        return;
+      }
       if (data && data.length > 0) {
         const mapped = data.map((r: any) => ({
           id: r.id,
@@ -40,12 +47,21 @@ export function CurrentAffairsScreen() {
           image_url: r.image_url || '',
         }));
         setDbAffairs(mapped);
+      } else {
+        setDbAffairs([]);
       }
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      console.error('[CA] network error:', err);
+      setError(err.message || 'Network error');
+      setLoading(false);
+    });
   }, []);
 
-  const allAffairs = dbAffairs ?? (storeCurrentAffairs.length > 0 ? storeCurrentAffairs : mockCurrentAffairs);
+  useEffect(() => { fetchNews(); }, [fetchNews]);
+
+  const status = dbAffairs === null ? 'loading' : dbAffairs.length === 0 ? 'empty' : 'loaded';
+  const allAffairs = status === 'loaded' ? dbAffairs : [];
 
   const filtered = activeCategory === 'all'
     ? allAffairs
@@ -55,6 +71,32 @@ export function CurrentAffairsScreen() {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={[typography.body, { color: colors.warning, textAlign: 'center', marginBottom: spacing.md }]}>⚠️ {error}</Text>
+        <TouchableOpacity onPress={fetchNews} style={styles.retryBtn}>
+          <Text style={[typography.bodyBold, { color: colors.primary }]}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (status === 'empty') {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
+        <Text style={[typography.h3, { color: colors.text, textAlign: 'center' }]}>No news available</Text>
+        <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm, marginBottom: spacing.lg }]}>
+          Current affairs will appear here once fetched. The cron job runs every 6 hours.
+        </Text>
+        <TouchableOpacity onPress={fetchNews} style={styles.retryBtn}>
+          <Text style={[typography.bodyBold, { color: colors.primary }]}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -145,5 +187,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.round,
     backgroundColor: colors.primary + '10',
+  },
+  retryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
 });

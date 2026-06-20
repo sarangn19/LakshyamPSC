@@ -15,6 +15,7 @@ interface AIGenRequest {
   syllabusItems?: string[];
   language?: 'en' | 'ml';
   topicConstraint?: string;
+  avoidTexts?: string[];
 }
 
 interface CacheEntry {
@@ -75,6 +76,7 @@ export async function generateAIQuestion(
     syllabusItems: request.syllabusItems,
     language: request.language,
     topicConstraint: request.topicConstraint,
+    avoidTexts: request.avoidTexts,
   };
 
   const functionUrl = `${SUPABASE_URL}/functions/v1/generate-question`;
