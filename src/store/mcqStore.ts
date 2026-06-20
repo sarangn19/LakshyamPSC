@@ -8,6 +8,7 @@ import { generateAIQuestion } from '../services/aiQuestionGenerator';
 import { generateNextAdaptiveQuestion, makeAdaptiveState, AdaptiveState, recordAnswer } from '../services/infinityEngine';
 import { makeInitialDifficultyState, recordSessionAnswer, DifficultySessionState } from '../services/sessionDifficultyAdapter';
 import { bandit as diffBandit, buildBanditContext } from '../services/contextualBandit';
+import { recordQuestionQualityAnswer } from '../services/questionQuality';
 import { useUserStore } from './userStore';
 import { useKnowledgeStore } from './knowledgeStore';
 import { storeGeneratedMCQ } from '../services/questionBankStorage';
@@ -663,6 +664,17 @@ export const useMCQStore = create<MCQState>()(
           streakDays: streak,
         });
         diffBandit.recordReward(ctx, current.difficulty, reward);
+
+        // Question quality tracking
+        const perfSignals = usePerformanceStore.getState().interactionSignals;
+        const overallAcc = perfSignals.length > 0
+          ? perfSignals.filter((s: any) => s.answeredCorrect).length / perfSignals.length
+          : 0.5;
+        const qKey = `${current.subject}::${current.topic}::${current.text.slice(0, 40)}`;
+        recordQuestionQualityAnswer(
+          qKey, current.subject, current.topic, current.difficulty,
+          isCorrect, timeToAnswer, overallAcc, {},
+        );
 
         const perf = usePerformanceStore.getState();
         perf.addInteractionSignal({
