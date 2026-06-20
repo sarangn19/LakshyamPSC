@@ -49,12 +49,13 @@ function LoadingScreen() {
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    'Satoshi': require('./assets/fonts/Satoshi-Regular.otf'),
-    'Satoshi-Medium': require('./assets/fonts/Satoshi-Medium.otf'),
-    'Satoshi-Bold': require('./assets/fonts/Satoshi-Bold.otf'),
-    'Satoshi-Black': require('./assets/fonts/Satoshi-Black.otf'),
-    'Satoshi-Light': require('./assets/fonts/Satoshi-Light.otf'),
-    'Satoshi-Italic': require('./assets/fonts/Satoshi-Italic.otf'),
+    'SFProDisplay-Regular': require('./assets/fonts/SFProDisplay-Regular.ttf'),
+    'SFProDisplay-Medium': require('./assets/fonts/SFProDisplay-Medium.ttf'),
+    'SFProDisplay-Bold': require('./assets/fonts/SFProDisplay-Bold.ttf'),
+    'SFProDisplay-Heavy': require('./assets/fonts/SFProDisplay-Heavy.ttf'),
+    'SFProDisplay-Light': require('./assets/fonts/SFProDisplay-Light.ttf'),
+    'SFProDisplay-Semibold': require('./assets/fonts/SFProDisplay-Semibold.ttf'),
+    'SFProDisplay-RegularItalic': require('./assets/fonts/SFProDisplay-RegularItalic.ttf'),
     'Malayalam': require('./assets/fonts/ML-KV-Veerankutty-R.ttf'),
   });
   const [hydrated, setHydrated] = useState(false);

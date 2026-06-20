@@ -3,12 +3,12 @@ import type { Locale } from '../i18n';
 
 const mlFont = 'Malayalam';
 const enFont = {
-  display: 'Satoshi-Bold',
-  body: 'Satoshi',
-  bodyMedium: 'Satoshi-Medium',
-  bodyLight: 'Satoshi-Light',
-  bodySemiBold: 'Satoshi-Bold',
-  bodyBold: 'Satoshi-Bold',
+  display: 'SFProDisplay-Bold',
+  body: 'SFProDisplay-Regular',
+  bodyMedium: 'SFProDisplay-Medium',
+  bodyLight: 'SFProDisplay-Light',
+  bodySemiBold: 'SFProDisplay-Semibold',
+  bodyBold: 'SFProDisplay-Bold',
 };
 
 const mlFontFamily = {
