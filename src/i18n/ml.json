@@ -543,7 +543,8 @@
     "dueBadge": "{{count}} എണ്ണം കുടിശ്ശിക",
     "quickAccess": {
       "retention": "നിലനിർത്തൽ",
-      "bookmarks": "ബുക്ക്മാർക്കുകൾ"
+      "bookmarks": "ബുക്ക്മാർക്കുകൾ",
+      "leaderboard": "ലീഡർബോർഡ്"
     },
     "focus": {
       "tag": "ഇന്നത്തെ ഫോക്കസ്",

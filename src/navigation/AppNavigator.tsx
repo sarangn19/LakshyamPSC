@@ -54,6 +54,7 @@ import { NoteDetailScreen } from '../screens/NoteDetailScreen';
 import { CreateNoteScreen } from '../screens/CreateNoteScreen';
 import { RetentionDashboardScreen } from '../screens/RetentionDashboardScreen';
 import { BookmarkedQuestionsScreen } from '../screens/BookmarkedQuestionsScreen';
+import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { BulkUploadScreen } from '../screens/admin/BulkUploadScreen';
 import { AdminNavigator } from './AdminNavigator';
 import { SuperAdminNavigator } from './SuperAdminNavigator';
@@ -124,6 +125,7 @@ export function AppNavigator() {
             <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
             <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
             <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
+            <Stack.Screen name="Leaderboard" component={LeaderboardScreen} options={{ ...screenHeaderStyle, title: 'Leaderboard', animation: 'slide_from_right' }} />
             <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
@@ -150,6 +152,7 @@ export function AppNavigator() {
         <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
         <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
         <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Leaderboard" component={LeaderboardScreen} options={{ ...screenHeaderStyle, title: 'Leaderboard', animation: 'slide_from_right' }} />
         <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
         <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />

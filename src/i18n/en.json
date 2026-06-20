@@ -543,7 +543,8 @@
     "dueBadge": "{{count}} due",
     "quickAccess": {
       "retention": "Retention",
-      "bookmarks": "Bookmarks"
+      "bookmarks": "Bookmarks",
+      "leaderboard": "Leaderboard"
     },
     "focus": {
       "tag": "TODAY'S FOCUS",

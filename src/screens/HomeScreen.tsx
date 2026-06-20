@@ -288,6 +288,14 @@ export function HomeScreen({ navigation }: any) {
             <Text style={{ fontSize: 20, marginBottom: 4 }}>🔖</Text>
             <Text style={[tx.caption, { color: '#8B5CF6', fontWeight: '700' }]}>{t('home.quickAccess.bookmarks')}</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickCard, { backgroundColor: '#F59E0B10' }]}
+            onPress={() => navigation.navigate('Leaderboard')}
+            activeOpacity={0.7}
+          >
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>🏆</Text>
+            <Text style={[tx.caption, { color: '#F59E0B', fontWeight: '700' }]}>{t('home.quickAccess.leaderboard')}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Today's Focus */}
