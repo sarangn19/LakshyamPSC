@@ -241,27 +241,24 @@ export function HomeScreen({ navigation }: any) {
                 : t('home.focus.subtextNew')}
             </Text>
           </View>
-        </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Adaptive Learning Row */}
-        <View style={styles.adaptiveRow}>
-          <Text style={styles.adaptiveLabel}>Adaptive Learning</Text>
-          <TouchableOpacity
-            style={styles.startBtn}
-            onPress={() => {
-              useMCQStore.getState().startOrchestratedSession({});
-              navigation.navigate('MCQ');
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.startBtnText}>Start</Text>
-            <Svg width="6.35" height="12" viewBox="0 0 7 12" fill="none">
-              <Path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
+          {/* Adaptive Learning Row - Frame 2500 */}
+          <View style={styles.adaptiveRow}>
+            <Text style={styles.adaptiveLabel}>Adaptive Learning</Text>
+            <TouchableOpacity
+              style={styles.startBtn}
+              onPress={() => {
+                useMCQStore.getState().startOrchestratedSession({});
+                navigation.navigate('MCQ');
+              }}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.startBtnText}>Start</Text>
+              <Svg width="6.35" height="12" viewBox="0 0 7 12" fill="none">
+                <Path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Divider */}
@@ -555,9 +552,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingTop: 8,
+    paddingBottom: 8,
     paddingLeft: 24,
     paddingRight: 8,
+    height: 72,
     backgroundColor: '#FFFFFF',
     borderWidth: 0.5,
     borderColor: 'rgba(0, 0, 0, 0.08)',
