@@ -443,21 +443,23 @@ export function ChatbotScreen({ navigation }: any) {
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.noteIconBtn} onPress={openAttachModal}>
             <Svg width="10" height="14" viewBox="0 0 10 14" fill="none">
-              <Path d="M2 2h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="black"/>
+              <Path d="M2 1h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" fill="black"/>
+              <Path d="M4 4h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
+              <Path d="M4 6h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
+              <Path d="M4 8h2" stroke="white" strokeWidth="0.8" strokeLinecap="round"/>
             </Svg>
           </TouchableOpacity>
           <TouchableOpacity style={styles.attachButton} onPress={openAttachModal}>
-            <Svg width="5.97" height="11.11" viewBox="0 0 8 14" fill="none">
-              <Path d="M4 1v8a2.5 2.5 0 0 1-5 0V3.5" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+            <Svg width="6" height="12" viewBox="0 0 8 14" fill="none">
+              <Path d="M5 2v7a2.5 2.5 0 0 1-5 0V4.5" stroke="black" strokeWidth="1.2" strokeLinecap="round"/>
+              <Path d="M3.5 9.5V3a1 1 0 0 1 2 0v7" stroke="black" strokeWidth="1.2" strokeLinecap="round"/>
             </Svg>
           </TouchableOpacity>
           <TouchableOpacity style={styles.sendButton} onPress={() => handleSend(inputText)}>
-            <View style={styles.sendIconWrap}>
-              <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <Path d="M8 3v10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                <Path d="M3 8l5-5 5 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </Svg>
-            </View>
+            <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <Path d="M8 3v10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <Path d="M13 8l-5-5-5 5" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </Svg>
           </TouchableOpacity>
         </View>
       </Animated.View>

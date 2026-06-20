@@ -220,7 +220,7 @@ export function LearnScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Top Bar: Bookmark */}
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.bookmarkBtn} onPress={() => navigation.navigate('SavedNotes')} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.bookmarkBtn} onPress={() => navigation.navigate('Bookmarks')} activeOpacity={0.8}>
             <View style={styles.bookmarkCircle}>
               <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <Path d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ rotate: '45deg' }],
+    transform: [{ rotate: '-45deg' }],
   },
   adaptiveImage: {
     width: 249,
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ rotate: '45deg' }],
+    transform: [{ rotate: '-45deg' }],
   },
   bottomNav: {
     position: 'absolute',
