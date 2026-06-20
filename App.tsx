@@ -18,6 +18,7 @@ import { saveUserProfile, saveNote, removeNote } from './src/services/dataSync';
 import { supabase } from './src/services/supabase';
 import { bandit as diffBandit } from './src/services/contextualBandit';
 import { initNotifications } from './src/services/notifications';
+import { Logo } from './src/components/Logo';
 
 let profileDebounce: ReturnType<typeof setTimeout> | null = null;
 function debouncedSaveUserProfile(state: any) {
@@ -42,7 +43,8 @@ function debouncedSaveUserProfile(state: any) {
 function LoadingScreen() {
   return (
     <View style={[styles.root, { justifyContent: 'center', alignItems: 'center' }]}>
-      <Text style={{ fontSize: 48, marginBottom: spacing.lg }}>🎯</Text>
+      <Logo size="xl" />
+      <View style={{ height: 40 }} />
       <ActivityIndicator color={colors.primary} size="large" />
       <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.md }]}>Loading Lakshyam...</Text>
     </View>

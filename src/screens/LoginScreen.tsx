@@ -9,6 +9,7 @@ import { supabase } from '../services/supabase';
 import { useTranslation } from '../i18n/useTranslation';
 import { fetchUserProfile, fetchNotes } from '../services/dataSync';
 import type { Role } from '../store/authStore';
+import { Logo } from '../components/Logo';
 
 const features = [
   { icon: '🧠', key: 'login.featureAiTutor' },
@@ -152,12 +153,7 @@ export function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Logo + Badge */}
         <View style={styles.topRow}>
-          <View style={styles.logoWrap}>
-            <View style={styles.logoCircle}>
-              <Text style={styles.logoLetter}>L</Text>
-            </View>
-            <Text style={styles.appName}>Lakshyam</Text>
-          </View>
+          <Logo size="small" />
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{t('login.badge')}</Text>
           </View>
@@ -239,9 +235,6 @@ const styles = StyleSheet.create({
   /* Top Row */
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   logoWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoCircle: { width: 34, height: 34, borderRadius: 9, backgroundColor: '#F7B11A', justifyContent: 'center', alignItems: 'center' },
-  logoLetter: { fontSize: 17, fontWeight: '800', color: '#FFFFFF', fontFamily: fontFamily.bodyBold },
-  appName: { fontSize: 18, fontWeight: '700', color: '#000000', fontFamily: fontFamily.bodySemiBold },
   badge: { backgroundColor: '#F7B11A20', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
   badgeText: { fontSize: 11, fontWeight: '600', color: '#F7B11A', fontFamily: fontFamily.bodyMedium },
 
