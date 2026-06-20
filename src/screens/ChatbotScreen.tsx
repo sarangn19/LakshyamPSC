@@ -467,20 +467,20 @@ export function ChatbotScreen({ navigation }: any) {
         <View style={styles.navIndicator} />
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
           <Svg width="16.25" height="16" viewBox="0 0 18 18" fill="none">
-            <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </Svg>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Learn')}>
+          <Svg width="18.97" height="16" viewBox="0 0 24 24" fill="black">
+            <Path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3ZM18.82 9L12 12.72L5.18 9L12 5.28L18.82 9ZM17 16L12 18.72L7 16V12.27L12 15L17 12.27V16Z" />
           </Svg>
         </TouchableOpacity>
         <View style={[styles.navItem, styles.navItemActive]}>
-          <Svg width="18.97" height="16" viewBox="0 0 24 24" fill="none">
-            <Path d="M21 11.5C21 12.8802 20.6488 14.1826 20 15.3249C19.1111 16.8899 17.6667 18.1149 15.92 18.6849C14.88 19.027 13.76 19.218 12.59 19.233C11.86 19.241 11.15 19.143 10.48 18.952C10.04 18.828 9.57 18.991 9.3 19.34L7 22.5V19.364C7 19.0305 6.78 18.724 6.49 18.605C4.65 17.83 3.21 16.512 2.38 14.87C1.5 13.24 1 11.41 1 9.5C1 5.36 4.47 2 8.71 2H9.5" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <Svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <Path d="M10 10C12.2091 10 14 8.20914 14 6C14 3.79086 12.2091 2 10 2C7.79086 2 6 3.79086 6 6C6 8.20914 7.79086 10 10 10Z" stroke="white" strokeWidth="2"/>
+            <Path d="M2 18C3.5 14.5 6 13 10 13C14 13 16.5 14.5 18 18" stroke="white" strokeWidth="2" strokeLinecap="round"/>
           </Svg>
         </View>
-        <TouchableOpacity style={styles.navItem}>
-          <Svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-            <Path d="M10 10C12.2091 10 14 8.20914 14 6C14 3.79086 12.2091 2 10 2C7.79086 2 6 3.79086 6 6C6 8.20914 7.79086 10 10 10Z" stroke="black" strokeWidth="2"/>
-            <Path d="M2 18C3.5 14.5 6 13 10 13C14 13 16.5 14.5 18 18" stroke="black" strokeWidth="2" strokeLinecap="round"/>
-          </Svg>
-        </TouchableOpacity>
       </View>
 
       {/* Attach Modal */}
