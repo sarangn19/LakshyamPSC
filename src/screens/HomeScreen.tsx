@@ -208,6 +208,27 @@ export function HomeScreen({ navigation }: any) {
         {/* Divider */}
         <View style={styles.divider} />
 
+        {/* Adaptive Learning Row */}
+        <View style={styles.adaptiveRow}>
+          <Text style={styles.adaptiveLabel}>Adaptive Learning</Text>
+          <TouchableOpacity
+            style={styles.startBtn}
+            onPress={() => {
+              useMCQStore.getState().startOrchestratedSession({});
+              navigation.navigate('MCQ');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.startBtnText}>Start</Text>
+            <Svg width="6.35" height="12" viewBox="0 0 7 12" fill="none">
+              <Path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </TouchableOpacity>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
         {/* Statistics Section */}
         <View style={styles.statSection}>
           <View style={styles.statHeader}>
@@ -227,27 +248,6 @@ export function HomeScreen({ navigation }: any) {
             <QuestionsPracticedCard total={interactionSignals.length} weekly={weeklyQuestions} />
             <OverallAccuracyCard overallAccuracy={accuracy} />
           </View>
-        </View>
-
-        {/* Divider */}
-        <View style={styles.divider} />
-
-        {/* Adaptive Learning Row */}
-        <View style={styles.adaptiveRow}>
-          <Text style={styles.adaptiveLabel}>Adaptive Learning</Text>
-          <TouchableOpacity
-            style={styles.startBtn}
-            onPress={() => {
-              useMCQStore.getState().startOrchestratedSession({});
-              navigation.navigate('MCQ');
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.startBtnText}>Start</Text>
-            <Svg width="6.35" height="12" viewBox="0 0 7 12" fill="none">
-              <Path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
