@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
@@ -8,6 +8,8 @@ import { useStudyValidationStore } from '../store/studyValidationStore';
 import { useMCQStore } from '../store';
 import { printValidationReport } from '../services/adaptiveValidationReport';
 import { getNode, getNodePath, getNodesByLevel } from '../data/knowledgeTree';
+import { syllabus } from '../data/syllabus';
+import { usePerformanceStore } from '../store/performanceStore';
 import { Badge } from '../components/common/StyledComponents';
 
 export function AnalyticsScreen({ navigation }: any) {
@@ -48,6 +50,19 @@ export function AnalyticsScreen({ navigation }: any) {
 
   const healthScore = healthScoreData.score;
   const healthLabel = healthScoreData.level;
+  const getSubjectAccuracy = usePerformanceStore((s) => s.getSubjectAccuracy);
+
+  const subjects = useMemo(() => {
+    try {
+      return syllabus.map((subj) => {
+        const acc = getSubjectAccuracy(subj.name);
+        return {
+          subject: subj.name,
+          percent: acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0,
+        };
+      });
+    } catch { return []; }
+  }, [getSubjectAccuracy]);
 
   const stats = useMemo(() => {
     const totalAttempts = Object.values(masteryMap).reduce((sum, m) => sum + m.attempts, 0);
@@ -162,6 +177,19 @@ export function AnalyticsScreen({ navigation }: any) {
           </View>
         </View>
       </View>
+
+      {/* Subject Accuracy */}
+      {subjects.length > 0 && (
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Subject Accuracy</Text>
+          {subjects.map((s, i) => (
+            <View key={s.subject}>
+              {i > 0 && <View style={styles.subjectDivider} />}
+              <SubjectProgress name={s.subject} percentage={s.percent} color={statColor(s.percent / 100)} />
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Part 12: Weak Subject / Topic / Subtopic */}
       {weakestSubjectData.name && (
@@ -404,6 +432,12 @@ export function AnalyticsScreen({ navigation }: any) {
           </View>
         )}
       </View>
+
+      {/* Retention Dashboard Link */}
+      <TouchableOpacity style={styles.retentionLink} onPress={() => navigation.navigate('Retention')} activeOpacity={0.8}>
+        <Text style={styles.retentionLinkText}>View Retention Dashboard</Text>
+        <Text style={styles.retentionLinkArrow}>›</Text>
+      </TouchableOpacity>
 
       {/* Most Durable Learning */}
       {mostDurableLearning.length > 0 && (
@@ -837,6 +871,33 @@ export function AnalyticsScreen({ navigation }: any) {
   );
 }
 
+function statColor(t: number): string {
+  const r = Math.round(247 * t);
+  const g = Math.round(177 * t);
+  const b = Math.round(26 * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function SubjectProgress({ name, percentage, color }: { name: string; percentage: number; color: string }) {
+  const widthAnim = useMemo(() => new Animated.Value(0), []);
+
+  React.useEffect(() => {
+    Animated.timing(widthAnim, { toValue: percentage, duration: 600, delay: 200, useNativeDriver: false }).start();
+  }, []);
+
+  return (
+    <View style={styles.subjectRow}>
+      <View style={styles.subjectInfo}>
+        <Text style={styles.subjectName}>{name}</Text>
+        <Text style={styles.subjectPct}>{percentage}%</Text>
+      </View>
+      <View style={styles.progressTrack}>
+        <Animated.View style={[styles.progressFill, { width: widthAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }), backgroundColor: color }]} />
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.xl, paddingTop: spacing.huge + spacing.md, paddingBottom: spacing.huge },
@@ -953,4 +1014,69 @@ const styles = StyleSheet.create({
   outcomePositive: { fontSize: 20, fontWeight: '700', fontFamily: fontFamily.bodyBold, color: colors.success, marginTop: spacing.md },
   outcomePending: { fontSize: 16, fontWeight: '600', fontFamily: fontFamily.bodyMedium, color: colors.warning, marginTop: spacing.md },
   outcomeDetail: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 20 },
+
+  subjectRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+  },
+  subjectInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: 90,
+    marginRight: spacing.md,
+  },
+  subjectName: {
+    fontSize: 12,
+    fontWeight: '600',
+    fontFamily: fontFamily.bodyMedium,
+    color: colors.text,
+    flex: 1,
+  },
+  subjectPct: {
+    fontSize: 12,
+    fontWeight: '700',
+    fontFamily: fontFamily.bodyBold,
+    color: colors.text,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  subjectDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.sm,
+  },
+
+  retentionLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.info + '40',
+    padding: spacing.md,
+    marginTop: spacing.lg,
+    gap: spacing.xs,
+  },
+  retentionLinkText: {
+    fontSize: 14,
+    fontWeight: '700',
+    fontFamily: fontFamily.bodyBold,
+    color: colors.info,
+  },
+  retentionLinkArrow: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.info,
+  },
 });
