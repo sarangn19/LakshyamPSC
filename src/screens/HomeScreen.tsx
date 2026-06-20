@@ -13,6 +13,7 @@ import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
 import { getDueSummary } from '../services/spacedRepetition';
 import { getChurnRisk, getRiskAction } from '../services/churnPrediction';
 import { getStudyPathRecommendations, StudyPathRecommendation } from '../services/collaborativeFiltering';
+import { explainRecommendation } from '../services/explainableAI';
 import { useMCQStore } from '../store';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
@@ -334,12 +335,26 @@ export function HomeScreen({ navigation }: any) {
             <Text style={styles.pathTitle}>Recommended Study Path</Text>
             <Text style={styles.pathSubtitle}>Based on your learning patterns</Text>
             <View style={styles.pathList}>
-              {pathRecs.map((rec, i) => (
-                <View key={i} style={styles.pathCard}>
-                  <Text style={styles.pathCardTitle}>{rec.subject}{rec.topic ? ` — ${rec.topic}` : ''}</Text>
-                  <Text style={styles.pathCardReason}>{rec.reason}</Text>
-                </View>
-              ))}
+              {pathRecs.map((rec, i) => {
+                const expl = explainRecommendation(rec.subject, rec.topic);
+                return (
+                  <View key={i} style={styles.pathCard}>
+                    <View style={styles.pathCardHeader}>
+                      <Text style={styles.pathCardTitle}>{rec.subject}{rec.topic ? ` — ${rec.topic}` : ''}</Text>
+                      <Text style={styles.pathCardScore}>{expl.score}</Text>
+                    </View>
+                    <Text style={styles.pathCardReason}>{rec.reason}</Text>
+                    <View style={styles.pathAttributionRow}>
+                      {expl.features.filter(f => f.contribution > 1).slice(0, 3).map((f, fi) => (
+                        <View key={fi} style={styles.attributionBadge}>
+                          <Text style={styles.attributionLabel}>{f.label}</Text>
+                          <Text style={styles.attributionValue}>{Math.round(f.contribution)}%</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                );
+              })}
             </View>
           </View>
         )}
@@ -751,12 +766,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  pathCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   pathCardTitle: {
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 19,
     color: '#000000',
     fontFamily: fontFamily.bodyMedium,
+    flex: 1,
+  },
+  pathCardScore: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 19,
+    color: '#7C3AED',
+    fontFamily: fontFamily.bodyMedium,
+    marginLeft: 8,
   },
   pathCardReason: {
     fontSize: 12,
@@ -765,5 +794,34 @@ const styles = StyleSheet.create({
     color: 'rgba(0,0,0,0.5)',
     fontFamily: fontFamily.body,
     marginTop: 4,
+  },
+  pathAttributionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  attributionBadge: {
+    flexDirection: 'row',
+    backgroundColor: '#F3E8FF',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    gap: 4,
+    alignItems: 'center',
+  },
+  attributionLabel: {
+    fontSize: 10,
+    fontWeight: '400',
+    lineHeight: 14,
+    color: '#6B21A8',
+    fontFamily: fontFamily.body,
+  },
+  attributionValue: {
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 14,
+    color: '#6B21A8',
+    fontFamily: fontFamily.bodyMedium,
   },
 });
