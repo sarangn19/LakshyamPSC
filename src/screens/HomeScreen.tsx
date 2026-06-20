@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, ActivityIndicator, Linking } from 'react-native';
 import { supabase } from '../services/supabase';
 import { CurrentAffair } from '../data/mockData';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -278,7 +278,7 @@ export function HomeScreen({ navigation }: any) {
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.caScroll}>
               {caItems.map((item) => (
-                <TouchableOpacity key={item.id} style={styles.caCard}>
+                <TouchableOpacity key={item.id} style={styles.caCard} onPress={() => item.url ? Linking.openURL(item.url) : null}>
                   <View style={styles.caCardHeader}>
                     <View style={[styles.caBadge, { backgroundColor: categoryColor(item.category) }]}>
                       <Text style={styles.caBadgeText}>{item.category}</Text>
