@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./icon logo.png",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lakshyam.app"
@@ -12,7 +13,19 @@
     "android": {
       "package": "com.lakshyam.app"
     },
-    "web": {},
+    "web": {
+      "favicon": "./icon logo.png",
+      "manifest": {
+        "display": "standalone",
+        "shortName": "Lakshyam",
+        "themeColor": "#2563EB",
+        "backgroundColor": "#F4F0EF",
+        "icons": [
+          { "src": "./icon logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+          { "src": "./icon logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+        ]
+      }
+    },
     "plugins": [
       "expo-font"
     ]
