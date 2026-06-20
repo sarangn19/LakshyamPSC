@@ -6,7 +6,7 @@ import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
-import { SendArrowIcon, AttachIcon, NoteIcon, BackIcon } from '../components/Icons';
+import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
 import { BottomNav } from '../components/BottomNav';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
@@ -441,8 +441,8 @@ export function ChatbotScreen({ navigation }: any) {
 
         {/* Action Buttons Row - Frame 2511 */}
         <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.noteIconBtn} onPress={openAttachModal}>
-            <NoteIcon color="black" />
+          <TouchableOpacity style={styles.noteIconBtn} onPress={handleVoiceNote}>
+            <MicIcon color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.attachButton} onPress={openAttachModal}>
             <AttachIcon color="black" />
