@@ -331,26 +331,181 @@ slide_number(slide, 8, TOTAL)
 # ═══════════════════════════════════════════
 slide = prs.slides.add_slide(prs.slide_layouts[6])
 set_bg(slide)
-add_text_box(slide, Inches(0.8), Inches(0.4), Inches(6), Inches(0.4), "Monetization", 14, PURPLE, True)
-add_text_box(slide, Inches(0.8), Inches(0.9), Inches(10), Inches(0.6), "Business Model", 36, WHITE, True)
+add_text_box(slide, Inches(0.8), Inches(0.3), Inches(6), Inches(0.3), "Monetization", 12, PURPLE, True)
+add_text_box(slide, Inches(0.8), Inches(0.6), Inches(10), Inches(0.4), "Business Model", 28, WHITE, True)
 
-biz_cards = [
-    ("Free", "AI-generated questions\nBasic analytics\nDaily current affairs", "Rs.0", GREEN),
-    ("Premium", "Unlimited questions\nOffline question bank\nPriority AI generation\nDetailed analytics\nAd-free", "Rs.199/mo", YELLOW),
-]
-for i, (title, features, price, color) in enumerate(biz_cards):
-    x = Inches(1.5 + i * 5.5)
-    add_card(slide, x, Inches(1.8), Inches(4.8), Inches(3.0), title, features)
-    add_text_box(slide, x, Inches(4.8), Inches(4.8), Inches(0.6), price, 28, color, True, PP_ALIGN.CENTER)
+# Top row: tiers + unit economics
+tier_x = Inches(0.8)
+tier_w = Inches(3.8)
+tier_h = Inches(1.8)
+add_card(slide, tier_x, Inches(1.1), tier_w, tier_h, "Free", "AI-generated questions, basic analytics, daily current affairs", PURPLE)
+add_text_box(slide, tier_x, Inches(2.5), tier_w, Inches(0.4), "Rs.0", 20, GREEN, True, PP_ALIGN.CENTER)
 
-add_card(slide, Inches(0.8), Inches(5.5), Inches(11.8), Inches(1.5), "Unit Economics", "")
+add_card(slide, Inches(4.8), Inches(1.1), tier_w, tier_h, "Premium", "Unlimited questions, offline question bank, priority AI, detailed analytics, ad-free", PURPLE)
+add_text_box(slide, Inches(4.8), Inches(2.5), tier_w, Inches(0.4), "Rs.199/mo", 20, YELLOW, True, PP_ALIGN.CENTER)
+
+add_card(slide, Inches(8.8), Inches(1.1), Inches(3.8), tier_h, "Unit Economics", "", PURPLE)
 unit_items = [
-    "AI inference cost per question: ~Rs.0.001 (free tier Groq+Gemini -> Rs.0)",
-    "Premium at Rs.199/mo with 300 questions/user = Rs.0.30 AI cost -> 99.85% gross margin",
-    "Even with GPT-4o-mini upgrade: Rs.5/user/mo -> 97.5% margin",
-    "Coaching centers charge Rs.15,000-50,000/year per student",
+    "AI cost: ~Rs.0.001/question",
+    "Premium: 99.85% gross margin",
+    "GPT-4o-mini: 97.5% margin",
 ]
-add_bullet_list(slide, Inches(1.1), Inches(5.9), Inches(11.3), Inches(1.2), unit_items, GRAY_LIGHT, 11)
+add_bullet_list(slide, Inches(9.0), Inches(1.4), Inches(3.4), Inches(1.3), unit_items, GRAY_LIGHT, 10)
+
+# Revenue projection table
+proj_x = Inches(0.8)
+proj_y = Inches(3.1)
+proj_col_w = [Inches(2.8), Inches(2.0), Inches(2.0), Inches(2.0)]
+proj_row_h = Inches(0.26)
+
+proj_headers = ["Metric", "Year 1", "Year 2", "Year 3"]
+for j, (h, w) in enumerate(zip(proj_headers, proj_col_w)):
+    x = proj_x + sum(proj_col_w[k] for k in range(j))
+    shape = add_rect(slide, x, proj_y, w, proj_row_h, PURPLE, None)
+    tf = shape.text_frame
+    p = tf.paragraphs[0]
+    p.text = h
+    p.font.size = Pt(7)
+    p.font.color.rgb = WHITE
+    p.font.bold = True
+    p.font.name = 'Calibri'
+    p.alignment = PP_ALIGN.CENTER
+
+proj_data = [
+    ("Free Users", "10,000", "50,000", "200,000"),
+    ("Paid Conversion", "5%", "5%", "8%"),
+    ("Paying Users", "500", "2,500", "16,000"),
+    ("ARPU (Monthly)", "Rs.199", "Rs.249", "Rs.299"),
+    ("Subscription Revenue", "Rs.11.9L", "Rs.74.7L", "Rs.5.74Cr"),
+    ("Coaching SaaS", "Rs.0", "Rs.15L", "Rs.75L"),
+    ("Enterprise", "Rs.0", "Rs.5L", "Rs.30L"),
+    ("Marketplace", "Rs.0", "Rs.2L", "Rs.20L"),
+    ("Advertising", "Rs.1L", "Rs.5L", "Rs.15L"),
+]
+for i, row in enumerate(proj_data):
+    y = proj_y + proj_row_h * (i + 1)
+    bg = RGBColor(0x15, 0x15, 0x2A) if i == 4 else (BG_CARD if i % 2 == 0 else RGBColor(0x15, 0x15, 0x28))
+    for j, (val, w) in enumerate(zip(row, proj_col_w)):
+        x = proj_x + sum(proj_col_w[k] for k in range(j))
+        shape = add_rect(slide, x, y, w, proj_row_h, bg, BORDER)
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        p.text = val
+        p.font.size = Pt(7)
+        if i == 4:
+            p.font.color.rgb = PURPLE_LIGHT
+            p.font.bold = True
+        elif i == len(proj_data) - 1:
+            p.font.color.rgb = YELLOW
+            p.font.bold = False
+        elif j == 0:
+            p.font.color.rgb = GRAY_LIGHT
+            p.font.bold = False
+        else:
+            p.font.color.rgb = GRAY_LIGHT
+            p.font.bold = False
+        p.font.name = 'Calibri'
+        p.alignment = PP_ALIGN.CENTER
+
+# Total row
+total_y = proj_y + proj_row_h * (len(proj_data) + 1)
+total_data = ["Total Revenue", "Rs.12.9L", "Rs.1.02Cr", "Rs.7.14Cr"]
+for j, (val, w) in enumerate(zip(total_data, proj_col_w)):
+    x = proj_x + sum(proj_col_w[k] for k in range(j))
+    shape = add_rect(slide, x, total_y, w, proj_row_h, RGBColor(0x2A, 0x2A, 0x4A), BORDER)
+    tf = shape.text_frame
+    p = tf.paragraphs[0]
+    p.text = val
+    p.font.size = Pt(7)
+    p.font.color.rgb = GREEN
+    p.font.bold = True
+    p.font.name = 'Calibri'
+    p.alignment = PP_ALIGN.CENTER
+
+# Right column: monthly stages + summary
+stages_x = Inches(7.5)
+stages_y = Inches(3.1)
+
+add_text_box(slide, stages_x, stages_y, Inches(5.5), Inches(0.25), "Monthly Revenue Stages", 11, PURPLE, True)
+
+stages_headers = ["Stage", "Users", "MRR"]
+stages_col_w = [Inches(1.8), Inches(1.2), Inches(1.5)]
+stages_header_x = stages_x
+for j, (h, w) in enumerate(zip(stages_headers, stages_col_w)):
+    x = stages_header_x + sum(stages_col_w[k] for k in range(j))
+    shape = add_rect(slide, x, stages_y + Inches(0.25), w, Inches(0.22), PURPLE, None)
+    tf = shape.text_frame
+    p = tf.paragraphs[0]
+    p.text = h
+    p.font.size = Pt(7)
+    p.font.color.rgb = WHITE
+    p.font.bold = True
+    p.font.name = 'Calibri'
+    p.alignment = PP_ALIGN.CENTER
+
+stages_data = [
+    ("MVP Launch", "100", "Rs.19.9K"),
+    ("Milestone", "500", "Rs.99.5K"),
+    ("PM-Fit", "2,500", "Rs.6.2L"),
+    ("Growth", "5,000", "Rs.12.4L"),
+    ("Scale", "10,000", "Rs.24.9L"),
+    ("Expansion", "16,000", "Rs.47.8L"),
+]
+for i, row in enumerate(stages_data):
+    y = stages_y + Inches(0.47) + Inches(0.22) * i
+    bg = BG_CARD if i % 2 == 0 else RGBColor(0x15, 0x15, 0x28)
+    for j, (val, w) in enumerate(zip(row, stages_col_w)):
+        x = stages_header_x + sum(stages_col_w[k] for k in range(j))
+        shape = add_rect(slide, x, y, w, Inches(0.22), bg, BORDER)
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        p.text = val
+        p.font.size = Pt(7)
+        p.font.color.rgb = GREEN if j == 2 else GRAY_LIGHT
+        p.font.bold = (j == 2)
+        p.font.name = 'Calibri'
+        p.alignment = PP_ALIGN.CENTER
+
+# Summary table
+sum_y = stages_y + Inches(1.9)
+add_text_box(slide, stages_x, sum_y, Inches(5.5), Inches(0.25), "Investor Summary", 11, PURPLE, True)
+
+sum_headers = ["Year", "Revenue", "Expenses", "EBITDA"]
+sum_col_w = [Inches(1.0), Inches(1.3), Inches(1.2), Inches(1.0)]
+for j, (h, w) in enumerate(zip(sum_headers, sum_col_w)):
+    x = stages_header_x + sum(sum_col_w[k] for k in range(j))
+    shape = add_rect(slide, x, sum_y + Inches(0.25), w, Inches(0.22), PURPLE, None)
+    tf = shape.text_frame
+    p = tf.paragraphs[0]
+    p.text = h
+    p.font.size = Pt(7)
+    p.font.color.rgb = WHITE
+    p.font.bold = True
+    p.font.name = 'Calibri'
+    p.alignment = PP_ALIGN.CENTER
+
+sum_data = [
+    ("Y1", "Rs.12.9L", "Rs.6L", "Rs.6.9L"),
+    ("Y2", "Rs.1.02Cr", "Rs.35L", "Rs.67L"),
+    ("Y3", "Rs.7.14Cr", "Rs.1.9Cr", "Rs.5.24Cr"),
+]
+for i, row in enumerate(sum_data):
+    y = sum_y + Inches(0.47) + Inches(0.22) * i
+    bg = BG_CARD if i % 2 == 0 else RGBColor(0x15, 0x15, 0x28)
+    for j, (val, w) in enumerate(zip(row, sum_col_w)):
+        x = stages_header_x + sum(sum_col_w[k] for k in range(j))
+        shape = add_rect(slide, x, y, w, Inches(0.22), bg, BORDER)
+        tf = shape.text_frame
+        p = tf.paragraphs[0]
+        p.text = val
+        p.font.size = Pt(7)
+        p.font.color.rgb = GREEN if j == 3 else GRAY_LIGHT
+        p.font.bold = (j == 3)
+        p.font.name = 'Calibri'
+        p.alignment = PP_ALIGN.CENTER
+
+# Conservative note
+add_text_box(slide, proj_x, Inches(5.6), Inches(11.5), Inches(0.3), "Conservative scenario: 35K users Y2 (Rs.52L) / 100K Y3 (Rs.2.2Cr). Upside exceeds Rs.5Cr ARR if conversion and retention outperform.", 8, GRAY, False, PP_ALIGN.CENTER)
 slide_number(slide, 9, TOTAL)
 
 # ═══════════════════════════════════════════

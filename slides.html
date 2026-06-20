@@ -33,6 +33,11 @@
   .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
   .badge-green { background: rgba(52,211,153,0.2); color: #34d399; }
   .badge-yellow { background: rgba(251,191,36,0.2); color: #fbbf24; }
+  .proj-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  .proj-table th { background:#1c1c2e; color:#a78bfa; padding:6px 10px; text-align:center; border:1px solid #2a2a3e; font-weight:600; font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; }
+  .proj-table td { padding:6px 10px; text-align:center; border:1px solid #2a2a3e; color:#b0b0b0; font-size:0.8rem; }
+  .proj-table tr:nth-child(even) td { background:#15152b; }
+  .proj-table tr:hover td { background:#1f1f3a; }
   .flow { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
   .flow-item { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 12px 20px; font-size: 0.9rem; color: #c4b5fd; font-weight: 500; text-align: center; min-width: 100px; }
   .flow-arrow { color: #555; font-size: 1.5rem; font-weight: 300; }
@@ -248,27 +253,65 @@
   <div class="slide-content">
     <h3>Monetization</h3>
     <h2>Business Model</h2>
-    <div class="grid-2">
-      <div class="card">
+    <div style="display:flex;gap:16px;margin-bottom:16px">
+      <div class="card" style="flex:1">
         <h4>🎁 Free</h4>
         <p>AI-generated questions, basic analytics, daily current affairs</p>
-        <p style="margin-top:12px;color:#34d399;font-size:2rem;font-weight:800">₹0</p>
+        <p style="margin-top:8px;color:#34d399;font-size:1.5rem;font-weight:800">₹0</p>
       </div>
-      <div class="card">
+      <div class="card" style="flex:1">
         <h4>⭐ Premium</h4>
         <p>Unlimited questions, offline question bank, priority AI, detailed analytics, ad-free</p>
-        <p style="margin-top:12px;color:#fbbf24;font-size:2rem;font-weight:800">₹199/mo</p>
+        <p style="margin-top:8px;color:#fbbf24;font-size:1.5rem;font-weight:800">₹199/mo</p>
+      </div>
+      <div class="card" style="flex:1">
+        <h4>📊 Unit Economics</h4>
+        <ul class="list" style="font-size:0.85rem">
+          <li>AI cost: ~₹0.001/question</li>
+          <li>Premium → 99.85% gross margin</li>
+          <li>GPT-4o-mini → 97.5% margin</li>
+        </ul>
       </div>
     </div>
-    <div style="margin-top:24px">
-      <div class="card">
-        <h4>📊 Unit Economics</h4>
-        <ul class="list">
-          <li>AI inference cost per question: <span style="color:#a78bfa">~₹0.001</span> (free tier → ₹0)</li>
-          <li>Premium at ₹199/mo with 300 questions/user = ₹0.30 AI cost → <span style="color:#34d399">99.85% gross margin</span></li>
-          <li>Even with GPT-4o-mini upgrade: ₹5/user/mo → 97.5% margin</li>
-          <li>Coaching centers charge ₹15,000–50,000/year per student</li>
-        </ul>
+    <div style="display:flex;gap:16px">
+      <div style="flex:2">
+        <table class="proj-table">
+          <tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
+          <tr><td>Free Users</td><td>10,000</td><td>50,000</td><td>200,000</td></tr>
+          <tr><td>Paid Conversion</td><td>5%</td><td>5%</td><td>8%</td></tr>
+          <tr><td>Paying Users</td><td>500</td><td>2,500</td><td>16,000</td></tr>
+          <tr><td>ARPU (Monthly)</td><td>₹199</td><td>₹249</td><td>₹299</td></tr>
+          <tr><td><strong>Subscription Revenue</strong></td><td><strong>₹11.9L</strong></td><td><strong>₹74.7L</strong></td><td><strong>₹5.74Cr</strong></td></tr>
+          <tr><td>Coaching SaaS</td><td>₹0</td><td>₹15L</td><td>₹75L</td></tr>
+          <tr><td>Enterprise</td><td>₹0</td><td>₹5L</td><td>₹30L</td></tr>
+          <tr><td>Marketplace</td><td>₹0</td><td>₹2L</td><td>₹20L</td></tr>
+          <tr><td>Advertising</td><td>₹1L</td><td>₹5L</td><td>₹15L</td></tr>
+          <tr style="background:rgba(167,139,250,0.1)"><td><strong>Total Revenue</strong></td><td><strong>₹12.9L</strong></td><td><strong>₹1.02Cr</strong></td><td><strong>₹7.14Cr</strong></td></tr>
+        </table>
+      </div>
+      <div style="flex:1">
+        <div class="card" style="margin-bottom:8px">
+          <h4>📈 Monthly Stages</h4>
+          <table class="proj-table" style="font-size:0.8rem">
+            <tr><th>Stage</th><th>Users</th><th>MRR</th></tr>
+            <tr><td>MVP</td><td>100</td><td>₹19.9K</td></tr>
+            <tr><td>Milestone</td><td>500</td><td>₹99.5K</td></tr>
+            <tr><td>PM-Fit</td><td>2,500</td><td>₹6.2L</td></tr>
+            <tr><td>Growth</td><td>5,000</td><td>₹12.4L</td></tr>
+            <tr><td>Scale</td><td>10,000</td><td>₹24.9L</td></tr>
+            <tr><td>Expansion</td><td>16,000</td><td>₹47.8L</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h4>💰 Summary</h4>
+          <table class="proj-table" style="font-size:0.8rem">
+            <tr><th>Year</th><th>Rev</th><th>Exp</th><th>EBITDA</th></tr>
+            <tr><td>Y1</td><td>₹12.9L</td><td>₹6L</td><td style="color:#34d399">₹6.9L</td></tr>
+            <tr><td>Y2</td><td>₹1.02Cr</td><td>₹35L</td><td style="color:#34d399">₹67L</td></tr>
+            <tr><td>Y3</td><td>₹7.14Cr</td><td>₹1.9Cr</td><td style="color:#34d399">₹5.24Cr</td></tr>
+          </table>
+          <p style="font-size:0.75rem;color:#888;margin-top:8px">Conservative: ₹52L Y2, ₹2.2Cr Y3. Upside &gt;₹5Cr ARR.</p>
+        </div>
       </div>
     </div>
   </div>

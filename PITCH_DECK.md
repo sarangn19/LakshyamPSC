@@ -129,10 +129,43 @@ This is a network-effects data moat. Each new student improves the system for ev
 | **Free** | AI-generated questions, basic analytics, daily current affairs | ₹0 |
 | **Premium** | Unlimited questions, offline question bank, priority AI, detailed analytics, ad-free | ₹199/month |
 
-**Unit economics:**
-- AI inference cost per question: ~₹0.001 (free tier Groq+Gemini → ₹0)
-- Premium at ₹199/mo with 300 questions/user = ₹0.30 AI cost → 99.85% gross margin
-- Even with GPT-4o-mini upgrade: ₹5/user/mo → 97.5% margin
+### Revenue Projection
+
+| Metric | Year 1 | Year 2 | Year 3 |
+|---|---|---|---|
+| Free Users | 10,000 | 50,000 | 200,000 |
+| Paid Conversion | 5% | 5% | 8% |
+| Paying Users | 500 | 2,500 | 16,000 |
+| ARPU (Monthly) | ₹199 | ₹249 | ₹299 |
+| Subscription Revenue | ₹11.9L | ₹74.7L | ₹5.74Cr |
+| Coaching SaaS Revenue | ₹0 | ₹15L | ₹75L |
+| Enterprise Revenue | ₹0 | ₹5L | ₹30L |
+| Marketplace Revenue | ₹0 | ₹2L | ₹20L |
+| Advertising Revenue | ₹1L | ₹5L | ₹15L |
+| **Total Revenue** | **₹12.9L** | **₹1.02Cr** | **₹7.14Cr** |
+
+### Monthly Revenue Stages
+
+| Stage | Paying Users | Monthly Revenue |
+|---|---|---|
+| MVP Launch | 100 | ₹19,900 |
+| First Milestone | 500 | ₹99,500 |
+| Product-Market Fit | 2,500 | ₹6.2L |
+| Growth Stage | 5,000 | ₹12.4L |
+| Scale Stage | 10,000 | ₹24.9L |
+| Expansion Stage | 16,000 | ₹47.8L |
+
+### Investor Summary
+
+| Year | Revenue | Expenses | EBITDA |
+|---|---|---|---|
+| Year 1 | ₹12.9L | ₹6L | ₹6.9L |
+| Year 2 | ₹1.02Cr | ₹35L | ₹67L |
+| Year 3 | ₹7.14Cr | ₹1.9Cr | ₹5.24Cr |
+
+**Unit economics:** AI inference cost per question ~₹0.001. Premium at ₹199/mo = 99.85% gross margin. Even with GPT-4o-mini: 97.5% margin.
+
+> **Conservative scenario:** 35K users → 1,750 paid → ₹52L (Y2); 100K users → 6K paid → ₹2.2Cr (Y3). Upside exceeds ₹5Cr ARR if conversion and retention outperform.
 
 ---
 
