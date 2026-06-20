@@ -238,7 +238,7 @@ export function HomeScreen({ navigation }: any) {
           <View style={styles.recommendRow}>
             <Text style={styles.recommendSubject}>
               {dueSummary.count > 0
-                ? `${dueSummary.count} items due for review`
+                ? `${dueSummary.count} item${dueSummary.count > 1 ? 's' : ''} due`
                 : cognitiveSummary.openGaps > 0
                   ? `${cognitiveSummary.openGaps} gaps to close`
                   : learnerProfile.totalQuestions === 0
@@ -255,6 +255,15 @@ export function HomeScreen({ navigation }: any) {
                   })
                 : t('home.focus.subtextNew')}
             </Text>
+            {dueSummary.items.length > 0 && (
+              <View style={{ marginTop: 4 }}>
+                {dueSummary.items.slice(0, 3).map((item, i) => (
+                  <Text key={i} style={[styles.recommendDesc, { fontSize: 11, opacity: 0.8 }]}>
+                    {['•', '◦', '▪'][i]} {item.path.slice(1).join(' › ')}: {item.name}
+                  </Text>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Adaptive Learning Row - Frame 2500 */}

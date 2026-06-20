@@ -212,12 +212,18 @@ export function getDueCount(): number {
   return getDueSubtopics().filter((d) => d.status === 'due').length;
 }
 
-export function getDueSummary(): { count: number; highestOverdue: number; averageMastery: number; newItemsCount: number } {
+export interface DueItem {
+  nodeId: string; name: string; path: string[];
+  daysOverdue: number; masteryScore: number;
+  priorityScore: number; subject: string; topic: string; status: string;
+}
+
+export function getDueSummary(): { count: number; highestOverdue: number; averageMastery: number; newItemsCount: number; items: DueItem[] } {
   const due = getDueSubtopics();
   const dueItems = due.filter((d) => d.status === 'due');
   const newItems = due.filter((d) => d.status === 'new');
   if (dueItems.length === 0 && newItems.length === 0) {
-    return { count: 0, highestOverdue: 0, averageMastery: 0, newItemsCount: 0 };
+    return { count: 0, highestOverdue: 0, averageMastery: 0, newItemsCount: 0, items: [] };
   }
   return {
     count: dueItems.length + (isNewUser() ? newItems.length : 0),
@@ -226,5 +232,6 @@ export function getDueSummary(): { count: number; highestOverdue: number; averag
       ? Math.round(dueItems.reduce((s, d) => s + d.masteryScore, 0) / dueItems.length)
       : 0,
     newItemsCount: newItems.length,
+    items: due.slice(0, 5),
   };
 }

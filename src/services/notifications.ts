@@ -7,16 +7,20 @@ import { getLearnerStageName } from './learnerStage';
 
 let initialized = false;
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+const isWeb = Platform.OS === 'web';
+
+if (!isWeb) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 export async function initNotifications(): Promise<void> {
-  if (initialized) return;
+  if (isWeb || initialized) return;
   initialized = true;
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -38,10 +42,12 @@ export async function initNotifications(): Promise<void> {
 }
 
 async function cancelAll(): Promise<void> {
+  if (isWeb) return;
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
 export async function scheduleReviewReminders(): Promise<void> {
+  if (isWeb) return;
   await cancelAll();
 
   const due = getDueSummary();
@@ -84,6 +90,8 @@ export async function scheduleReviewReminders(): Promise<void> {
   }
 }
 
-export function getNotificationPermission(): Promise<Notifications.PermissionStatus> {
-  return Notifications.getPermissionsAsync().then((r) => r.status);
+export async function getNotificationPermission(): Promise<Notifications.PermissionStatus | 'web'> {
+  if (isWeb) return 'web';
+  const r = await Notifications.getPermissionsAsync();
+  return r.status;
 }
