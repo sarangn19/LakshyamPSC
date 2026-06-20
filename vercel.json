@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "devCommand": "expo start --web",
   "framework": null,
+  "nodeVersion": "20.x",
   "rewrites": [
     {
       "source": "/(.*)",
