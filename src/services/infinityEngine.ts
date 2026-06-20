@@ -8,6 +8,7 @@ import { useUserStore } from '../store/userStore';
 import { InteractionSignal } from '../store/performanceStore';
 import { getUnifiedPriorities } from './cognitiveTwinRecommender';
 import { getLearnerProfile, getStageConfig } from './learnerStage';
+import { getBlueprintBoost, recordBlueprintGeneration } from './blueprintAlignment';
 
 export interface RecentAnswer {
   text: string;
@@ -113,6 +114,8 @@ function pickTopic(
           adjustedScore *= 0.5;
         }
       }
+      const boost = getBlueprintBoost(p.subject, p.topic);
+      adjustedScore *= boost;
       return { subject: p.subject, topic: p.topic, adjustedScore };
     })
     .filter((c) => c.adjustedScore > 0);
@@ -233,6 +236,7 @@ export async function generateNextAdaptiveQuestion(
   if (aiResult.question) {
     const q = aiResult.question;
     q.subtopic = subtopic;
+    recordBlueprintGeneration(q.subject, q.topic);
     console.log('[AUDIT] generatedQuestionTopic:', q.subject + '::' + q.topic);
     const aligned = q.topic === topic.topic && q.subject === topic.subject;
     if (!aligned) {
