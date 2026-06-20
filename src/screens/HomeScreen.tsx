@@ -15,6 +15,7 @@ import { getChurnRisk, getRiskAction } from '../services/churnPrediction';
 import { getStudyPathRecommendations, StudyPathRecommendation } from '../services/collaborativeFiltering';
 import { explainRecommendation } from '../services/explainableAI';
 import { useMCQStore } from '../store';
+import { FirstLaunchTooltip } from '../components/FirstLaunchTooltip';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -389,6 +390,7 @@ export function HomeScreen({ navigation }: any) {
       </ScrollView>
 
       <BottomNav activeTab="Home" />
+      <FirstLaunchTooltip />
     </View>
   );
 }
