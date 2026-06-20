@@ -4,12 +4,13 @@ import Svg, { Path, Circle } from 'react-native-svg';
 import { fontFamily, spacing, typography } from '../theme';
 import { useUserStore } from '../store/userStore';
 import { usePerformanceStore } from '../store/performanceStore';
-import { mockCurrentAffairs, CurrentAffair } from '../data/mockData';
+import { CurrentAffair } from '../data/mockData';
 import { supabase } from '../services/supabase';
 import { syllabus } from '../data/syllabus';
 import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
 import { getDueSummary } from '../services/spacedRepetition';
+import { useTranslation } from '../i18n/useTranslation';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -35,6 +36,7 @@ const GRADIENT_COLORS = [
 ];
 
 function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: number[] }) {
+  const { t } = useTranslation();
   const days = getWeekLabels();
   const barAnims = useRef(weekly.map(() => new Animated.Value(0))).current;
 
@@ -46,7 +48,7 @@ function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: numb
 
   return (
     <View style={styles.questionsCard}>
-      <Text style={styles.questionsLabel}>Questions practiced</Text>
+      <Text style={styles.questionsLabel}>{t('home.questionsPracticed')}</Text>
       <Text style={styles.questionsValue}>{total}</Text>
       <View style={styles.barChartWrapper}>
         <View style={styles.barChart}>
@@ -71,6 +73,7 @@ function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: numb
 }
 
 function OverallAccuracyCard({ data, overallAccuracy }: { data: number[]; overallAccuracy: number }) {
+  const { t } = useTranslation();
   const w = 130;
   const h = 60;
   const padding = 4;
@@ -100,7 +103,7 @@ function OverallAccuracyCard({ data, overallAccuracy }: { data: number[]; overal
   return (
     <View style={styles.accuracyCard}>
       <View style={styles.accuracyTop}>
-        <Text style={styles.accuracyLabel}>Overall accuracy</Text>
+        <Text style={styles.accuracyLabel}>{t('home.overallAccuracy')}</Text>
         <Text style={styles.accuracyValue}>{displayAcc}%</Text>
       </View>
       <Animated.View style={[styles.graphWrap, { opacity: graphOpacity }]}>
@@ -119,13 +122,12 @@ function OverallAccuracyCard({ data, overallAccuracy }: { data: number[]; overal
 }
 
 export function HomeScreen({ navigation }: any) {
+  const { t, typography: tx } = useTranslation();
   const userName = useUserStore((s) => s.userName);
-  const storeCurrentAffairs = useUserStore((s) => s.currentAffairs);
-  const lastFetch = useUserStore((s) => s.lastCurrentAffairsFetch);
-  const setLastFetch = useUserStore((s) => s.setLastCurrentAffairsFetch);
   const [dbAffairs, setDbAffairs] = useState<CurrentAffair[] | null>(null);
+  const [newsError, setNewsError] = useState<string | null>(null);
   const [selectedNews, setSelectedNews] = useState<CurrentAffair | null>(null);
-  const currentAffairs = dbAffairs ?? (storeCurrentAffairs.length > 0 ? storeCurrentAffairs : mockCurrentAffairs);
+  const currentAffairs = dbAffairs ?? [];
   const { width: screenW, height: screenH } = useWindowDimensions();
   const cardRefs = useRef<(View | null)[]>([]);
   const cardStartLayout = useRef({ x: 0, y: 0, w: 0, h: 0 });
@@ -191,10 +193,9 @@ export function HomeScreen({ navigation }: any) {
   };
 
   useEffect(() => {
-    const ONE_DAY = 86400000;
-    if (Date.now() - lastFetch < ONE_DAY) return;
     if (!supabase) return;
-    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data }) => {
+    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(20).then(({ data, error }) => {
+      if (error) { setNewsError(error.message); return; }
       if (data && data.length > 0) {
         const mapped = data.map((r: any) => ({
           id: r.id,
@@ -208,9 +209,10 @@ export function HomeScreen({ navigation }: any) {
           image_url: r.image_url || '',
         }));
         setDbAffairs(mapped);
-        setLastFetch(Date.now());
+      } else {
+        setDbAffairs([]);
       }
-    });
+    }).catch((err) => setNewsError(err.message));
   }, []);
 
   const getInteractionAccuracy = usePerformanceStore((s) => s.getInteractionAccuracy);
@@ -259,10 +261,11 @@ export function HomeScreen({ navigation }: any) {
   const learnerProfile = getLearnerProfile();
   const cognitiveSummary = getCognitiveTwinSummary();
   const dueSummary = getDueSummary();
+  const weakestSubject = subjects.reduce((a, b) => a.percent < b.percent ? a : b);
 
   const hour = new Date().getHours();
-  const greetingText = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  const displayName = userName || 'there';
+  const greetingText = hour < 12 ? t('home.greeting.morning') : hour < 17 ? t('home.greeting.afternoon') : t('home.greeting.evening');
+  const displayName = userName || t('home.greeting.fallbackName');
 
   return (
     <View style={styles.container}>
@@ -275,7 +278,7 @@ export function HomeScreen({ navigation }: any) {
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 20, marginBottom: 4 }}>📊</Text>
-            <Text style={[typography.caption, { color: '#2563EB', fontWeight: '700' }]}>Retention</Text>
+            <Text style={[tx.caption, { color: '#2563EB', fontWeight: '700' }]}>{t('home.quickAccess.retention')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.quickCard, { backgroundColor: '#8B5CF610' }]}
@@ -283,7 +286,7 @@ export function HomeScreen({ navigation }: any) {
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 20, marginBottom: 4 }}>🔖</Text>
-            <Text style={[typography.caption, { color: '#8B5CF6', fontWeight: '700' }]}>Bookmarks</Text>
+            <Text style={[tx.caption, { color: '#8B5CF6', fontWeight: '700' }]}>{t('home.quickAccess.bookmarks')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -293,10 +296,10 @@ export function HomeScreen({ navigation }: any) {
             <View style={styles.headerText}>
               <Text style={styles.greeting}>{greetingText}, {displayName}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <Text style={styles.subtitle}>Here's what we recommend for today.</Text>
+                <Text style={styles.subtitle}>{t('home.greeting.subtitle')}</Text>
                 {dueSummary.count > 0 && (
                   <View style={styles.dueBadge}>
-                    <Text style={styles.dueBadgeText}>{dueSummary.count} due</Text>
+                    <Text style={styles.dueBadgeText}>{t('home.dueBadge', { count: dueSummary.count })}</Text>
                   </View>
                 )}
               </View>
@@ -312,26 +315,31 @@ export function HomeScreen({ navigation }: any) {
           <TouchableOpacity style={styles.focusCard} activeOpacity={0.9} onPress={() => {}}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={styles.focusTag}>
-                <Text style={styles.focusTagText}>TODAY'S FOCUS</Text>
+                <Text style={styles.focusTagText}>{t('home.focus.tag')}</Text>
               </View>
               <View style={styles.stageBadge}>
                 <Text style={styles.stageBadgeText}>{learnerProfile.stage}</Text>
               </View>
             </View>
             <Text style={styles.focusTitle}>
-              Review <Text style={styles.focusHighlight}>{subjects.reduce((a, b) => a.percent < b.percent ? a : b).subject}</Text> today.
+              {t('home.focus.titlePrefix')} <Text style={styles.focusHighlight}>{weakestSubject.subject}</Text>{t('home.focus.titleSuffix')}
             </Text>
             <Text style={styles.focusSubtext}>
               {learnerProfile.totalQuestions >= 5
-                ? `This is your weakest area at ${subjects.reduce((a, b) => a.percent < b.percent ? a : b).percent}% accuracy with ${cognitiveSummary.openGaps} open gaps. ${learnerProfile.totalQuestions} questions answered across ${learnerProfile.sessionCount} sessions.`
-                : 'Based on your recent performance and accuracy trends, this topic is likely to deliver the highest score improvement.'}
+                ? t('home.focus.subtextExperienced', {
+                    accuracy: weakestSubject.percent,
+                    gaps: cognitiveSummary.openGaps,
+                    totalQ: learnerProfile.totalQuestions,
+                    sessions: learnerProfile.sessionCount,
+                  })
+                : t('home.focus.subtextNew')}
             </Text>
           </TouchableOpacity>
         </View>
 
         {/* This Week Section */}
         <View style={styles.weekSection}>
-          <Text style={styles.sectionTitle}>This Week</Text>
+          <Text style={styles.sectionTitle}>{t('home.thisWeek')}</Text>
           <View style={styles.weekCards}>
             <QuestionsPracticedCard total={interactionSignals.length} weekly={weeklyQuestions} />
             <OverallAccuracyCard data={dailyAccuracy} overallAccuracy={accuracy} />
@@ -340,7 +348,7 @@ export function HomeScreen({ navigation }: any) {
 
         {/* Subject Accuracy Section */}
         <View style={styles.subjectSection}>
-          <Text style={styles.sectionTitle}>Subject Accuracy</Text>
+          <Text style={styles.sectionTitle}>{t('home.subjectAccuracy')}</Text>
           <View style={styles.subjectCard}>
             {subjects.map((s, i) => (
               <React.Fragment key={s.subject}>
@@ -357,7 +365,7 @@ export function HomeScreen({ navigation }: any) {
 
         {/* Current Affairs */}
         <View style={styles.caSection}>
-          <Text style={styles.caSectionTitle}>Current Affairs</Text>
+          <Text style={styles.caSectionTitle}>{t('home.currentAffairs')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.caScroll}>
             {currentAffairs.map((item, index) => (
               <TouchableOpacity key={item.id} style={styles.caCard} onPress={() => handleCardPress(item, index)} activeOpacity={0.95}>
@@ -374,7 +382,7 @@ export function HomeScreen({ navigation }: any) {
                   <View style={styles.caContentWrap}>
                     <Text style={styles.caCategory}>{item.category}</Text>
                     <Text style={styles.caTitle} numberOfLines={2}>{item.title}</Text>
-                    <Text style={styles.caMeta}>{item.source} · {item.date}</Text>
+                    <Text style={styles.caMeta}>{t('home.newsMetadata', { source: item.source, date: item.date })}</Text>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -425,13 +433,13 @@ export function HomeScreen({ navigation }: any) {
                 <View style={styles.modalBody}>
                   <View style={styles.modalMeta}>
                     <Text style={styles.modalCategory}>{(expandedNews || selectedNews)!.category}</Text>
-                    <Text style={styles.modalSource}>{(expandedNews || selectedNews)!.source} · {(expandedNews || selectedNews)!.date}</Text>
+                    <Text style={styles.modalSource}>{t('home.newsMetadata', { source: (expandedNews || selectedNews)!.source, date: (expandedNews || selectedNews)!.date })}</Text>
                   </View>
                   <Text style={styles.modalTitle}>{(expandedNews || selectedNews)!.title}</Text>
                   <Text style={styles.modalSummary}>{(expandedNews || selectedNews)!.summary}</Text>
                   {(expandedNews || selectedNews)!.url ? (
                 <TouchableOpacity onPress={() => { Linking.openURL((expandedNews || selectedNews)!.url!); }}>
-                  <Text style={styles.modalLinkText}>Read full article →</Text>
+                  <Text style={styles.modalLinkText}>{t('home.readFullArticle')}</Text>
                 </TouchableOpacity>
                   ) : null}
                 </View>

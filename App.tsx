@@ -54,6 +54,7 @@ export default function App() {
     'Satoshi-Black': require('./assets/fonts/Satoshi-Black.otf'),
     'Satoshi-Light': require('./assets/fonts/Satoshi-Light.otf'),
     'Satoshi-Italic': require('./assets/fonts/Satoshi-Italic.otf'),
+    'Malayalam': require('./assets/fonts/ML-KV-Veerankutty-R.ttf'),
   });
   const [hydrated, setHydrated] = useState(false);
   const [setupDone, setSetupDone] = useState(false);

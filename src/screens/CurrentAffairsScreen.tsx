@@ -17,7 +17,7 @@ const CATEGORIES = [
 ];
 
 export function CurrentAffairsScreen() {
-  const { t } = useTranslation();
+  const { t, typography: tx } = useTranslation();
   const [dbAffairs, setDbAffairs] = useState<CurrentAffair[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +78,9 @@ export function CurrentAffairsScreen() {
   if (error) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={[typography.body, { color: colors.warning, textAlign: 'center', marginBottom: spacing.md }]}>⚠️ {error}</Text>
+        <Text style={[tx.body, { color: colors.warning, textAlign: 'center', marginBottom: spacing.md }]}>⚠️ {error}</Text>
         <TouchableOpacity onPress={fetchNews} style={styles.retryBtn}>
-          <Text style={[typography.bodyBold, { color: colors.primary }]}>Retry</Text>
+          <Text style={[tx.bodyBold, { color: colors.primary }]}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -90,12 +90,12 @@ export function CurrentAffairsScreen() {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ fontSize: 48, marginBottom: spacing.md }}>📭</Text>
-        <Text style={[typography.h3, { color: colors.text, textAlign: 'center' }]}>No news available</Text>
-        <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm, marginBottom: spacing.lg }]}>
+        <Text style={[tx.h3, { color: colors.text, textAlign: 'center' }]}>No news available</Text>
+        <Text style={[tx.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm, marginBottom: spacing.lg }]}>
           Current affairs will appear here once fetched. The cron job runs every 6 hours.
         </Text>
         <TouchableOpacity onPress={fetchNews} style={styles.retryBtn}>
-          <Text style={[typography.bodyBold, { color: colors.primary }]}>Refresh</Text>
+          <Text style={[tx.bodyBold, { color: colors.primary }]}>Refresh</Text>
         </TouchableOpacity>
       </View>
     );
@@ -103,8 +103,8 @@ export function CurrentAffairsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={[typography.h2, { color: colors.text, paddingTop: spacing.lg }]}>{t('currentAffairs.title')}</Text>
-      <Text style={[typography.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>{t('currentAffairs.subtitle')}</Text>
+      <Text style={[tx.h2, { color: colors.text, paddingTop: spacing.lg }]}>{t('currentAffairs.title')}</Text>
+      <Text style={[tx.caption, { color: colors.textMuted, marginTop: spacing.xs }]}>{t('currentAffairs.subtitle')}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.catRow}>
         {CATEGORIES.map((cat) => (
@@ -114,7 +114,7 @@ export function CurrentAffairsScreen() {
             onPress={() => setActiveCategory(cat.key)}
           >
             <Text style={{ fontSize: 14 }}>{cat.icon}</Text>
-            <Text style={[typography.caption, { color: activeCategory === cat.key ? colors.primary : colors.textSecondary, marginLeft: spacing.xs }]}>
+            <Text style={[tx.caption, { color: activeCategory === cat.key ? colors.primary : colors.textSecondary, marginLeft: spacing.xs }]}>
               {t(`currentAffairs.category${cat.key.charAt(0).toUpperCase() + cat.key.slice(1)}`)}
             </Text>
           </TouchableOpacity>
@@ -133,19 +133,19 @@ export function CurrentAffairsScreen() {
               } />
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
                 {item.isImportant && <Text style={{ color: colors.warning }}>⭐</Text>}
-                <Text style={[typography.small, { color: colors.textMuted }]}>{item.date}</Text>
+                <Text style={[tx.small, { color: colors.textMuted }]}>{item.date}</Text>
               </View>
             </View>
             {item.image_url && (
               <Image source={{ uri: item.image_url }} style={styles.newsImage} resizeMode="cover" />
             )}
-            <Text style={[typography.bodyBold, { color: colors.text, marginTop: spacing.sm }]}>{item.title}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>{item.summary}</Text>
-            <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.sm }]}>{t('currentAffairs.source', { source: item.source })}</Text>
+            <Text style={[tx.bodyBold, { color: colors.text, marginTop: spacing.sm }]}>{item.title}</Text>
+            <Text style={[tx.caption, { color: colors.textSecondary, marginTop: spacing.xs }]}>{item.summary}</Text>
+            <Text style={[tx.small, { color: colors.textMuted, marginTop: spacing.sm }]}>{t('currentAffairs.source', { source: item.source })}</Text>
 
             <View style={styles.newsActions}>
               <TouchableOpacity style={styles.actionChip}>
-                <Text style={[typography.small, { color: colors.primary }]}>Save</Text>
+                <Text style={[tx.small, { color: colors.primary }]}>Save</Text>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>

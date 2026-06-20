@@ -531,5 +531,33 @@
     "systemTab": "സിസ്റ്റം",
     "expTab": "പരീക്ഷണങ്ങൾ",
     "auditTab": "ഓഡിറ്റ്"
+  },
+  "home": {
+    "greeting": {
+      "morning": "സുപ്രഭാതം",
+      "afternoon": "ശുഭ മദ്ധ്യാഹ്നം",
+      "evening": "ശുഭ സായാഹ്നം",
+      "fallbackName": "സുഹൃത്തേ",
+      "subtitle": "ഇന്ന് നിങ്ങൾക്കായി ഞങ്ങൾ ശുപാർശ ചെയ്യുന്നത് ഇതാണ്."
+    },
+    "dueBadge": "{{count}} എണ്ണം കുടിശ്ശിക",
+    "quickAccess": {
+      "retention": "നിലനിർത്തൽ",
+      "bookmarks": "ബുക്ക്മാർക്കുകൾ"
+    },
+    "focus": {
+      "tag": "ഇന്നത്തെ ഫോക്കസ്",
+      "titlePrefix": "ഇന്ന് ",
+      "titleSuffix": " ആവർത്തിക്കുക.",
+      "subtextExperienced": "{{accuracy}}% കൃത്യതയും {{gaps}} ഓപ്പൺ ഗാപ്പുകളുമുള്ള നിങ്ങളുടെ ഏറ്റവും ദുർബലമായ മേഖലയാണിത്. {{totalQ}} ചോദ്യങ്ങൾക്ക് {{sessions}} സെഷനുകളിലായി ഉത്തരം നൽകി.",
+      "subtextNew": "നിങ്ങളുടെ സമീപകാല പ്രകടനത്തെയും കൃത്യതാ ട്രെൻഡുകളെയും അടിസ്ഥാനമാക്കി, ഈ വിഷയം ഏറ്റവും ഉയർന്ന സ്കോർ പുരോഗതി നൽകാൻ സാധ്യതയുണ്ട്."
+    },
+    "thisWeek": "ഈ ആഴ്ച",
+    "questionsPracticed": "ചോദ്യങ്ങൾ പരിശീലിച്ചു",
+    "overallAccuracy": "മൊത്തത്തിലുള്ള കൃത്യത",
+    "subjectAccuracy": "വിഷയ കൃത്യത",
+    "currentAffairs": "നിലവിലെ കാര്യങ്ങൾ",
+    "readFullArticle": "പൂർണ്ണ ലേഖനം വായിക്കുക →",
+    "newsMetadata": "{{source}} · {{date}}"
   }
 }

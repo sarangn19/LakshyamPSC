@@ -64,7 +64,7 @@ const LogoutIcon = () => (
 );
 
 export function ProfileScreen({ navigation }: any) {
-  const { t, locale, setLocale } = useTranslation();
+  const { t, locale, setLocale, typography: tx } = useTranslation();
   const { targetExams, primaryExam, examDate, streak, masteredTopics, accuracyImprovement, userName } = useUserStore();
   const profile = usePerformanceStore((s) => s.profile);
   const { role, isAuthenticated, login } = useAuthStore();
@@ -83,15 +83,15 @@ export function ProfileScreen({ navigation }: any) {
         <View style={styles.avatarLarge}>
           <Text style={{ fontSize: 48, lineHeight: 56 }}>🧑‍🎓</Text>
         </View>
-        <Text style={[typography.h2, { color: colors.text, marginTop: spacing.md }]}>{displayName}</Text>
+        <Text style={[tx.h2, { color: colors.text, marginTop: spacing.md }]}>{displayName}</Text>
         {primaryExam && (
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+          <Text style={[tx.caption, { color: colors.textSecondary }]}>
             {t('profile.tracking', { count: targetExams.length, exam: primaryExam })}
           </Text>
         )}
         {streak.current > 0 && (
           <View style={{ marginTop: spacing.sm, backgroundColor: colors.primary + '20', paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: borderRadius.round }}>
-            <Text style={[typography.small, { color: colors.primary }]}>{t('profile.streak', { days: streak.current })}</Text>
+            <Text style={[tx.small, { color: colors.primary }]}>{t('profile.streak', { days: streak.current })}</Text>
           </View>
         )}
       </View>
@@ -99,42 +99,42 @@ export function ProfileScreen({ navigation }: any) {
       {hasData ? (
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={[typography.h3, { color: colors.primary }]}>{streak.longest}</Text>
-            <Text style={[typography.small, { color: colors.textMuted }]}>{t('profile.bestStreak')}</Text>
+            <Text style={[tx.h3, { color: colors.primary }]}>{streak.longest}</Text>
+            <Text style={[tx.small, { color: colors.textMuted }]}>{t('profile.bestStreak')}</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[typography.h3, { color: colors.accentGreen }]}>{masteredTopics.length}</Text>
-            <Text style={[typography.small, { color: colors.textMuted }]}>{t('profile.masteredTopics')}</Text>
+            <Text style={[tx.h3, { color: colors.accentGreen }]}>{masteredTopics.length}</Text>
+            <Text style={[tx.small, { color: colors.textMuted }]}>{t('profile.masteredTopics')}</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={[typography.h3, { color: colors.info }]}>+{accuracyImprovement}%</Text>
-            <Text style={[typography.small, { color: colors.textMuted }]}>{t('profile.accuracy')}</Text>
+            <Text style={[tx.h3, { color: colors.info }]}>+{accuracyImprovement}%</Text>
+            <Text style={[tx.small, { color: colors.textMuted }]}>{t('profile.accuracy')}</Text>
           </View>
         </View>
       ) : (
         <View style={styles.emptyCard}>
           <TargetIcon />
-          <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm }]}>
+          <Text style={[tx.caption, { color: colors.textMuted, textAlign: 'center', marginTop: spacing.sm }]}>
             {t('profile.emptyStats')}
           </Text>
         </View>
       )}
 
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.settings')}</Text>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.settings')}</Text>
         {settings.map((s) => (
           <TouchableOpacity key={s.label} style={styles.settingRow}>
             {s.icon}
             <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Text style={[typography.body, { color: colors.text }]}>{s.label}</Text>
-              <Text style={[typography.small, { color: colors.textMuted }]}>{s.value}</Text>
+              <Text style={[tx.body, { color: colors.text }]}>{s.label}</Text>
+              <Text style={[tx.small, { color: colors.textMuted }]}>{s.value}</Text>
             </View>
           </TouchableOpacity>
         ))}
         <View style={styles.settingRow}>
           <GlobeIcon />
           <View style={{ flex: 1, marginLeft: spacing.md }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('profile.language')}</Text>
+            <Text style={[tx.body, { color: colors.text }]}>{t('profile.language')}</Text>
           </View>
           <View style={{ flexDirection: 'row', gap: spacing.xs }}>
             <TouchableOpacity
@@ -157,7 +157,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={styles.section}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
             {role === 'superadmin' ? <ShieldIcon /> : <WrenchIcon />}
-            <Text style={[typography.h3, { color: colors.text }]}>{t('profile.adminPortal')}</Text>
+            <Text style={[tx.h3, { color: colors.text }]}>{t('profile.adminPortal')}</Text>
           </View>
           {!isAuthenticated ? (
             <TouchableOpacity
@@ -167,7 +167,7 @@ export function ProfileScreen({ navigation }: any) {
                 if (ok) navigation.navigate(role === 'superadmin' ? 'SuperAdminPortal' : 'AdminPortal');
               }}
             >
-              <Text style={[typography.bodyBold, { color: '#fff' }]}>
+              <Text style={[tx.bodyBold, { color: '#fff' }]}>
                 {t('profile.loginAs')} {role}
               </Text>
             </TouchableOpacity>
@@ -176,7 +176,7 @@ export function ProfileScreen({ navigation }: any) {
               style={styles.adminLoginBtn}
               onPress={() => navigation.navigate(role === 'superadmin' ? 'SuperAdminPortal' : 'AdminPortal')}
             >
-              <Text style={[typography.bodyBold, { color: '#fff' }]}>
+              <Text style={[tx.bodyBold, { color: '#fff' }]}>
                 {t('profile.openPortal')}
               </Text>
             </TouchableOpacity>
@@ -187,8 +187,8 @@ export function ProfileScreen({ navigation }: any) {
           >
             <UploadIcon />
             <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Text style={[typography.body, { color: colors.text }]}>Bulk Upload Questions</Text>
-              <Text style={[typography.small, { color: colors.textMuted }]}>JSON / CSV / file upload</Text>
+              <Text style={[tx.body, { color: colors.text }]}>Bulk Upload Questions</Text>
+              <Text style={[tx.small, { color: colors.textMuted }]}>JSON / CSV / file upload</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
@@ -197,8 +197,8 @@ export function ProfileScreen({ navigation }: any) {
           >
             <Text style={{ fontSize: 18 }}>🔖</Text>
             <View style={{ flex: 1, marginLeft: spacing.md }}>
-              <Text style={[typography.body, { color: colors.text }]}>Bookmarked Questions</Text>
-              <Text style={[typography.small, { color: colors.textMuted }]}>Questions you saved during practice</Text>
+              <Text style={[tx.body, { color: colors.text }]}>Bookmarked Questions</Text>
+              <Text style={[tx.small, { color: colors.textMuted }]}>Questions you saved during practice</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -206,19 +206,19 @@ export function ProfileScreen({ navigation }: any) {
 
       {hasData && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.studyStatistics')}</Text>
+          <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.studyStatistics')}</Text>
           <View style={styles.statItem}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('profile.totalDaysStudied')}</Text>
-            <Text style={[typography.bodyBold, { color: colors.text }]}>{streak.dates.length} days</Text>
+            <Text style={[tx.caption, { color: colors.textSecondary }]}>{t('profile.totalDaysStudied')}</Text>
+            <Text style={[tx.bodyBold, { color: colors.text }]}>{streak.dates.length} days</Text>
           </View>
           <View style={styles.statItem}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('profile.topicsMastered')}</Text>
-            <Text style={[typography.bodyBold, { color: colors.text }]}>{masteredTopics.length} topics</Text>
+            <Text style={[tx.caption, { color: colors.textSecondary }]}>{t('profile.topicsMastered')}</Text>
+            <Text style={[tx.bodyBold, { color: colors.text }]}>{masteredTopics.length} topics</Text>
           </View>
           {profile && (
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{t('profile.questionsAttempted')}</Text>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{profile.totalQuestionsAttempted}</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>{t('profile.questionsAttempted')}</Text>
+              <Text style={[tx.bodyBold, { color: colors.text }]}>{profile.totalQuestionsAttempted}</Text>
             </View>
           )}
         </View>
@@ -230,41 +230,41 @@ export function ProfileScreen({ navigation }: any) {
         return (
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
-              <Text style={[typography.h3, { color: colors.text }]}>Learning Profile</Text>
+              <Text style={[tx.h3, { color: colors.text }]}>Learning Profile</Text>
               <View style={{ backgroundColor: '#E8EDF5', borderRadius: 999, paddingHorizontal: 10, height: 22, justifyContent: 'center', alignItems: 'center' }}>
                 <Text style={{ fontSize: 10, fontWeight: '600', color: '#4D5F81', letterSpacing: 0.5, textTransform: 'capitalize' }}>{lp.stage}</Text>
               </View>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Stage</Text>
-              <Text style={[typography.bodyBold, { color: colors.text, textTransform: 'capitalize' }]}>{lp.stage}</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Stage</Text>
+              <Text style={[tx.bodyBold, { color: colors.text, textTransform: 'capitalize' }]}>{lp.stage}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Total Questions</Text>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{lp.totalQuestions}</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Total Questions</Text>
+              <Text style={[tx.bodyBold, { color: colors.text }]}>{lp.totalQuestions}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Sessions Completed</Text>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{lp.sessionCount}</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Sessions Completed</Text>
+              <Text style={[tx.bodyBold, { color: colors.text }]}>{lp.sessionCount}</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Overall Mastery</Text>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.overallMastery}%</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Overall Mastery</Text>
+              <Text style={[tx.bodyBold, { color: colors.text }]}>{cs.overallMastery}%</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Open Gaps</Text>
-              <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.openGaps}</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Open Gaps</Text>
+              <Text style={[tx.bodyBold, { color: colors.text }]}>{cs.openGaps}</Text>
             </View>
             {cs.strongestSubject && (
               <View style={styles.statItem}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Strongest Subject</Text>
-                <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.strongestSubject}</Text>
+                <Text style={[tx.caption, { color: colors.textSecondary }]}>Strongest Subject</Text>
+                <Text style={[tx.bodyBold, { color: colors.text }]}>{cs.strongestSubject}</Text>
               </View>
             )}
             {cs.weakestSubject && (
               <View style={styles.statItem}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>Weakest Subject</Text>
-                <Text style={[typography.bodyBold, { color: colors.text }]}>{cs.weakestSubject}</Text>
+                <Text style={[tx.caption, { color: colors.textSecondary }]}>Weakest Subject</Text>
+                <Text style={[tx.bodyBold, { color: colors.text }]}>{cs.weakestSubject}</Text>
               </View>
             )}
           </View>
@@ -276,40 +276,40 @@ export function ProfileScreen({ navigation }: any) {
         if (cal.totalRecords < 3) return null;
         return (
           <View style={styles.section}>
-            <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>Confidence Calibration</Text>
+            <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.md }]}>Confidence Calibration</Text>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Calibration Score</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Calibration Score</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={[typography.bodyBold, { color: cal.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea }]}>{cal.calibrationScore}%</Text>
+                <Text style={[tx.bodyBold, { color: cal.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea }]}>{cal.calibrationScore}%</Text>
                 <View style={{ flex: 1, height: 4, backgroundColor: colors.border, borderRadius: 2 }}>
                   <View style={{ width: `${cal.calibrationScore}%`, height: 4, backgroundColor: cal.calibrationScore >= 70 ? colors.status.strong : colors.status.weakArea, borderRadius: 2 }} />
                 </View>
               </View>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Overconfidence</Text>
-              <Text style={[typography.bodyBold, { color: cal.overconfidenceRate > 30 ? colors.error : colors.text }]}>{cal.overconfidenceRate}%</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Overconfidence</Text>
+              <Text style={[tx.bodyBold, { color: cal.overconfidenceRate > 30 ? colors.error : colors.text }]}>{cal.overconfidenceRate}%</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Underconfidence</Text>
-              <Text style={[typography.bodyBold, { color: cal.underconfidenceRate > 30 ? colors.warning : colors.text }]}>{cal.underconfidenceRate}%</Text>
+              <Text style={[tx.caption, { color: colors.textSecondary }]}>Underconfidence</Text>
+              <Text style={[tx.bodyBold, { color: cal.underconfidenceRate > 30 ? colors.warning : colors.text }]}>{cal.underconfidenceRate}%</Text>
             </View>
-            <Text style={[typography.tiny, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>{getCalibrationInterpretation(cal)}</Text>
+            <Text style={[tx.tiny, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>{getCalibrationInterpretation(cal)}</Text>
           </View>
         );
       })()}
 
       <View style={styles.section}>
-        <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.about')}</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
+        <Text style={[tx.h3, { color: colors.text, marginBottom: spacing.md }]}>{t('profile.about')}</Text>
+        <Text style={[tx.caption, { color: colors.textSecondary }]}>
           {t('profile.aboutText')}
         </Text>
-        <Text style={[typography.small, { color: colors.textMuted, marginTop: spacing.md }]}>{t('profile.version')}</Text>
+        <Text style={[tx.small, { color: colors.textMuted, marginTop: spacing.md }]}>{t('profile.version')}</Text>
       </View>
 
       {hasData && (
         <TouchableOpacity style={styles.logoutBtn} onPress={() => {}}>
-          <Text style={[typography.bodyBold, { color: colors.textSecondary }]}>{t('profile.resetData')}</Text>
+          <Text style={[tx.bodyBold, { color: colors.textSecondary }]}>{t('profile.resetData')}</Text>
         </TouchableOpacity>
       )}
 
@@ -318,7 +318,7 @@ export function ProfileScreen({ navigation }: any) {
         useAuthStore.getState().logout();
       }}>
         <LogoutIcon />
-        <Text style={[typography.bodyBold, { color: '#E53935', marginLeft: spacing.sm }]}>Logout</Text>
+        <Text style={[tx.bodyBold, { color: '#E53935', marginLeft: spacing.sm }]}>Logout</Text>
       </TouchableOpacity>
 
       <View style={{ height: spacing.huge }} />

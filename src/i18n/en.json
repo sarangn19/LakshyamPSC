@@ -531,5 +531,33 @@
     "systemTab": "System",
     "expTab": "Experiments",
     "auditTab": "Audit"
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good Morning",
+      "afternoon": "Good Afternoon",
+      "evening": "Good Evening",
+      "fallbackName": "there",
+      "subtitle": "Here's what we recommend for today."
+    },
+    "dueBadge": "{{count}} due",
+    "quickAccess": {
+      "retention": "Retention",
+      "bookmarks": "Bookmarks"
+    },
+    "focus": {
+      "tag": "TODAY'S FOCUS",
+      "titlePrefix": "Review ",
+      "titleSuffix": " today.",
+      "subtextExperienced": "This is your weakest area at {{accuracy}}% accuracy with {{gaps}} open gaps. {{totalQ}} questions answered across {{sessions}} sessions.",
+      "subtextNew": "Based on your recent performance and accuracy trends, this topic is likely to deliver the highest score improvement."
+    },
+    "thisWeek": "This Week",
+    "questionsPracticed": "Questions practiced",
+    "overallAccuracy": "Overall accuracy",
+    "subjectAccuracy": "Subject Accuracy",
+    "currentAffairs": "Current Affairs",
+    "readFullArticle": "Read full article →",
+    "newsMetadata": "{{source}} · {{date}}"
   }
 }
