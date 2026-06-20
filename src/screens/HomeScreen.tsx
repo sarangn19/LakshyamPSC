@@ -228,10 +228,16 @@ export function HomeScreen({ navigation }: any) {
           </View>
           <View style={styles.recommendRow}>
             <Text style={styles.recommendSubject}>
-              Review {weakestSubject.subject || 'your subjects'} today.
+              {dueSummary.count > 0
+                ? `${dueSummary.count} items due for review`
+                : cognitiveSummary.openGaps > 0
+                  ? `${cognitiveSummary.openGaps} gaps to close`
+                  : learnerProfile.totalQuestions === 0
+                    ? 'Start your first session'
+                    : 'Keep up the momentum'}
             </Text>
             <Text style={styles.recommendDesc}>
-              {learnerProfile.totalQuestions >= 5
+              {learnerProfile.stage !== 'discovering'
                 ? t('home.focus.subtextExperienced', {
                     accuracy: weakestSubject.percent,
                     gaps: cognitiveSummary.openGaps,

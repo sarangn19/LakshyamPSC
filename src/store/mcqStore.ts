@@ -856,12 +856,17 @@ export const useMCQStore = create<MCQState>()(
         const recentSignals = usePerformanceStore.getState().interactionSignals;
         const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
 
+        // Dynamically re-prioritize topic mid-session from cognitive twin + BKT
+        const dynamicRec = getNextCognitiveGapTopic(weakSubjects, covered);
+        const nextSubject = dynamicRec?.subject || state.recommendedSubject;
+        const nextTopic = dynamicRec?.topic || state.recommendedTopic;
+
         const { question, report } = await resolveValidQuestion(
           weakSubjects, covered,
           state.score.correct, state.score.total,
           state.currentDifficulty, state.adaptiveState,
           recentSignals, !wasCorrect,
-          state.recommendedSubject, state.recommendedTopic,
+          nextSubject, nextTopic,
           targetExams, state.reportedQuestions,
           useUserStore.getState().locale,
           state.seenQuestionTexts,

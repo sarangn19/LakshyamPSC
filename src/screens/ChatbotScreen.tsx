@@ -72,10 +72,33 @@ export function ChatbotScreen({ navigation }: any) {
   async function getAIResponse(userMessage: string, history: { role: string; content: string }[]) {
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return t('chatbot.aiNotConfigured');
     try {
+      const { usePerformanceStore } = require('../store/performanceStore');
+      const { useCognitiveTwinStore } = require('../store/cognitiveTwinStore');
+      const { useUserStore: us } = require('../store/userStore');
+      const perf = usePerformanceStore.getState();
+      const twin = useCognitiveTwinStore.getState();
+      const user = us.getState();
+      const accuracy = perf.interactionSignals.length > 0
+        ? Math.round(perf.interactionSignals.filter((s: any) => s.answeredCorrect).length / perf.interactionSignals.length * 100)
+        : 0;
+      const weakSubjects: string[] = perf.getSubjectAccuracy
+        ? (['Malayalam', 'English', 'Science', 'Social Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Polity', 'Economics'] as string[])
+            .map((s: string) => ({ subject: s, acc: perf.getSubjectAccuracy(s) }))
+            .filter((s: any) => s.acc.total > 0)
+            .filter((s: any) => s.acc.total > 0 && s.acc.correct / s.acc.total < 0.4)
+            .map((s: any) => s.subject)
+        : [];
+      const userContext = {
+        currentAccuracy: accuracy,
+        weakSubjects: weakSubjects.slice(0, 3),
+        targetExam: (user.targetExams || ['LDC'])[0],
+        totalQuestionsAnswered: perf.interactionSignals.length,
+        openGaps: twin.gapRecords?.filter((g: any) => g.status !== 'closed').length || 0,
+      };
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ message: userMessage, history, examType: 'LDC' }),
+        body: JSON.stringify({ message: userMessage, history, examType: 'LDC', userContext }),
       });
       const data = await res.json();
       return data.reply || t('chatbot.noResponse');
