@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, useWindowDimensions, Easing } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { fontFamily } from '../theme';
 import { useTranslation } from '../i18n/useTranslation';
 import { usePerformanceStore } from '../store/performanceStore';
-import { HomeIcon, LearnIcon, ChatbotIcon } from '../components/Icons';
+import { BottomNav } from '../components/BottomNav';
 import { syllabus } from '../data/syllabus';
 import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
@@ -161,22 +161,6 @@ export function HomeScreen({ navigation }: any) {
   const hour = new Date().getHours();
   const greetingText = hour < 12 ? t('home.greeting.morning') : hour < 17 ? t('home.greeting.afternoon') : t('home.greeting.evening');
 
-  const { width: screenW } = useWindowDimensions();
-  const navW = screenW - 48;
-  const indicatorAnim = useRef(new Animated.Value(8)).current;
-  const [navWidth, setNavWidth] = useState(0);
-
-  const slideIndicator = (targetLeft: number, navigateTo?: string) => {
-    Animated.timing(indicatorAnim, {
-      toValue: targetLeft,
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      if (navigateTo) navigation.navigate(navigateTo);
-    });
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -267,21 +251,7 @@ export function HomeScreen({ navigation }: any) {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav} onLayout={(e) => { setNavWidth(e.nativeEvent.layout.width); }}>
-        <Animated.View style={[styles.navActiveBg, { left: indicatorAnim }]} />
-        <View style={styles.navItems}>
-          <TouchableOpacity style={[styles.navItem, styles.navItemActive]} activeOpacity={1}>
-            <HomeIcon width={16.25} height={16} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator((w - 54.32) / 2, 'Learn'); }}>
-            <LearnIcon width={18.97} height={16} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(w - 54.32 - 9, 'Chatbot'); }}>
-            <ChatbotIcon width={19} height={16} color="black" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BottomNav activeTab="Home" />
     </View>
   );
 }
@@ -557,43 +527,5 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#FFFFFF',
     fontFamily: fontFamily.bodyBold,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
-    height: 72,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 6,
-    justifyContent: 'center',
-  },
-  navActiveBg: {
-    position: 'absolute',
-    top: 8.84,
-    width: 54.32,
-    height: 54.32,
-    backgroundColor: '#F7B11A',
-    borderRadius: 999,
-  },
-  navItems: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  navItem: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navItemActive: {
-    zIndex: 1,
   },
 });

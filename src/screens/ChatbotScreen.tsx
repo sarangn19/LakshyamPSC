@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Animated, Keyboard, Platform, Easing, Alert, useWindowDimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Animated, Keyboard, Platform, Easing, Alert } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
-import { HomeIcon, LearnIcon, ChatbotIcon, SendArrowIcon, AttachIcon, NoteIcon, BackIcon } from '../components/Icons';
+import { SendArrowIcon, AttachIcon, NoteIcon, BackIcon } from '../components/Icons';
+import { BottomNav } from '../components/BottomNav';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y3V0Y3FsaHBldWRtYWVid21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzAzNTcsImV4cCI6MjA5NzIwNjM1N30.2s-MMZa-gjJdOBGxOzXKftT-ZA0k6hfj3IoEm0gqaKI';
@@ -255,22 +256,6 @@ export function ChatbotScreen({ navigation }: any) {
     }
   }
 
-  const { width: screenW } = useWindowDimensions();
-  const navW = screenW - 48;
-  const indicatorAnim = useRef(new Animated.Value(navW - 54.32 - 9)).current;
-  const [navWidth, setNavWidth] = useState(0);
-
-  const slideIndicator = (targetLeft: number, navigateTo?: string) => {
-    Animated.timing(indicatorAnim, {
-      toValue: targetLeft,
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      if (navigateTo) navigation.navigate(navigateTo);
-    });
-  };
-
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -468,22 +453,6 @@ export function ChatbotScreen({ navigation }: any) {
         </View>
       </Animated.View>
 
-      {/* Bottom Pill Nav - Frame 2507 */}
-      <View style={styles.bottomNav} onLayout={(e) => { setNavWidth(e.nativeEvent.layout.width); }}>
-        <Animated.View style={[styles.navActiveBg, { left: indicatorAnim }]} />
-        <View style={styles.navItems}>
-          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(8, 'Home'); }}>
-            <HomeIcon width={16.25} height={16} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator((w - 54.32) / 2, 'Learn'); }}>
-            <LearnIcon width={18.97} height={16} color="black" />
-          </TouchableOpacity>
-          <View style={[styles.navItem, styles.navItemActive]}>
-            <ChatbotIcon width={19} height={16} color="white" />
-          </View>
-        </View>
-      </View>
-
       {/* Attach Modal */}
       <Modal visible={showAttachModal} transparent animationType="none" onRequestClose={closeAttachModal}>
         <TouchableOpacity style={styles.attachOverlay} activeOpacity={1} onPress={closeAttachModal}>
@@ -522,6 +491,7 @@ export function ChatbotScreen({ navigation }: any) {
         </TouchableOpacity>
       </Modal>
 
+      <BottomNav activeTab="Chatbot" />
     </View>
   );
 }
@@ -769,46 +739,6 @@ const styles = StyleSheet.create({
       web: { boxShadow: '0px 0px 4px rgba(0,0,0,0.12)' },
       default: { elevation: 2 },
     }),
-  },
-
-  bottomNav: {
-    position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 24,
-    height: 72,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 6,
-    justifyContent: 'center',
-    zIndex: 10,
-  },
-  navActiveBg: {
-    position: 'absolute',
-    top: 8.84,
-    width: 54.32,
-    height: 54.32,
-    borderRadius: 999,
-    backgroundColor: '#F7B11A',
-  },
-  navItems: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  navItem: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navItemActive: {
-    zIndex: 1,
   },
 
   modalOverlay: {
