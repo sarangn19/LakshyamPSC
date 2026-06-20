@@ -276,9 +276,15 @@ export function MCQEngineScreen({ route, navigation }: any) {
 
       {isAnswered && (
         <View style={styles.bottomBar}>
-          <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.9}>
-            <Text style={styles.nextBtnText}>{t('mcqEngine.nextQuestion')}</Text>
-          </TouchableOpacity>
+          {currentIndex < currentQuestions.length - 1 ? (
+            <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.9}>
+              <Text style={styles.nextBtnText}>{t('mcqEngine.nextQuestion')}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.9}>
+              <Text style={styles.nextBtnText}>{t('mcqEngine.finish')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>

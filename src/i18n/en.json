@@ -697,7 +697,8 @@
     "reportIncorrect": "Report Incorrect Question",
     "reported": "Reported",
     "howSure": "How sure were you?",
-    "nextQuestion": "Next question"
+    "nextQuestion": "Next question",
+    "finish": "Finish"
   },
   "bookmarks": {
     "noBookmarksYet": "No bookmarks yet",
