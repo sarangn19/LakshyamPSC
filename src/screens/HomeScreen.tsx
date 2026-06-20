@@ -162,26 +162,25 @@ export function HomeScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Top Bar: Crown + Profile */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.crownBtn} activeOpacity={0.8}>
-          <View style={styles.crownCircle}>
-            <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <Path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
-            </Svg>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Profile')} activeOpacity={0.8}>
-          <View style={styles.profileCircle}>
-            <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <Path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <Path d="M20 21C20 18.8783 19.1571 16.8434 17.6569 15.3431C16.1566 13.8429 14.1217 13 12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </View>
-        </TouchableOpacity>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Top Bar: Crown + Profile */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.crownBtn} activeOpacity={0.8}>
+            <View style={styles.crownCircle}>
+              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <Path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="white" />
+              </Svg>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Profile')} activeOpacity={0.8}>
+            <View style={styles.profileCircle}>
+              <Svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <Path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12Z" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <Path d="M20 21C20 18.8783 19.1571 16.8434 17.6569 15.3431C16.1566 13.8429 14.1217 13 12 13C9.87827 13 7.84344 13.8429 6.34315 15.3431C4.84285 16.8434 4 18.8783 4 21" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          </TouchableOpacity>
+        </View>
         {/* Recommendation Card */}
         <View style={styles.recommendCard}>
           <View style={styles.recommendTextGroup}>
@@ -282,13 +281,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F0EF',
     paddingHorizontal: 24,
-    paddingTop: 64,
-    gap: 24,
   },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    paddingTop: 64,
     paddingBottom: 48,
     gap: 8,
   },
@@ -354,10 +352,11 @@ const styles = StyleSheet.create({
   recommendRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 4,
+    gap: 16,
   },
   recommendSubject: {
-    width: 152,
+    width: 152.12,
+    height: 38,
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 19,
@@ -366,6 +365,7 @@ const styles = StyleSheet.create({
   },
   recommendDesc: {
     flex: 1,
+    height: 85,
     fontSize: 14,
     fontWeight: '300',
     lineHeight: 17,
@@ -449,8 +449,6 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: 16,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
   },
   daysRow: {
     flexDirection: 'row',
