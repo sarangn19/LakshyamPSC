@@ -15,6 +15,7 @@ import { getChurnRisk, getRiskAction } from '../services/churnPrediction';
 import { getStudyPathRecommendations, StudyPathRecommendation } from '../services/collaborativeFiltering';
 import { explainRecommendation } from '../services/explainableAI';
 import { useMCQStore } from '../store';
+import { KnowledgeDashboard } from '../components/KnowledgeDashboard';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -284,6 +285,9 @@ export function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Knowledge Dashboard */}
+        <KnowledgeDashboard />
 
         {churnNudge && (
           <View style={styles.churnBanner}>
