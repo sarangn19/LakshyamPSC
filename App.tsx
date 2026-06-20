@@ -16,6 +16,7 @@ import { useSyncSubscriptions, useOfflineQueueFlush } from './src/services/syncS
 import { restoreFromRemote, startPeriodicSync } from './src/services/syncService';
 import { saveUserProfile, saveNote, removeNote } from './src/services/dataSync';
 import { supabase } from './src/services/supabase';
+import { bandit as diffBandit } from './src/services/contextualBandit';
 
 let profileDebounce: ReturnType<typeof setTimeout> | null = null;
 function debouncedSaveUserProfile(state: any) {
@@ -135,6 +136,7 @@ export default function App() {
       restoreFromRemote().finally(() => setRestoring(false));
       startPeriodicSync();
       useSubscriptionStore.getState().initialize();
+      diffBandit.load();
     }
   }, [setupDone, hydrated, restored]);
 

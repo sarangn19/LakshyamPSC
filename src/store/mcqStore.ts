@@ -7,6 +7,7 @@ import { generateMCQs, getQuestionPoolSize, GeneratedQuestion } from '../service
 import { generateAIQuestion } from '../services/aiQuestionGenerator';
 import { generateNextAdaptiveQuestion, makeAdaptiveState, AdaptiveState, recordAnswer } from '../services/infinityEngine';
 import { makeInitialDifficultyState, recordSessionAnswer, DifficultySessionState } from '../services/sessionDifficultyAdapter';
+import { bandit as diffBandit, buildBanditContext } from '../services/contextualBandit';
 import { useUserStore } from './userStore';
 import { useKnowledgeStore } from './knowledgeStore';
 import { storeGeneratedMCQ } from '../services/questionBankStorage';
@@ -633,6 +634,36 @@ export const useMCQStore = create<MCQState>()(
           adaptiveState: updatedAdaptive,
         });
 
+        // Feed reward to contextual bandit
+        const sessionSignals = newSignals;
+        const last5 = sessionSignals.slice(-5);
+        const sessionAcc = last5.length > 0 ? last5.filter((s) => s.correct).length / last5.length : 0.5;
+        let consecCorrect = 0; let consecIncorrect = 0;
+        for (let i = sessionSignals.length - 1; i >= 0; i--) {
+          if (sessionSignals[i].correct) { consecCorrect++; consecIncorrect = 0; if (consecCorrect >= 10) break; }
+          else { consecIncorrect++; consecCorrect = 0; if (consecIncorrect >= 10) break; }
+        }
+        const bktTopic = useBKTStore.getState().getTopicPMastered(current.subject, current.topic);
+        const twinMastery = (() => {
+          try { return useCognitiveTwinStore.getState().getMetrics().overallMastery; } catch { return 50; }
+        })();
+        const streak = useUserStore.getState().streak?.current ?? 0;
+        const normTta = Math.min(1, timeToAnswer / 30000);
+        let reward = isCorrect ? 1.0 : -0.5;
+        if (isCorrect && timeToAnswer < 5000) reward += 0.25;
+        if (!isCorrect && timeToAnswer > 20000) reward -= 0.25;
+        reward = Math.max(-1, Math.min(1, reward));
+        const ctx = buildBanditContext({
+          pMastered: bktTopic,
+          sessionAccuracy: sessionAcc,
+          avgTimeToAnswer: normTta,
+          overallMastery: twinMastery,
+          consecutiveCorrect: consecCorrect,
+          consecutiveIncorrect: consecIncorrect,
+          streakDays: streak,
+        });
+        diffBandit.recordReward(ctx, current.difficulty, reward);
+
         const perf = usePerformanceStore.getState();
         perf.addInteractionSignal({
           questionId: current.id,
@@ -861,10 +892,33 @@ export const useMCQStore = create<MCQState>()(
         const nextSubject = dynamicRec?.subject || state.recommendedSubject;
         const nextTopic = dynamicRec?.topic || state.recommendedTopic;
 
+        // Contextual bandit predicts optimal difficulty
+        const sessionSignals = state.sessionSignals;
+        const last5 = sessionSignals.slice(-5);
+        const sessionAcc = last5.length > 0 ? last5.filter((s) => s.correct).length / last5.length : 0.5;
+        let consecCorrect = 0; let consecIncorrect = 0;
+        for (let i = sessionSignals.length - 1; i >= 0; i--) {
+          if (sessionSignals[i].correct) { consecCorrect++; consecIncorrect = 0; if (consecCorrect >= 10) break; }
+          else { consecIncorrect++; consecCorrect = 0; if (consecIncorrect >= 10) break; }
+        }
+        const bktTopic = nextTopic ? useBKTStore.getState().getTopicPMastered(nextSubject, nextTopic) : 0.5;
+        const twinMastery = (() => { try { return useCognitiveTwinStore.getState().getMetrics().overallMastery; } catch { return 50; } })();
+        const streak = useUserStore.getState().streak?.current ?? 0;
+        const banditCtx = buildBanditContext({
+          pMastered: bktTopic,
+          sessionAccuracy: sessionAcc,
+          avgTimeToAnswer: 0.5,
+          overallMastery: twinMastery,
+          consecutiveCorrect: consecCorrect,
+          consecutiveIncorrect: consecIncorrect,
+          streakDays: streak,
+        });
+        const banditDifficulty = diffBandit.predict(banditCtx);
+
         const { question, report } = await resolveValidQuestion(
           weakSubjects, covered,
           state.score.correct, state.score.total,
-          state.currentDifficulty, state.adaptiveState,
+          banditDifficulty, state.adaptiveState,
           recentSignals, !wasCorrect,
           nextSubject, nextTopic,
           targetExams, state.reportedQuestions,
