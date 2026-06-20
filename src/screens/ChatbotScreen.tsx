@@ -424,43 +424,64 @@ export function ChatbotScreen({ navigation }: any) {
         </View>
       </Modal>
 
-      {/* Input Area */}
-      <Animated.View style={[styles.inputArea, { bottom: keyboardOffset }]}>
-        <View style={styles.composer}>
+      {/* Input Container - Frame 2435 */}
+      <Animated.View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
+        {/* Text Input Row - Frame 2436 */}
+        <View style={styles.textInputRow}>
           <TextInput
-            style={styles.prompt}
-            placeholder={t('chatbot.inputPlaceholder')}
-            placeholderTextColor="#7f8795"
+            style={styles.textInput}
+            placeholder="Ask about...."
+            placeholderTextColor="rgba(0,0,0,0.75)"
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={() => handleSend(inputText)}
             returnKeyType="send"
-            multiline
-            textAlignVertical="top"
           />
-          <View style={styles.toolbar}>
-            <TouchableOpacity style={styles.attachBtn} onPress={openAttachModal}>
-              <Svg width="14" height="14" viewBox="0 0 18 18" fill="none">
-                <Path d="M9.5 3V10.5C9.5 10.8978 9.34196 11.2794 9.06066 11.5607C8.77936 11.842 8.39782 12 8 12C7.60218 12 7.22064 11.842 6.93934 11.5607C6.65804 11.2794 6.5 10.8978 6.5 10.5V4.5C6.5 3.83696 6.76339 3.20107 7.23223 2.73223C7.70107 2.26339 8.33696 2 9 2C9.66304 2 10.2989 2.26339 10.7678 2.73223C11.2366 3.20107 11.5 3.83696 11.5 4.5V10.5C11.5 11.4283 11.1313 12.3185 10.4749 12.9749C9.8185 13.6313 8.92826 14 8 14C7.07174 14 6.1815 13.6313 5.52513 12.9749C4.86875 12.3185 4.5 11.4283 4.5 10.5V5.5" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </View>
+
+        {/* Action Buttons Row - Frame 2511 */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.noteIconBtn} onPress={openAttachModal}>
+            <Svg width="10" height="14" viewBox="0 0 10 14" fill="none">
+              <Path d="M2 2h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="black"/>
+            </Svg>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.attachButton} onPress={openAttachModal}>
+            <Svg width="5.97" height="11.11" viewBox="0 0 8 14" fill="none">
+              <Path d="M4 1v8a2.5 2.5 0 0 1-5 0V3.5" stroke="black" strokeWidth="1.5" strokeLinecap="round"/>
+            </Svg>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.sendButton} onPress={() => handleSend(inputText)}>
+            <View style={styles.sendIconWrap}>
+              <Svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <Path d="M8 3v10" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <Path d="M3 8l5-5 5 5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </Svg>
-            </TouchableOpacity>
-            <View style={styles.spacer} />
-            <TouchableOpacity style={styles.micBtn} onPress={handleVoiceNote}>
-              <Svg width="14" height="14" viewBox="0 0 22 22" fill="none">
-                <Path d="M11 2C9.89543 2 9 2.89543 9 4V11C9 12.1046 9.89543 13 11 13C12.1046 13 13 12.1046 13 11V4C13 2.89543 12.1046 2 11 2Z" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <Path d="M16 10C16 11.3261 15.4732 12.5979 14.5355 13.5355C13.5979 14.4732 12.3261 15 11 15C9.67392 15 8.40215 14.4732 7.46447 13.5355C6.52678 12.5979 6 11.3261 6 10" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <Path d="M11 18V20" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                <Path d="M8 20H14" stroke={isListening ? '#DC2626' : '#6B7280'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </Svg>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sendBtn} onPress={() => handleSend(inputText)}>
-              <Svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-                <Path d="M17.5 10L2.5 10M17.5 10L12 4.5M17.5 10L12 15.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </Svg>
-            </TouchableOpacity>
-          </View>
+            </View>
+          </TouchableOpacity>
         </View>
       </Animated.View>
+
+      {/* Bottom Pill Nav - Frame 2507 */}
+      <View style={styles.bottomNav}>
+        <View style={styles.navIndicator} />
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+          <Svg width="16.25" height="16" viewBox="0 0 18 18" fill="none">
+            <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </Svg>
+        </TouchableOpacity>
+        <View style={[styles.navItem, styles.navItemActive]}>
+          <Svg width="18.97" height="16" viewBox="0 0 24 24" fill="none">
+            <Path d="M21 11.5C21 12.8802 20.6488 14.1826 20 15.3249C19.1111 16.8899 17.6667 18.1149 15.92 18.6849C14.88 19.027 13.76 19.218 12.59 19.233C11.86 19.241 11.15 19.143 10.48 18.952C10.04 18.828 9.57 18.991 9.3 19.34L7 22.5V19.364C7 19.0305 6.78 18.724 6.49 18.605C4.65 17.83 3.21 16.512 2.38 14.87C1.5 13.24 1 11.41 1 9.5C1 5.36 4.47 2 8.71 2H9.5" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </Svg>
+        </View>
+        <TouchableOpacity style={styles.navItem}>
+          <Svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <Path d="M10 10C12.2091 10 14 8.20914 14 6C14 3.79086 12.2091 2 10 2C7.79086 2 6 3.79086 6 6C6 8.20914 7.79086 10 10 10Z" stroke="black" strokeWidth="2"/>
+            <Path d="M2 18C3.5 14.5 6 13 10 13C14 13 16.5 14.5 18 18" stroke="black" strokeWidth="2" strokeLinecap="round"/>
+          </Svg>
+        </TouchableOpacity>
+      </View>
 
       {/* Attach Modal */}
       <Modal visible={showAttachModal} transparent animationType="none" onRequestClose={closeAttachModal}>
@@ -563,7 +584,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingTop: 100,
-    paddingBottom: 180,
+    paddingBottom: 310,
     gap: 32,
     alignItems: 'center',
   },
@@ -604,7 +625,7 @@ const styles = StyleSheet.create({
   },
   chatContent: {
     paddingTop: 100,
-    paddingBottom: 180,
+    paddingBottom: 310,
     paddingHorizontal: 16,
     gap: 12,
   },
@@ -673,78 +694,121 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bodyMedium,
     color: '#6B7280',
   },
-  inputArea: {
+  inputContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 12,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-    zIndex: 1,
-  },
-  composer: {
+    padding: 24,
+    paddingBottom: 140,
+    gap: 4,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 18,
-    padding: 10,
-    marginHorizontal: 8,
-    marginBottom: Platform.OS === 'ios' ? 8 : 8,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    zIndex: 1,
     ...Platform.select({
-      web: { boxShadow: '0 4px 16px rgba(0,0,0,.06)' },
-      default: { elevation: 3 },
+      web: { boxShadow: '7px 0px 98.5px rgba(0,0,0,0.12)' },
+      default: { elevation: 8 },
     }),
   },
-  prompt: {
-    minHeight: 36,
-    maxHeight: 120,
-    paddingHorizontal: 6,
-    paddingTop: 4,
-    paddingBottom: 6,
-    fontSize: 15,
-    lineHeight: 21,
-    fontWeight: '400',
-    fontFamily: fontFamily.body,
-    color: '#111827',
-    outlineStyle: 'none',
-    outlineWidth: 0,
-  },
-  toolbar: {
+  textInputRow: {
     flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '400',
+    lineHeight: 17,
+    fontFamily: fontFamily.body,
+    color: '#000000',
+    opacity: 0.75,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: 4,
+    gap: 4,
+    height: 56,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 16,
+  },
+  noteIconBtn: {
+    width: 31.43,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  attachButton: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: '#080500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      web: { boxShadow: '0px 0px 4px rgba(0,0,0,0.12)' },
+      default: { elevation: 2 },
+    }),
+  },
+  sendIconWrap: {
+    width: 12.44,
+    height: 13.07,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  bottomNav: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: 32,
+    height: 72,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 10,
+    zIndex: 10,
+    ...Platform.select({
+      web: { boxShadow: '0px 0px 24px rgba(0,0,0,0.12)' },
+      default: { elevation: 6 },
+    }),
+  },
+  navIndicator: {
+    position: 'absolute',
+    right: 9,
+    top: 8.84,
+    width: 54.32,
+    height: 54.32,
+    borderRadius: 999,
+    backgroundColor: '#F7B11A',
+  },
+  navItem: {
+    justifyContent: 'center',
     alignItems: 'center',
     height: 44,
-    paddingHorizontal: 4,
-    marginTop: 4,
   },
-  attachBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micBtn: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-  },
-  sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: '#F7B11A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...Platform.select({
-      web: { boxShadow: '0 4px 10px rgba(247,177,26,.3)' },
-      default: { elevation: 3 },
-    }),
-  },
-  spacer: {
-    flex: 1,
+  navItemActive: {
+    zIndex: 1,
   },
 
   modalOverlay: {
@@ -825,7 +889,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontFamily: fontFamily.body,
     color: '#000000',
-    outlineWidth: 0,
   },
   tagInputRow: {
     height: 48,
@@ -872,7 +935,6 @@ const styles = StyleSheet.create({
     color: '#000000',
     padding: 0,
     minWidth: 60,
-    outlineWidth: 0,
   },
   modalContentArea: {
     backgroundColor: '#FFFFFF',
