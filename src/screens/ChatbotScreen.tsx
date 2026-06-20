@@ -529,7 +529,7 @@ export function ChatbotScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAF8',
+    backgroundColor: '#F4F0EF',
   },
   contentArea: {
     flex: 1,
@@ -785,7 +785,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 6,
     justifyContent: 'center',
-    zIndex: 10,
   },
   navActiveBg: {
     position: 'absolute',

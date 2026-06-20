@@ -575,7 +575,6 @@ const styles = StyleSheet.create({
   },
   navActiveBg: {
     position: 'absolute',
-    left: 8,
     top: 8.84,
     width: 54.32,
     height: 54.32,

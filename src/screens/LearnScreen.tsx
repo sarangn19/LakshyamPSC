@@ -576,13 +576,13 @@ export function LearnScreen({ navigation }: any) {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav} onLayout={(e) => { setNavWidth(e.nativeEvent.layout.width); }}>
-        <Animated.View style={[styles.navCenterBg, { left: indicatorAnim }]} />
+        <Animated.View style={[styles.navActiveBg, { left: indicatorAnim }]} />
         <View style={styles.navItems}>
           <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(8, 'Home'); }}>
             <HomeIcon width={16.25} height={16} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={[styles.navItem, styles.navItemActive]} onPress={() => { const w = navWidth || navW; slideIndicator((w - 54.32) / 2); }}>
-            <LearnIcon width={18.97} height={16} color="black" />
+            <LearnIcon width={18.97} height={16} color="white" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.navItem} onPress={() => { const w = navWidth || navW; slideIndicator(w - 54.32 - 9, 'Chatbot'); }}>
             <ChatbotIcon width={19} height={16} color="black" />
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     elevation: 6,
     justifyContent: 'center',
   },
-  navCenterBg: {
+  navActiveBg: {
     position: 'absolute',
     width: 54.32,
     height: 54.32,
