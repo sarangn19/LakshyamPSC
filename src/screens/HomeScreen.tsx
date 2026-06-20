@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import { supabase } from '../services/supabase';
+import { CurrentAffair } from '../data/mockData';
 import Svg, { Path, Circle } from 'react-native-svg';
-import { fontFamily } from '../theme';
+import { fontFamily, colors } from '../theme';
 import { useTranslation } from '../i18n/useTranslation';
 import { usePerformanceStore } from '../store/performanceStore';
 import { BottomNav } from '../components/BottomNav';
@@ -121,12 +123,48 @@ function OverallAccuracyCard({ overallAccuracy }: { overallAccuracy: number }) {
   );
 }
 
+const CATEGORY_COLORS: Record<string, string> = {
+  kerala: '#F7B11A',
+  national: '#4A90D9',
+  appointments: '#7C4DFF',
+  schemes: '#4CAF50',
+  awards: '#FF7043',
+};
+
+function categoryColor(cat: string): string {
+  return CATEGORY_COLORS[cat] || '#999';
+}
+
 export function HomeScreen({ navigation }: any) {
   const { t } = useTranslation();
   const getInteractionAccuracy = usePerformanceStore((s) => s.getInteractionAccuracy);
   const getSubjectAccuracy = usePerformanceStore((s) => s.getSubjectAccuracy);
   const interactionSignals = usePerformanceStore((s) => s.interactionSignals);
   const sessionOutcomes = usePerformanceStore((s) => s.sessionOutcomes);
+  const [caItems, setCaItems] = useState<CurrentAffair[]>([]);
+  const [loadingCA, setLoadingCA] = useState(true);
+  const [caError, setCaError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!supabase) { setLoadingCA(false); return; }
+    supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(5).then(({ data, error: fetchError }) => {
+      if (fetchError) { setCaError(fetchError.message); setLoadingCA(false); return; }
+      if (data && data.length > 0) {
+        setCaItems(data.map((r: any) => ({
+          id: r.id,
+          title: r.title,
+          summary: r.summary,
+          category: r.category,
+          date: r.published_at ? r.published_at.split('T')[0] : '',
+          source: r.source || '',
+          isImportant: false,
+          url: r.url || '',
+          image_url: r.image_url || '',
+        })));
+      }
+      setLoadingCA(false);
+    }).catch((err) => { setCaError(err.message || 'Network error'); setLoadingCA(false); });
+  }, []);
 
   const weeklyQuestions: number[] = (() => {
     const days: number[] = [0, 0, 0, 0, 0, 0, 0];
@@ -224,6 +262,39 @@ export function HomeScreen({ navigation }: any) {
               <Path d="M1 1L6 6L1 11" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
           </TouchableOpacity>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Current Affairs Section */}
+        <View style={styles.caSection}>
+            <TouchableOpacity onPress={() => navigation.navigate('Affairs')} activeOpacity={0.8}>
+            <Text style={styles.caTitle}>{t('home.currentAffairs')}</Text>
+          </TouchableOpacity>
+          {loadingCA ? (
+            <ActivityIndicator color={colors.primary} size="small" />
+          ) : caError ? (
+            <Text style={styles.caErrorText}>{caError}</Text>
+          ) : caItems.length === 0 ? (
+            <Text style={styles.caEmptyText}>No news available</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.caScroll}>
+              {caItems.map((item) => (
+                <TouchableOpacity key={item.id} style={styles.caCard}>
+                  <View style={styles.caCardHeader}>
+                    <View style={[styles.caBadge, { backgroundColor: categoryColor(item.category) }]}>
+                      <Text style={styles.caBadgeText}>{item.category}</Text>
+                    </View>
+                    <Text style={styles.caDate}>{item.date}</Text>
+                  </View>
+                  <Text style={styles.caCardTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.caCardSummary} numberOfLines={2}>{item.summary}</Text>
+                  <Text style={styles.caSource}>{item.source}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* Divider */}
@@ -527,5 +598,90 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: '#FFFFFF',
     fontFamily: fontFamily.bodyBold,
+  },
+  caSection: {
+    alignSelf: 'stretch',
+  },
+  caTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 19,
+    color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+    marginBottom: 12,
+  },
+  caScroll: {
+    marginLeft: -24,
+    paddingLeft: 24,
+  },
+  caCard: {
+    width: 220,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+    borderRadius: 24,
+    padding: 16,
+    marginRight: 12,
+    gap: 8,
+  },
+  caCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  caBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  caBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 14,
+    color: '#FFFFFF',
+    fontFamily: fontFamily.bodyBold,
+    textTransform: 'capitalize',
+  },
+  caDate: {
+    fontSize: 10,
+    fontWeight: '400',
+    lineHeight: 14,
+    color: 'rgba(0,0,0,0.5)',
+    fontFamily: fontFamily.body,
+  },
+  caCardTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 17,
+    color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  caCardSummary: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 15,
+    color: 'rgba(0,0,0,0.6)',
+    fontFamily: fontFamily.body,
+  },
+  caSource: {
+    fontSize: 10,
+    fontWeight: '400',
+    lineHeight: 14,
+    color: 'rgba(0,0,0,0.4)',
+    fontFamily: fontFamily.body,
+  },
+  caErrorText: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 14,
+    color: colors.warning,
+    fontFamily: fontFamily.body,
+  },
+  caEmptyText: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 14,
+    color: 'rgba(0,0,0,0.4)',
+    fontFamily: fontFamily.body,
   },
 });
