@@ -37,8 +37,10 @@ export const useKnowledgeStore = create<KnowledgeState>()(
       selectedSubject: '',
       searchQuery: '',
       addNote: (note) => {
-        set((state) => ({ notes: [note, ...state.notes] }));
-        saveNote(note);
+        const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16); });
+        const stored = { ...note, id: uuid };
+        set((state) => ({ notes: [stored, ...state.notes] }));
+        saveNote(stored);
       },
       removeNote: (id) => {
         set((state) => ({ notes: state.notes.filter((n) => n.id !== id) }));
