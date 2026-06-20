@@ -9,6 +9,7 @@ import { LoadingAnimation } from '../components/common/LoadingAnimation';
 import { useTranslation } from '../i18n/useTranslation';
 import { Arrow45Icon } from '../components/Icons';
 import { BottomNav } from '../components/BottomNav';
+import { submitSuggestion } from '../services/adminDataService';
 
 
 
@@ -45,6 +46,11 @@ export function LearnScreen({ navigation }: any) {
   const [selectedTaskPreset, setSelectedTaskPreset] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAdaptiveLoading, setIsAdaptiveLoading] = useState(false);
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+  const [suggestionSubject, setSuggestionSubject] = useState('');
+  const [suggestionMessage, setSuggestionMessage] = useState('');
+  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
   const generationProgress = useMCQStore((s) => s.generationProgress);
   const taskPresets = [5, 20, 50, 100];
   const sourceSlideAnim = useRef(new Animated.Value(300)).current;
@@ -82,6 +88,12 @@ export function LearnScreen({ navigation }: any) {
   useEffect(() => {
     Animated.timing(tasksSlideAnim, { toValue: showTasksModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
   }, [showTasksModal]);
+
+  const suggestionSlideAnim = useRef(new Animated.Value(300)).current;
+
+  useEffect(() => {
+    Animated.timing(suggestionSlideAnim, { toValue: showSuggestionModal ? 0 : 300, duration: 250, useNativeDriver: true }).start();
+  }, [showSuggestionModal]);
 
   const handleSourceSelect = (source: string) => {
     setShowSourceModal(false);
@@ -161,6 +173,32 @@ export function LearnScreen({ navigation }: any) {
       setIsLoading(false);
       navigation.navigate('MCQ', { mode: 'practice' });
     }
+  };
+
+  const handleSubmitSuggestion = async () => {
+    if (!suggestionMessage.trim()) return;
+    setSuggestionSubmitting(true);
+    try {
+      await submitSuggestion(suggestionSubject.trim(), suggestionMessage.trim());
+      setSuggestionSuccess(true);
+      setTimeout(() => {
+        setShowSuggestionModal(false);
+        setSuggestionSubject('');
+        setSuggestionMessage('');
+        setSuggestionSuccess(false);
+      }, 1500);
+    } catch (err) {
+      console.error('Failed to submit suggestion:', err);
+    } finally {
+      setSuggestionSubmitting(false);
+    }
+  };
+
+  const handleOpenSuggestion = () => {
+    setSuggestionSubject('');
+    setSuggestionMessage('');
+    setSuggestionSuccess(false);
+    setShowSuggestionModal(true);
   };
 
   const sourceScrollRef = useRef<ScrollView>(null);
@@ -268,6 +306,11 @@ export function LearnScreen({ navigation }: any) {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Suggestions / Feedback */}
+        <TouchableOpacity style={styles.feedbackBtn} onPress={handleOpenSuggestion} activeOpacity={0.7}>
+          <Text style={styles.feedbackBtnText}>Give Feedback</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Select type modal (MCQ or Flashcard) */}
@@ -544,6 +587,60 @@ export function LearnScreen({ navigation }: any) {
               >
                 <Text style={styles.continueBtnText}>{t('learn.continue')}</Text>
               </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Suggestion / Feedback Modal */}
+      <Modal visible={showSuggestionModal} transparent animationType="none" onRequestClose={() => setShowSuggestionModal(false)}>
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !suggestionSubmitting && setShowSuggestionModal(false)}>
+          <Animated.View style={[styles.selectionModal, { transform: [{ translateY: suggestionSlideAnim }] }]}>
+            <View style={styles.selectionModalHeader}>
+              <Text style={styles.selectionModalTitle}>Give Feedback</Text>
+              <TouchableOpacity style={styles.sourceModalClose} onPress={() => !suggestionSubmitting && setShowSuggestionModal(false)}>
+                <View style={styles.sourceModalCloseIcon}>
+                  <Text style={styles.sourceModalCloseX}>✕</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.searchRow}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Subject (optional)"
+                placeholderTextColor="rgba(0,0,0,0.5)"
+                value={suggestionSubject}
+                onChangeText={setSuggestionSubject}
+              />
+            </View>
+
+            <View style={styles.pasteContentRow}>
+              <TextInput
+                style={styles.pasteInput}
+                placeholder="Share your suggestion..."
+                placeholderTextColor="rgba(0,0,0,0.5)"
+                value={suggestionMessage}
+                onChangeText={setSuggestionMessage}
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.modalBottomBar}>
+              {suggestionSuccess ? (
+                <View style={[styles.continueBtn, { backgroundColor: '#16A34A' }]}>
+                  <Text style={styles.continueBtnText}>Submitted ✓</Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.continueBtn, (suggestionMessage.trim().length === 0 || suggestionSubmitting) && styles.continueBtnDisabled]}
+                  onPress={handleSubmitSuggestion}
+                  disabled={suggestionMessage.trim().length === 0 || suggestionSubmitting}
+                >
+                  <Text style={styles.continueBtnText}>{suggestionSubmitting ? 'Submitting...' : 'Submit Feedback'}</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </Animated.View>
         </TouchableOpacity>
@@ -1004,5 +1101,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: fontFamily.body,
   },
-
+  feedbackBtn: {
+    alignSelf: 'center',
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  feedbackBtnText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2563EB',
+    fontFamily: fontFamily.bodyMedium,
+  },
 });

@@ -495,7 +495,48 @@ export async function cancelSubscriptionByAdmin(userId: string): Promise<boolean
   return updateSubscriptionStatus(userId, 'canceled');
 }
 
-export async function extendTrial(userId: string, days: number = 7): Promise<boolean> {
+// ── Suggestions / Feedback ──
+
+export async function fetchSuggestions() {
+  if (!hasSupabase()) return [];
+  const data = await rpcData<any[]>('admin_get_suggestions');
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    userId: row.user_id,
+    userName: row.user_name || 'Unknown',
+    subject: row.subject || '',
+    message: row.message,
+    status: row.status as 'new' | 'read' | 'resolved',
+    createdAt: row.created_at,
+  }));
+}
+
+export async function updateSuggestionStatus(id: string, status: string) {
+  if (!hasSupabase()) return;
+  await supabase!.rpc('admin_update_suggestion_status', { _id: id, _status: status });
+}
+
+export async function submitSuggestion(subject: string, message: string) {
+  if (!hasSupabase()) throw new Error('Supabase not configured');
+  const { data: { user } } = await supabase!.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const { error } = await supabase!.from('suggestions').insert({
+    user_id: user.id,
+    user_name: user.user_metadata?.user_name || user.email?.split('@')[0] || 'User',
+    subject,
+    message,
+  });
+  if (error) throw error;
+}
+
+// ── Subscription helpers (originals above) ──
+
+export async function resetUserSubscription(userId: string) {
+  if (!hasSupabase()) return;
+  await supabase!.rpc('admin_reset_subscription', { _user_id: userId });
+}
+
+export async function extendTrial(userId: string, days: number) {
   try {
     if (!supabase) return false;
     const { data: sub } = await supabase

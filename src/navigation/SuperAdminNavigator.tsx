@@ -13,6 +13,7 @@ import { SystemMonitoringScreen } from '../screens/superadmin/SystemMonitoringSc
 import { ExperimentCenterScreen } from '../screens/superadmin/ExperimentCenterScreen';
 import { AuditLogsScreen } from '../screens/superadmin/AuditLogsScreen';
 import { BillingDashboardScreen } from '../screens/superadmin/BillingDashboardScreen';
+import { SuggestionManagementScreen } from '../screens/admin/SuggestionManagementScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -26,6 +27,7 @@ const SUPER_ADMIN_TABS = [
   { name: 'SystemMonitoring', component: SystemMonitoringScreen, icon: '⚙️', labelKey: 'superadmin.systemTab' },
   { name: 'ExperimentCenter', component: ExperimentCenterScreen, icon: '🧪', labelKey: 'superadmin.expTab' },
   { name: 'AuditLogs', component: AuditLogsScreen, icon: '📋', labelKey: 'superadmin.auditTab' },
+  { name: 'Suggestions', component: SuggestionManagementScreen, icon: '💡', labelKey: 'superadmin.suggestionsTab' },
 ];
 
 function SuperAdminTabIcon({ name, focused }: { name: string; focused: boolean }) {

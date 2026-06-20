@@ -452,6 +452,7 @@
     "supportTab": "Support",
       "analyticsTab": "Analytics",
       "subscriptionTab": "Subscriptions",
+      "suggestionsTab": "Suggestions",
     "questionManagement": "Question Management",
     "createQuestion": "New",
     "searchQuestions": "Search questions...",
@@ -642,7 +643,8 @@
     "systemTab": "System",
     "expTab": "Experiments",
       "auditTab": "Audit",
-      "billingTab": "Billing"
+      "billingTab": "Billing",
+      "suggestionsTab": "Suggestions"
   },
   "home": {
     "greeting": {

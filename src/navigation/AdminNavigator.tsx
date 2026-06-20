@@ -13,6 +13,7 @@ import { LearningAnalyticsScreen } from '../screens/admin/LearningAnalyticsScree
 import { QuestionAuditScreen } from '../screens/admin/QuestionAuditScreen';
 import { BulkUploadScreen } from '../screens/admin/BulkUploadScreen';
 import { SubscriptionManagementScreen } from '../screens/admin/SubscriptionManagementScreen';
+import { SuggestionManagementScreen } from '../screens/admin/SuggestionManagementScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -25,6 +26,7 @@ const ADMIN_TABS = [
   { name: 'BulkUpload', component: BulkUploadScreen, icon: '📤', labelKey: 'admin.bulkUploadTab' },
   { name: 'SubscriptionMgmt', component: SubscriptionManagementScreen, icon: '💳', labelKey: 'admin.subscriptionTab' },
   { name: 'LearnerSupport', component: LearnerSupportScreen, icon: '🎫', labelKey: 'admin.supportTab' },
+  { name: 'Suggestions', component: SuggestionManagementScreen, icon: '💡', labelKey: 'admin.suggestionsTab' },
   { name: 'LearningAnalytics', component: LearningAnalyticsScreen, icon: '📈', labelKey: 'admin.analyticsTab' },
 ];
 

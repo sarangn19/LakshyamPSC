@@ -4,7 +4,7 @@ import { colors, spacing, borderRadius, fontFamily } from '../../theme';
 import { typography } from '../../theme/typography';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAuthStore } from '../../store';
-import { fetchTotalLearners, fetchActiveLearnersToday, fetchSessionCompletionRate, fetchAverageAccuracy, fetchTotalAttempts, fetchTotalSessions, fetchPendingFlaggedCount, fetchDraftCACount, fetchOpenTicketCount, fetchCriticalTicketCount, fetchRevisionAdherenceRate, fetchRecommendationsAccepted, fetchSubscriptionStats } from '../../services/adminDataService';
+import { fetchTotalLearners, fetchActiveLearnersToday, fetchSessionCompletionRate, fetchAverageAccuracy, fetchTotalAttempts, fetchTotalSessions, fetchPendingFlaggedCount, fetchDraftCACount, fetchOpenTicketCount, fetchCriticalTicketCount, fetchRevisionAdherenceRate, fetchRecommendationsAccepted, fetchSubscriptionStats, fetchSuggestions } from '../../services/adminDataService';
 
 export function AdminDashboardScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -24,12 +24,13 @@ export function AdminDashboardScreen({ navigation }: any) {
   const [draftCA, setDraftCA] = useState(0);
   const [openTickets, setOpenTickets] = useState(0);
   const [criticalTickets, setCriticalTickets] = useState(0);
+  const [newSuggestions, setNewSuggestions] = useState(0);
   const [subStats, setSubStats] = useState({ total: 0, trialing: 0, active: 0, estimatedMonthlyRevenue: 0 });
   const [refreshing, setRefreshing] = useState(false);
 
   const loadDashboard = async () => {
     try {
-      const [tl, al, sc, aa, ta, ts, ra, rec, pf, dc, ot, ct, ss] = await Promise.all([
+      const [tl, al, sc, aa, ta, ts, ra, rec, pf, dc, ot, ct, ss, sugs] = await Promise.all([
         fetchTotalLearners(),
         fetchActiveLearnersToday(),
         fetchSessionCompletionRate(),
@@ -43,6 +44,7 @@ export function AdminDashboardScreen({ navigation }: any) {
         fetchOpenTicketCount(),
         fetchCriticalTicketCount(),
         fetchSubscriptionStats(),
+        fetchSuggestions(),
       ]);
       setTotalLearners(tl);
       setActiveLearners(al);
@@ -57,6 +59,7 @@ export function AdminDashboardScreen({ navigation }: any) {
       setOpenTickets(ot);
       setCriticalTickets(ct);
       setSubStats(ss);
+      setNewSuggestions(sugs.filter((s: any) => s.status === 'new').length);
     } catch (err) {
       console.error('Failed to fetch KPIs:', err);
     } finally {
@@ -173,6 +176,18 @@ export function AdminDashboardScreen({ navigation }: any) {
           </View>
           <View style={[styles.badge, { backgroundColor: criticalTickets > 0 ? colors.error : colors.warning }]}>
             <Text style={[typography.small, { color: '#fff', fontWeight: '700', fontFamily: fontFamily.bodyBold }]}>{openTickets}</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionRow} onPress={() => navigation.navigate('Suggestions')}>
+          <Text style={{ fontSize: 20 }}>💡</Text>
+          <View style={styles.actionText}>
+            <Text style={[typography.body, { color: colors.text }]}>Suggestions</Text>
+            <Text style={[typography.small, { color: colors.textSecondary }]}>
+              {newSuggestions > 0 ? `${newSuggestions} new` : 'No new suggestions'}
+            </Text>
+          </View>
+          <View style={[styles.badge, { backgroundColor: newSuggestions > 0 ? colors.warning : colors.textTertiary }]}>
+            <Text style={[typography.small, { color: '#fff', fontWeight: '700', fontFamily: fontFamily.bodyBold }]}>{newSuggestions}</Text>
           </View>
         </TouchableOpacity>
       </View>
