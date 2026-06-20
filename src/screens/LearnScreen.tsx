@@ -595,54 +595,56 @@ export function LearnScreen({ navigation }: any) {
       {/* Suggestion / Feedback Modal */}
       <Modal visible={showSuggestionModal} transparent animationType="none" onRequestClose={() => setShowSuggestionModal(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => !suggestionSubmitting && setShowSuggestionModal(false)}>
-          <Animated.View style={[styles.selectionModal, { transform: [{ translateY: suggestionSlideAnim }] }]}>
-            <View style={styles.selectionModalHeader}>
-              <Text style={styles.selectionModalTitle}>Give Feedback</Text>
-              <TouchableOpacity style={styles.sourceModalClose} onPress={() => !suggestionSubmitting && setShowSuggestionModal(false)}>
-                <View style={styles.sourceModalCloseIcon}>
-                  <Text style={styles.sourceModalCloseX}>✕</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
+          <View onStartShouldSetResponder={() => true}>
+            <Animated.View style={[styles.selectionModal, { transform: [{ translateY: suggestionSlideAnim }] }]}>
+              <View style={styles.selectionModalHeader}>
+                <Text style={styles.selectionModalTitle}>Give Feedback</Text>
+                <TouchableOpacity style={styles.sourceModalClose} onPress={() => !suggestionSubmitting && setShowSuggestionModal(false)}>
+                  <View style={styles.sourceModalCloseIcon}>
+                    <Text style={styles.sourceModalCloseX}>✕</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.searchRow}>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Subject (optional)"
-                placeholderTextColor="rgba(0,0,0,0.5)"
-                value={suggestionSubject}
-                onChangeText={setSuggestionSubject}
-              />
-            </View>
+              <View style={styles.searchRow}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Subject (optional)"
+                  placeholderTextColor="rgba(0,0,0,0.5)"
+                  value={suggestionSubject}
+                  onChangeText={setSuggestionSubject}
+                />
+              </View>
 
-            <View style={styles.pasteContentRow}>
-              <TextInput
-                style={styles.pasteInput}
-                placeholder="Share your suggestion..."
-                placeholderTextColor="rgba(0,0,0,0.5)"
-                value={suggestionMessage}
-                onChangeText={setSuggestionMessage}
-                multiline
-                textAlignVertical="top"
-              />
-            </View>
+              <View style={styles.pasteContentRow}>
+                <TextInput
+                  style={styles.pasteInput}
+                  placeholder="Share your suggestion..."
+                  placeholderTextColor="rgba(0,0,0,0.5)"
+                  value={suggestionMessage}
+                  onChangeText={setSuggestionMessage}
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
 
-            <View style={styles.modalBottomBar}>
-              {suggestionSuccess ? (
-                <View style={[styles.continueBtn, { backgroundColor: '#16A34A' }]}>
-                  <Text style={styles.continueBtnText}>Submitted ✓</Text>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.continueBtn, (suggestionMessage.trim().length === 0 || suggestionSubmitting) && styles.continueBtnDisabled]}
-                  onPress={handleSubmitSuggestion}
-                  disabled={suggestionMessage.trim().length === 0 || suggestionSubmitting}
-                >
+              <View style={styles.modalBottomBar}>
+                {suggestionSuccess ? (
+                  <View style={[styles.continueBtn, { backgroundColor: '#16A34A' }]}>
+                    <Text style={styles.continueBtnText}>Submitted ✓</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    style={[styles.continueBtn, (suggestionMessage.trim().length === 0 || suggestionSubmitting) && styles.continueBtnDisabled]}
+                    onPress={handleSubmitSuggestion}
+                    disabled={suggestionMessage.trim().length === 0 || suggestionSubmitting}
+                  >
                   <Text style={styles.continueBtnText}>{suggestionSubmitting ? 'Submitting...' : 'Submit Feedback'}</Text>
                 </TouchableOpacity>
               )}
             </View>
           </Animated.View>
+          </View>
         </TouchableOpacity>
       </Modal>
 
