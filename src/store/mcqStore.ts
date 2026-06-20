@@ -1046,6 +1046,7 @@ export const useMCQStore = create<MCQState>()(
           isAnswered: false,
           score: { correct: 0, total: 0 },
           sessionActive: true,
+          sessionType: 'practice',
           drillMode: 'daily',
           sessionSignals: [],
           sessionCoveredTopics: [],
