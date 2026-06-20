@@ -187,12 +187,11 @@
   "chatbot": {
     "title": "AI Tutor",
     "headerSubtitle": "Lakshyam PSC",
-    "welcomeMessage": "നമസ്കാരം! 👋 I'm your Lakshyam AI Tutor.\n\nI'll calibrate explanations to your exam level.\n\nI can help you with:\n• Explaining Kerala PSC topics\n• Creating study notes\n• Answering doubts\n• Simplifying difficult concepts\n• മലയാളത്തിലും ചോദിക്കാം\n\nWhat would you like to learn today?",
+    "welcomeMessage": "നമസ്കാരം! 👋 I'm your Lakshyam AI Tutor.\n\nI'll calibrate explanations to your exam level.\n\nI can help you with:\n• Explaining Kerala PSC topics\n• Creating study notes\n• Answering doubts\n• Simplifying difficult concepts\n• മലയാളത്തിലും ചോദിക്കാം\n\n**Note: My knowledge is restricted up to 2023.**\n\nWhat would you like to learn today?",
     "greeting": "Hi, what would you like to learn today?",
     "suggestion1": "Make a note on Indian Freedom Struggle",
     "suggestion2": "Summarise the Preamble of Indian Constitution",
     "suggestion3": "Create a study note on key Geography facts",
-    "suggestion4": "Note down this week's important current affairs",
     "recordingBanner": "Listening... tap mic to stop",
     "saveAsNote": "Save as note",
     "saveNote": "Save Note",

@@ -23,7 +23,6 @@ export function ChatbotScreen({ navigation }: any) {
     { text: t('chatbot.suggestion1') },
     { text: t('chatbot.suggestion2') },
     { text: t('chatbot.suggestion3') },
-    { text: t('chatbot.suggestion4') },
   ];
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
