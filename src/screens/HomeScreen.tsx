@@ -12,6 +12,7 @@ import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
 import { getDueSummary } from '../services/spacedRepetition';
 import { getChurnRisk, getRiskAction } from '../services/churnPrediction';
+import { getStudyPathRecommendations, StudyPathRecommendation } from '../services/collaborativeFiltering';
 import { useMCQStore } from '../store';
 
 const DAY_ABBR = ["S", "M", "T", "W", "T", "F", "S"];
@@ -22,20 +23,9 @@ function getWeekLabels(): string[] {
     const d = new Date(now);
     d.setDate(d.getDate() - (6 - i));
     return DAY_ABBR[d.getDay()];
-  });
-}
-
-const BAR_COLORS = ["#F7B11A", "#D59713", "#F7B11A", "#D78B07", "#9F3200", "#D88B07", "#000000"];
-
-function QuestionsPracticedCard({ total, weekly }: { total: number; weekly: number[] }) {
-  const days = getWeekLabels();
-  const maxVal = Math.max(...weekly, 1);
-  const barAnims = useRef(weekly.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    Animated.stagger(80, barAnims.map((anim, i) =>
-      Animated.timing(anim, { toValue: weekly[i], duration: 400, useNativeDriver: false })
-    )).start();
+      });
+    }
+    setPathRecs(getStudyPathRecommendations(5));
   }, []);
 
   return (
@@ -146,6 +136,7 @@ export function HomeScreen({ navigation }: any) {
   const [loadingCA, setLoadingCA] = useState(true);
   const [caError, setCaError] = useState<string | null>(null);
   const [churnNudge, setChurnNudge] = useState<{ message: string; type: string } | null>(null);
+  const [pathRecs, setPathRecs] = useState<StudyPathRecommendation[]>([]);
 
   useEffect(() => {
     if (!supabase) { setLoadingCA(false); return; }
@@ -337,6 +328,21 @@ export function HomeScreen({ navigation }: any) {
             <OverallAccuracyCard overallAccuracy={accuracy} />
           </View>
         </View>
+
+        {pathRecs.length > 0 && (
+          <View style={styles.pathSection}>
+            <Text style={styles.pathTitle}>Recommended Study Path</Text>
+            <Text style={styles.pathSubtitle}>Based on your learning patterns</Text>
+            <View style={styles.pathList}>
+              {pathRecs.map((rec, i) => (
+                <View key={i} style={styles.pathCard}>
+                  <Text style={styles.pathCardTitle}>{rec.subject}{rec.topic ? ` — ${rec.topic}` : ''}</Text>
+                  <Text style={styles.pathCardReason}>{rec.reason}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       <BottomNav activeTab="Home" />
@@ -716,5 +722,48 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: '#92400E',
     fontFamily: fontFamily.bodyMedium,
+  },
+  pathSection: {
+    alignSelf: 'stretch',
+  },
+  pathTitle: {
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 24,
+    color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  pathSubtitle: {
+    fontSize: 13,
+    fontWeight: '400',
+    lineHeight: 18,
+    color: 'rgba(0,0,0,0.5)',
+    fontFamily: fontFamily.body,
+    marginBottom: 12,
+  },
+  pathList: {
+    gap: 8,
+  },
+  pathCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pathCardTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 19,
+    color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  pathCardReason: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+    color: 'rgba(0,0,0,0.5)',
+    fontFamily: fontFamily.body,
+    marginTop: 4,
   },
 });
