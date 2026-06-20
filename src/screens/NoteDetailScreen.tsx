@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Platform, ActivityIndicator } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius, fontFamily } from '../theme';
@@ -11,6 +11,7 @@ export function NoteDetailScreen({ route, navigation }: any) {
   const { t } = useTranslation();
   const { noteId } = route.params;
   const note = useKnowledgeStore((s) => s.notes.find((n) => n.id === noteId));
+  const [generating, setGenerating] = useState<'idle' | 'mcq' | 'flashcard'>('idle');
 
   if (!note) {
     return (
@@ -25,24 +26,34 @@ export function NoteDetailScreen({ route, navigation }: any) {
   };
 
   const handleGenerateMCQs = async () => {
-    await useMCQStore.getState().startPracticeSession({
-      subjects: [note.subject],
-      difficulty: 'medium',
-      count: 10,
-      sourceType: 'note',
-      noteId: note.id,
-    });
-    navigation.navigate('MCQ');
+    setGenerating('mcq');
+    try {
+      await useMCQStore.getState().startPracticeSession({
+        subjects: [note.subject],
+        difficulty: 'medium',
+        count: 10,
+        sourceType: 'note',
+        noteId: note.id,
+      });
+      navigation.navigate('MCQ');
+    } finally {
+      setGenerating('idle');
+    }
   };
 
   const handleGenerateFlashcards = async () => {
-    const cards = await generateFlashcardsFromNote(note, 5);
-    if (cards.length === 0) {
-      Alert.alert(t('noteDetail.noFlashcardsTitle'), t('noteDetail.noFlashcardsMsg'));
-      return;
+    setGenerating('flashcard');
+    try {
+      const cards = await generateFlashcardsFromNote(note, 5);
+      if (cards.length === 0) {
+        Alert.alert(t('noteDetail.noFlashcardsTitle'), t('noteDetail.noFlashcardsMsg'));
+        return;
+      }
+      useFlashcardStore.getState().addFlashcards(cards);
+      navigation.navigate('Flashcards');
+    } finally {
+      setGenerating('idle');
     }
-    useFlashcardStore.getState().addFlashcards(cards);
-    navigation.navigate('Flashcards');
   };
 
   return (
@@ -110,6 +121,15 @@ export function NoteDetailScreen({ route, navigation }: any) {
 
       <View style={{ height: spacing.huge }} />
       </ScrollView>
+
+      {generating !== 'idle' && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[typography.captionBold, { color: colors.white, marginTop: spacing.md }]}>
+            {generating === 'mcq' ? 'Generating MCQs...' : 'Generating flashcards...'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -164,6 +184,12 @@ const styles = StyleSheet.create({
   subjectBadge: { paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: borderRadius.sm },
   divider: { height: 1, backgroundColor: colors.border + '40', marginVertical: spacing.lg },
   tags: { flexDirection: 'row', flexWrap: 'wrap', marginTop: spacing.md },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
