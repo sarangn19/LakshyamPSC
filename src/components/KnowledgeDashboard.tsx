@@ -27,14 +27,6 @@ export function KnowledgeDashboard() {
           <Text style={styles.statValue}>{forecast.coveragePercent}%</Text>
           <Text style={styles.statLabel}>Coverage</Text>
         </View>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{forecast.daysToExam}d</Text>
-          <Text style={styles.statLabel}>To Exam</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={[styles.statValue, { color: '#1E90FF' }]}>{forecast.recommendedDaily}</Text>
-          <Text style={styles.statLabel}>Qns/Day</Text>
-        </View>
       </View>
 
       <View style={styles.barBg}>
