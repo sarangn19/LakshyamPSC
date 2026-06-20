@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, TextInput, Animated, Image } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { LinearGradient } from 'expo-linear-gradient';
 import { fontFamily } from '../theme';
 import { useMCQStore } from '../store/mcqStore';
 import { useFlashcardStore } from '../store/flashcardStore';
@@ -218,36 +217,37 @@ export function LearnScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* Top Bar */}
-      <LinearGradient
-        colors={['#FFFFFF', 'rgba(255, 255, 255, 0.317308)', 'rgba(255, 255, 255, 0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.topBar}
-      >
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <View style={styles.backArrowWrap}>
-            <Svg width="9" height="17" viewBox="0 0 9 17" fill="none">
-              <Path fillRule="evenodd" clipRule="evenodd" d="M8.99892 15.938L7.95392 17L0.287919 9.21C0.10342 9.0197 0.000244141 8.76505 0.000244141 8.5C0.000244141 8.23495 0.10342 7.9803 0.287919 7.79L7.95392 0L8.99892 1.063L1.68092 8.5L8.99892 15.938Z" fill="black"/>
-            </Svg>
-          </View>
-        </TouchableOpacity>
-      </LinearGradient>
-
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Top Bar: Bookmark */}
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.bookmarkBtn} onPress={() => navigation.navigate('SavedNotes')} activeOpacity={0.8}>
+            <View style={styles.bookmarkCircle}>
+              <Svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <Path d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </View>
+          </TouchableOpacity>
+        </View>
+
         {/* Card 1: Adaptive Learning */}
-        <TouchableOpacity style={styles.card} onPress={async () => {
-          setIsAdaptiveLoading(true);
-          const store = useMCQStore.getState();
-          await store.startDailyDrill();
-          setIsAdaptiveLoading(false);
-          navigation.navigate('MCQ');
-        }}>
-          <View style={styles.cardLeftLarge}>
-            <Text style={styles.cardTitleLarge}>{t('learn.adaptiveLearning')}</Text>
+        <View style={styles.adaptiveCard}>
+          <View style={styles.adaptiveLeft}>
+            <Text style={styles.adaptiveTitle}>{t('learn.adaptiveLearning').replace('\n', ' ')}</Text>
+            <TouchableOpacity style={styles.adaptiveArrowBtn} onPress={async () => {
+              setIsAdaptiveLoading(true);
+              const store = useMCQStore.getState();
+              await store.startDailyDrill();
+              setIsAdaptiveLoading(false);
+              navigation.navigate('MCQ');
+            }} activeOpacity={0.8}>
+              <Svg width="12.44" height="13.07" viewBox="0 0 14 14" fill="none">
+                <Path d="M8 1L13 7L8 13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <Path d="M1 7H13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
           </View>
-          <Image source={require('../../icons/adaptive learning image.png')} style={styles.cardImageLarge} />
-        </TouchableOpacity>
+          <Image source={require('../../icons/adaptive learning image.png')} style={styles.adaptiveImage} />
+        </View>
 
         {/* Card 2 + 3: Notes & Practice row */}
         <View style={styles.cardRow}>
@@ -256,9 +256,10 @@ export function LearnScreen({ navigation }: any) {
               <Text style={styles.smallCardTitle}>{t('learn.notes')}</Text>
               <Text style={styles.smallCardSubtitle}>{t('learn.viewSavedNotes')}</Text>
             </View>
-            <View style={styles.smallCardArrow}>
-              <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <View style={styles.smallCardArrowBtn}>
+              <Svg width="12.44" height="13.07" viewBox="0 0 14 14" fill="none">
+                <Path d="M8 1L13 7L8 13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <Path d="M1 7H13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
             </View>
           </TouchableOpacity>
@@ -267,26 +268,14 @@ export function LearnScreen({ navigation }: any) {
               <Text style={styles.smallCardTitle}>{t('learn.practice')}</Text>
               <Text style={styles.smallCardSubtitle}>{t('learn.practiceMCQFlashcards')}</Text>
             </View>
-            <View style={styles.smallCardArrow}>
-              <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <View style={styles.smallCardArrowBtn}>
+              <Svg width="12.44" height="13.07" viewBox="0 0 14 14" fill="none">
+                <Path d="M8 1L13 7L8 13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <Path d="M1 7H13" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </Svg>
             </View>
           </TouchableOpacity>
         </View>
-
-        {/* Card 4: Knowledge Map */}
-        <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('Map')} activeOpacity={0.7}>
-          <View style={styles.smallCardContent}>
-            <Text style={styles.smallCardTitle}>{t('learn.knowledgeMap')}</Text>
-            <Text style={styles.smallCardSubtitle}>{t('learn.visualConceptMapping')}</Text>
-          </View>
-          <View style={styles.smallCardArrow}>
-            <Svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <Path d="M5 11L10 7L5 3" stroke="#000000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </View>
-        </TouchableOpacity>
       </ScrollView>
 
       {/* Select type modal (MCQ or Flashcard) */}
@@ -583,28 +572,25 @@ export function LearnScreen({ navigation }: any) {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-          <View style={styles.navIcon}>
-            <Svg width="16" height="16" viewBox="0 0 16 18" fill="none">
-              <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" fill="black"/>
+        <View style={styles.navCenterBg} />
+        <View style={styles.navItems}>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+            <Svg width="16.25" height="16" viewBox="0 0 18 18" fill="none">
+              <Path d="M2 15.5H5V10.5C5 10.2167 5.096 9.97933 5.288 9.788C5.48 9.59667 5.71733 9.50067 6 9.5H10C10.2833 9.5 10.521 9.596 10.713 9.788C10.905 9.98 11.0007 10.2173 11 10.5V15.5H14V6.5L8 2L2 6.5V15.5ZM0 15.5V6.5C0 6.18333 0.0709998 5.88333 0.213 5.6C0.355 5.31667 0.550667 5.08333 0.8 4.9L6.8 0.4C7.15 0.133333 7.55 0 8 0C8.45 0 8.85 0.133333 9.2 0.4L15.2 4.9C15.45 5.08333 15.646 5.31667 15.788 5.6C15.93 5.88333 16.0007 6.18333 16 6.5V15.5C16 16.05 15.804 16.521 15.412 16.913C15.02 17.305 14.5493 17.5007 14 17.5H10C9.71667 17.5 9.47933 17.404 9.288 17.212C9.09667 17.02 9.00067 16.7827 9 16.5V11.5H7V16.5C7 16.7833 6.904 17.021 6.712 17.213C6.52 17.405 6.28267 17.5007 6 17.5H2C1.45 17.5 0.979333 17.3043 0.588 16.913C0.196666 16.5217 0.000666667 16.0507 0 15.5Z" stroke="black" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </Svg>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chatbot')}>
-          <View style={styles.navIcon}>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Chatbot')}>
+            <Svg width="18.97" height="16" viewBox="0 0 24 24" fill="none">
+              <Path d="M9.5 9H9.51M14.5 9H14.51M18 4C18.7956 4 19.5587 4.31607 20.1213 4.87868C20.6839 5.44129 21 6.20435 21 7V15C21 15.7956 20.6839 16.5587 20.1213 17.1213C19.5587 17.6839 18.7956 18 18 18H13L8 21V18H6C5.20435 18 4.44129 17.6839 3.87868 17.1213C3.31607 16.5587 3 15.7956 3 15V7C3 6.20435 3.31607 5.44129 3.87868 4.87868C4.44129 4.31607 5.20435 4 6 4H18Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <Path d="M9.5 13C9.82588 13.3326 10.2148 13.5968 10.6441 13.7772C11.0734 13.9576 11.5344 14.0505 12 14.0505C12.4656 14.0505 12.9266 13.9576 13.3559 13.7772C13.7852 13.5968 14.1741 13.3326 14.5 13" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Learn')}>
             <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <Path d="M9.5 9H9.51M14.5 9H14.51M18 4C18.7956 4 19.5587 4.31607 20.1213 4.87868C20.6839 5.44129 21 6.20435 21 7V15C21 15.7956 20.6839 16.5587 20.1213 17.1213C19.5587 17.6839 18.7956 18 18 18H13L8 21V18H6C5.20435 18 4.44129 17.6839 3.87868 17.1213C3.31607 16.5587 3 15.7956 3 15V7C3 6.20435 3.31607 5.44129 3.87868 4.87868C4.44129 4.31607 5.20435 4 6 4H18Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <Path d="M9.5 13C9.82588 13.3326 10.2148 13.5968 10.6441 13.7772C11.0734 13.9576 11.5344 14.0505 12 14.0505C12.4656 14.0505 12.9266 13.9576 13.3559 13.7772C13.7852 13.5968 14.1741 13.3326 14.5 13" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <Path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3ZM18.82 9L12 12.72L5.18 9L12 5.28L18.82 9ZM17 16L12 18.72L7 16V12.27L12 15L17 12.27V16Z" fill="black" />
             </Svg>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Learn')}>
-          <View style={styles.navIconActive}>
-            <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <Path d="M12 3L1 9L5 11.18V17.18L12 21L19 17.18V11.18L21 10.09V17H23V9L12 3ZM18.82 9L12 12.72L5.18 9L12 5.28L18.82 9ZM17 16L12 18.72L7 16V12.27L12 15L17 12.27V16Z" fill="black"/>
-            </Svg>
-          </View>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -614,81 +600,82 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F4F0EF',
-  },
-  topBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 122,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 21,
-    paddingBottom: 57,
-    gap: 12,
-    backgroundColor: 'transparent',
-    zIndex: 10,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backArrowWrap: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 999,
-  },
-  backArrow: {
-    fontSize: 18,
-    color: '#000000',
   },
   scrollContent: {
-    paddingTop: 120,
-    paddingHorizontal: 16,
-    paddingBottom: 170,
     gap: 10,
+    paddingTop: 64,
+    paddingBottom: 110,
   },
-  card: {
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 48,
+    gap: 8,
+  },
+  bookmarkBtn: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bookmarkCircle: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  adaptiveCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: 16,
     gap: 16,
-    alignSelf: 'stretch',
     backgroundColor: '#FFFFFF',
     borderWidth: 0.5,
     borderColor: 'rgba(0, 0, 0, 0.1)',
     borderRadius: 12,
-    boxShadow: '0px 0px 16px rgba(0, 0, 0, 0.08)',
-    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+    alignSelf: 'stretch',
   },
-  cardLeftLarge: {
+  adaptiveLeft: {
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    padding: 0,
     gap: 16,
-    flex: 1,
-    maxWidth: 120,
+    width: 95,
   },
-  cardTitleLarge: {
+  adaptiveTitle: {
     fontSize: 24,
     fontWeight: '500',
-    lineHeight: 32,
-    fontFamily: fontFamily.bodyMedium,
+    lineHeight: 29,
     color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+  },
+  adaptiveArrowBtn: {
+    width: 44,
+    height: 44,
+    backgroundColor: '#F7B11A',
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ rotate: '45deg' }],
+  },
+  adaptiveImage: {
+    width: 249,
+    height: 142.23,
+    resizeMode: 'cover',
+    borderRadius: 8,
   },
   cardRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
     gap: 10,
     alignSelf: 'stretch',
   },
@@ -700,47 +687,81 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     gap: 10,
-    shadowColor: '#000000',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 4,
+    elevation: 3,
   },
   smallCardContent: {
+    flex: 1,
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 10,
-    alignSelf: 'stretch',
   },
   smallCardTitle: {
     fontSize: 16,
     fontWeight: '500',
-    lineHeight: 22,
-    fontFamily: fontFamily.bodyMedium,
+    lineHeight: 19,
     color: '#000000',
+    fontFamily: fontFamily.bodyMedium,
+    alignSelf: 'stretch',
   },
   smallCardSubtitle: {
     fontSize: 14,
     fontWeight: '300',
-    lineHeight: 19,
-    fontFamily: fontFamily.bodyLight,
+    lineHeight: 17,
     color: '#000000',
+    fontFamily: fontFamily.body,
+    alignSelf: 'stretch',
   },
-  smallCardArrow: {
+  smallCardArrowBtn: {
     width: 44,
     height: 44,
-    borderRadius: 999,
     backgroundColor: '#F9F9F9',
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'flex-end',
+    transform: [{ rotate: '45deg' }],
   },
-  cardImageLarge: {
-    width: '65%',
-    aspectRatio: 265 / 141.43,
-    maxWidth: 265,
-    borderRadius: 8,
+  bottomNav: {
+    position: 'absolute',
+    bottom: 24,
+    left: 24,
+    right: 24,
+    height: 72,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 6,
+    justifyContent: 'center',
   },
+  navCenterBg: {
+    position: 'absolute',
+    width: 54.32,
+    height: 54.32,
+    left: '50%',
+    top: 8.84,
+    marginLeft: -27.16,
+    backgroundColor: '#F7B11A',
+    borderRadius: 999,
+  },
+  navItems: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+  },
+  navItem: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.2)',
@@ -854,7 +875,6 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.body,
     color: '#000000',
     padding: 0,
-    outlineWidth: 0,
   },
   selectListRow: {
     flexDirection: 'row',
@@ -975,7 +995,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: fontFamily.body,
     color: '#000000',
-    outlineWidth: 0,
   },
   tasksModal: {
     width: '100%',
@@ -1022,7 +1041,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: fontFamily.body,
     color: '#000000',
-    outlineWidth: 0,
   },
   tasksPresetRow: {
     flexDirection: 'row',
@@ -1055,42 +1073,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: fontFamily.body,
   },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
-    height: 76,
-    backgroundColor: '#F6F6F6',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    borderRadius: 78,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    boxShadow: '0 0 115px rgba(0,0,0,0.12)',
-    elevation: 5,
-  },
-  navItem: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 86,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  navIconActive: {
-    width: 44,
-    height: 44,
-    borderRadius: 86,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
+
 });
