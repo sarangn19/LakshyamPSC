@@ -785,6 +785,7 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 6,
     justifyContent: 'center',
+    zIndex: 10,
   },
   navActiveBg: {
     position: 'absolute',
