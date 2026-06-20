@@ -32,7 +32,6 @@
   td { color: #ccc; }
   .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
   .badge-green { background: rgba(52,211,153,0.2); color: #34d399; }
-  .badge-red { background: rgba(251,113,133,0.2); color: #fb7185; }
   .badge-yellow { background: rgba(251,191,36,0.2); color: #fbbf24; }
   .flow { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
   .flow-item { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 12px 20px; font-size: 0.9rem; color: #c4b5fd; font-weight: 500; text-align: center; min-width: 100px; }
@@ -48,21 +47,18 @@
   .list { list-style: none; padding: 0; }
   .list li { padding: 8px 0; color: #ccc; font-size: 1rem; display: flex; align-items: center; gap: 12px; }
   .list li::before { content: "▸"; color: #a78bfa; font-weight: 700; }
-  .pipeline { display: flex; flex-direction: column; gap: 8px; margin: 20px 0; }
-  .pipeline-row { display: flex; align-items: center; gap: 12px; }
-  .pipeline-box { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.2); border-radius: 10px; padding: 10px 18px; font-size: 0.85rem; color: #c4b5fd; font-weight: 500; }
-  .pipeline-label { font-size: 0.8rem; color: #666; min-width: 100px; text-align: right; }
-  .pipeline-status { font-size: 0.8rem; color: #34d399; }
-  .proj-table { width:100%;border-collapse:collapse;margin-top:16px; }
-  .proj-table th { background:#1c1c2e;color:#a78bfa;padding:10px 16px;text-align:center;border:1px solid #2a2a3e;font-weight:600;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.5px; }
-  .proj-table td { padding:10px 16px;text-align:center;border:1px solid #2a2a3e;font-size:0.9rem;color:#b0b0b0; }
-  .proj-table tr:nth-child(even) td { background:#15152b; }
-  .proj-table tr:hover td { background:#1f1f3a; }
+  .moat-cycle { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 24px 0; }
+  .moat-step { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.25); border-radius: 10px; padding: 10px 24px; font-size: 0.95rem; color: #c4b5fd; font-weight: 500; text-align: center; min-width: 200px; }
+  .moat-arrow { color: #555; font-size: 1.2rem; }
+  .pillars { display: flex; gap: 16px; margin-top: 16px; }
+  .pillar-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; flex: 1; text-align: center; }
+  .pillar-card h4 { font-size: 1rem; color: #a78bfa; margin-bottom: 8px; }
+  .pillar-card p { font-size: 0.85rem; color: #999; }
   @media (max-width: 768px) {
     .slide { padding: 30px 24px; }
     h1 { font-size: 2rem; }
     h2 { font-size: 1.4rem; }
-    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .grid-2, .grid-3, .pillars { grid-template-columns: 1fr; flex-direction: column; }
     .stat-num { font-size: 2rem; }
     .flow { gap: 6px; }
     .flow-item { padding: 8px 12px; font-size: 0.75rem; min-width: 70px; }
@@ -81,426 +77,320 @@
 <div class="slide active" data-index="0">
   <div class="slide-content" style="text-align:center">
     <h1 style="font-size:5rem;margin-bottom:8px">Lakshyam</h1>
-    <p class="tagline">Your AI Coach for Kerala PSC Exams</p>
-    <div style="margin-top:48px">
-      <p style="font-size:1.1rem;color:#666">AI-native exam preparation platform</p>
-      <p style="font-size:1.1rem;color:#666">iOS · Android · Web</p>
-    </div>
+    <p class="tagline">AI-Powered Kerala PSC Preparation</p>
+    <p style="font-size:1.1rem;color:#666;margin-top:40px">Personalized learning for every aspirant.</p>
     <div style="margin-top:60px">
       <p style="font-size:0.9rem;color:#444">PRESS <span style="color:#666">→</span> TO NAVIGATE</p>
     </div>
   </div>
 </div>
 
-<!-- 2: Problem -->
+<!-- 2: The Problem -->
 <div class="slide" data-index="1">
   <div class="slide-content">
     <h3>The Problem</h3>
-    <h2>1M+ aspirants, zero modern tools</h2>
+    <h2>PSC preparation is broken.</h2>
     <div class="grid-2">
       <div class="card">
-        <h4>📊 Massive Market</h4>
-        <p>1M+ applicants every year for Kerala PSC exams. Lakhs compete for hundreds of vacancies.</p>
+        <h4>❓ Unknown Path</h4>
+        <p>Students don't know what to study next. Without a personalized roadmap, they waste time on random topics.</p>
       </div>
       <div class="card">
-        <h4>📚 Outdated Solutions</h4>
-        <p>Printed books, coaching centers, and generic exam apps. Nothing built specifically for Kerala PSC.</p>
+        <h4>🔄 Wasted Repetition</h4>
+        <p>They practice what they already know. Time is spent on familiar topics instead of weak areas.</p>
       </div>
       <div class="card">
-        <h4>🧠 One-Size-Fits-None</h4>
-        <p>Static question banks, no personalization, no adaptive learning. Every student gets the same content.</p>
+        <h4>📉 The Forgetting Curve</h4>
+        <p>Concepts learned weeks ago are forgotten. No system reminds students what they're about to lose.</p>
       </div>
       <div class="card">
-        <h4>🌐 Language Gap</h4>
-        <p>Most tools are English-only. Kerala aspirants need Malayalam support. Rural users need offline access.</p>
+        <h4>🤷 No Guidance</h4>
+        <p>No personalized feedback. No tutor who understands their specific gaps. Just static question banks.</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- 3: Solution -->
+<!-- 3: Market Opportunity -->
 <div class="slide" data-index="2">
   <div class="slide-content">
-    <h3>The Solution</h3>
-    <h2>Full-stack AI learning platform</h2>
-    <p style="font-size:1.2rem;color:#ccc;margin-bottom:32px">Fresh AI-generated questions · Cognitive twin · Adaptive engine · Spaced repetition · Offline-first</p>
+    <h3>Market Opportunity</h3>
+    <h2>One of India's largest recruitment ecosystems</h2>
+    <p style="margin-bottom:32px;color:#ccc">Kerala PSC is among the largest state recruitment ecosystems in India. Hundreds of thousands of candidates compete for government jobs every year.</p>
     <div class="grid-3">
-      <div class="card">
-        <h4>🤖 AI Question Generator</h4>
-        <p>Fresh questions for any subject, topic, or difficulty — in English or Malayalam. Multi-model pipeline (Groq → Gemini → OpenRouter).</p>
-      </div>
-      <div class="card">
-        <h4>🧬 Cognitive Twin</h4>
-        <p>A digital replica of each learner's knowledge. Tracks mastery, forgetting, confidence, and gaps across 47+ subtopics.</p>
-      </div>
-      <div class="card">
-        <h4>🎯 Adaptive Engine</h4>
-        <p>Bayesian Knowledge Tracing selects the optimal next question. Real-time difficulty adjustment based on performance.</p>
-      </div>
-      <div class="card">
-        <h4>⏰ Spaced Repetition</h4>
-        <p>SM-2 algorithm. Reviews scheduled at optimal intervals (1, 3, 7, 14, 30, 60, 120, 240 days).</p>
-      </div>
-      <div class="card">
-        <h4>💬 AI Tutor</h4>
-        <p>Kerala PSC chatbot. Understands Malayalam. Explains concepts, generates practice on demand.</p>
-      </div>
-      <div class="card">
-        <h4>📰 Current Affairs</h4>
-        <p>Auto-fetched daily from NewsAPI. Categorized (Kerala, National, Schemes, etc.). With images.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 4: How It Works -->
-<div class="slide" data-index="3">
-  <div class="slide-content">
-    <h3>How It Works</h3>
-    <h2>Every answer trains the model</h2>
-    <div class="flow">
-      <div class="flow-item">Student answers question</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-item">Cognitive Twin updates</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-item">Adaptive Engine picks next topic</div>
-    </div>
-    <div class="flow">
-      <div class="flow-item">AI generates fresh question</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-item">Validated & served</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-item">Spaced Rep schedules review</div>
-    </div>
-    <div style="margin-top:40px;text-align:center">
-      <p style="color:#a78bfa;font-weight:600;font-size:1.1rem">The system gets smarter with every answer. No two students see the same path.</p>
-    </div>
-  </div>
-</div>
-
-<!-- 5: Cognitive Twin -->
-<div class="slide" data-index="4">
-  <div class="slide-content">
-    <h3>Core Differentiator</h3>
-    <h2>The Cognitive Twin</h2>
-    <p style="margin-bottom:24px">A persistent knowledge model across a 3-level syllabus with prerequisite chains.</p>
-    <div class="grid-2">
-      <div>
-        <div class="card" style="margin-bottom:16px">
-          <h4>Syllabus Structure</h4>
-          <p>9 Subjects → 20+ Topics → 47+ Subtopics, each with prerequisite relationships</p>
-        </div>
-        <div class="card" style="margin-bottom:16px">
-          <h4>Per-Node Tracking</h4>
-          <ul class="list">
-            <li>Mastery score, accuracy, hesitation, forgetting rate</li>
-            <li>Trend direction: improving / declining / stable</li>
-            <li>7-day, 30-day, 90-day retention rates</li>
-          </ul>
-        </div>
-      </div>
-      <div>
-        <div class="card" style="margin-bottom:16px">
-          <h4>Gap Lifecycle</h4>
-          <div class="flow" style="margin:16px 0">
-            <div class="flow-item" style="font-size:0.8rem;padding:6px 12px;min-width:auto">Open</div>
-            <span class="flow-arrow">→</span>
-            <div class="flow-item" style="font-size:0.8rem;padding:6px 12px;min-width:auto">Improving</div>
-            <span class="flow-arrow">→</span>
-            <div class="flow-item" style="font-size:0.8rem;padding:6px 12px;min-width:auto">Closing</div>
-            <span class="flow-arrow">→</span>
-            <div class="flow-item" style="font-size:0.8rem;padding:6px 12px;min-width:auto">Closed</div>
-            <span class="flow-arrow">→</span>
-            <div class="flow-item" style="font-size:0.8rem;padding:6px 12px;min-width:auto">Retained</div>
-          </div>
-        </div>
-        <div class="card">
-          <h4>What This Enables</h4>
-          <ul class="list">
-            <li>Know exactly what each student is <span style="color:#fb7185">about to forget</span></li>
-            <li>Prioritize gaps that matter most for <span style="color:#a78bfa">their target exam</span></li>
-            <li>Measure <span style="color:#34d399">real learning progress</span>, not just question count</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 6: AI Pipeline -->
-<div class="slide" data-index="5">
-  <div class="slide-content">
-    <h3>Infrastructure</h3>
-    <h2>AI Multi-Model Pipeline</h2>
-    <p>No single point of failure. No expensive vendor lock-in. <span style="color:#34d399">$0 AI inference cost at current scale.</span></p>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:32px 0">
-      <div style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:12px;padding:16px 32px;text-align:center">
-        <div style="font-weight:700;color:#c4b5fd;font-size:1.1rem">Groq — Primary</div>
-        <div style="color:#888;font-size:0.85rem">Llama 3.1 8B · 30 req/min free</div>
-      </div>
-      <div style="color:#555;font-size:0.9rem">⬇ fallback</div>
-      <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:16px 32px;text-align:center">
-        <div style="font-weight:700;color:#fbbf24;font-size:1.1rem">OpenRouter — Fallback 1</div>
-        <div style="color:#888;font-size:0.85rem">Gemini 2.0 Flash Lite</div>
-      </div>
-      <div style="color:#555;font-size:0.9rem">⬇ fallback</div>
-      <div style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:16px 32px;text-align:center">
-        <div style="font-weight:700;color:#34d399;font-size:1.1rem">Gemini Direct — Fallback 2</div>
-        <div style="color:#888;font-size:0.85rem">Gemini 2.0 Flash · 1,500 req/day free</div>
-      </div>
-    </div>
-    <div class="grid-3">
-      <div class="stat"><div class="stat-num">1,500+</div><div class="stat-label">Questions/day free</div></div>
-      <div class="stat"><div class="stat-num">3</div><div class="stat-label">AI providers</div></div>
-      <div class="stat"><div class="stat-num">$0</div><div class="stat-label">Inference cost</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- 7: Product Screens -->
-<div class="slide" data-index="6">
-  <div class="slide-content">
-    <h3>Product</h3>
-    <h2>Student Screens</h2>
-    <div class="grid-3">
-      <div class="card"><h4>📊 Dashboard</h4><p>Progress, accuracy, streak, due reviews, subject breakdown</p></div>
-      <div class="card"><h4>🎯 MCQ Engine</h4><p>AI-generated questions, confidence tracking, timer, flag/report</p></div>
-      <div class="card"><h4>🃏 Flashcards</h4><p>SM-2 spaced repetition, flip & rate, mastery tracking</p></div>
-      <div class="card"><h4>🗺️ Knowledge Map</h4><p>3-level tree with mastery heatmap, prerequisite warnings</p></div>
-      <div class="card"><h4>💬 AI Tutor</h4><p>Malayalam/English chatbot, explains concepts, generates practice</p></div>
-      <div class="card"><h4>📈 Analytics</h4><p>Gap lifecycle, retention curves, confidence calibration</p></div>
-      <div class="card"><h4>📰 Current Affairs</h4><p>Daily news with images, categorized, exam-relevant</p></div>
-      <div class="card"><h4>🏆 Retention Dashboard</h4><p>Heat maps, sparklines, due/at-risk subtopics</p></div>
-      <div class="card"><h4>🎯 Goal Tracker</h4><p>Exam roadmaps with phases, daily targets, streak</p></div>
-    </div>
-  </div>
-</div>
-
-<!-- 8: Admin & Superadmin -->
-<div class="slide" data-index="7">
-  <div class="slide-content">
-    <h3>Platform</h3>
-    <h2>Admin & Superadmin Portals</h2>
-    <div class="grid-2">
-      <div class="card">
-        <h4>🛠️ Admin Portal — 8 Tabs</h4>
-        <ul class="list">
-          <li>Dashboard (platform metrics)</li>
-          <li>Question Management (CRUD)</li>
-          <li>Current Affairs Publishing</li>
-          <li>Content Quality Center</li>
-          <li>Question Audit</li>
-          <li>Bulk Upload</li>
-          <li>Learner Support</li>
-          <li>Learning Analytics</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h4>⚡ Superadmin Portal — 8 Tabs</h4>
-        <ul class="list">
-          <li>Executive Dashboard (KPIs)</li>
-          <li>Cognitive Twin Configuration</li>
-          <li>Recommendation Analytics</li>
-          <li>User & Role Management</li>
-          <li>Access Control</li>
-          <li>System Monitoring</li>
-          <li>Experiment Center (A/B Testing)</li>
-          <li>Audit Logs</li>
-        </ul>
-      </div>
-    </div>
-    <div style="margin-top:20px;text-align:center">
-      <p><span class="badge badge-green">Student</span> <span style="color:#444;margin:0 12px">→</span> <span class="badge badge-yellow">Admin</span> <span style="color:#444;margin:0 12px">→</span> <span class="badge badge-red">Superadmin</span></p>
-    </div>
-  </div>
-</div>
-
-<!-- 9: Technology -->
-<div class="slide" data-index="8">
-  <div class="slide-content">
-    <h3>Architecture</h3>
-    <h2>Technology Stack</h2>
-    <div class="grid-2">
-      <div>
-        <div class="card" style="margin-bottom:16px"><h4>🎨 Frontend</h4><p>React Native 0.76 + Expo 52 · TypeScript · Zustand (offline persistence)</p></div>
-        <div class="card" style="margin-bottom:16px"><h4>⚙️ Backend</h4><p>Supabase · PostgreSQL · Auth · Edge Functions (Deno) · Realtime</p></div>
-        <div class="card" style="margin-bottom:16px"><h4>🧠 AI</h4><p>Groq · Gemini · OpenRouter · OpenAI · Multi-model fallback chain</p></div>
-      </div>
-      <div>
-        <div class="card" style="margin-bottom:16px"><h4>🌐 Platform</h4><p>iOS · Android · Web — single codebase. Vercel (web) + Expo (mobile).</p></div>
-        <div class="card" style="margin-bottom:16px"><h4>📦 Scale</h4><p>~110 source files · 30+ services · 12 stores · 16 DB migrations · 8 edge functions</p></div>
-        <div class="card" style="margin-bottom:16px"><h4>🌍 i18n</h4><p>English + Malayalam · AI generates Malayalam questions · Chatbot speaks Malayalam</p></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 10: Market -->
-<div class="slide" data-index="9">
-  <div class="slide-content">
-    <h3>Market</h3>
-    <h2>Massive underserved opportunity</h2>
-    <div class="grid-3">
-      <div class="stat"><div class="stat-num">1M+</div><div class="stat-label">Annual PSC applicants</div></div>
+      <div class="stat"><div class="stat-num">500K+</div><div class="stat-label">Active aspirants/year</div></div>
       <div class="stat"><div class="stat-num">5+</div><div class="stat-label">Exam types</div></div>
-      <div class="stat"><div class="stat-num">10,000+</div><div class="stat-label">Coaching centers in Kerala</div></div>
+      <div class="stat"><div class="stat-num">10,000+</div><div class="stat-label">Coaching centers</div></div>
       <div class="stat"><div class="stat-num">96%</div><div class="stat-label">Kerala literacy rate</div></div>
       <div class="stat"><div class="stat-num">80%+</div><div class="stat-label">Smartphone penetration</div></div>
-      <div class="stat"><div class="stat-num">0</div><div class="stat-label">Dedicated Kerala PSC apps</div></div>
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">Dedicated PSC apps</div></div>
     </div>
+    <p style="text-align:center;color:#a78bfa;font-weight:600;margin-top:16px">The market is ready. The product doesn't exist yet.</p>
   </div>
 </div>
 
-<!-- 11: Competition -->
-<div class="slide" data-index="10">
+<!-- 4: Why Existing Solutions Fail -->
+<div class="slide" data-index="3">
   <div class="slide-content">
     <h3>Competition</h3>
-    <h2>No one else does this</h2>
+    <h2>Why existing solutions fail</h2>
+    <p style="margin-bottom:24px">Every student receives the same content. No solution adapts to individual learning needs.</p>
     <table>
-      <tr><th>Capability</th><th>Lakshyam</th><th>Generic Apps</th><th>Coaching Centers</th><th>Books</th></tr>
-      <tr><td>AI-generated questions</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-      <tr><td>Adaptive learning</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-      <tr><td>Cognitive twin</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-      <tr><td>Malayalam support</td><td class="highlight">✅</td><td>❌</td><td>✅</td><td>✅</td></tr>
-      <tr><td>Offline-first</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>✅</td></tr>
-      <tr><td>Multi-platform</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-      <tr><td>Real-time analytics</td><td class="highlight">✅</td><td>❌</td><td>❌</td><td>❌</td></tr>
-      <tr><td>Cost</td><td class="highlight">Free tier</td><td>Paid</td><td>₹5K-50K</td><td>₹500-2K</td></tr>
+      <tr><th></th><th>Books</th><th>Coaching</th><th>Apps</th></tr>
+      <tr><td>Personalized</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td></tr>
+      <tr><td>Adaptive</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td></tr>
+      <tr><td>Affordable</td><td style="color:#34d399">✅</td><td style="color:#fb7185">❌</td><td style="color:#34d399">✅</td></tr>
+      <tr><td>Malayalam support</td><td style="color:#34d399">✅</td><td style="color:#34d399">✅</td><td style="color:#fb7185">❌</td></tr>
+      <tr><td>Always fresh content</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td><td style="color:#fb7185">❌</td></tr>
     </table>
   </div>
 </div>
 
-<!-- 12: Business Model -->
-<div class="slide" data-index="11">
+<!-- 5: Lakshyam -->
+<div class="slide" data-index="4">
+  <div class="slide-content" style="text-align:center">
+    <h3>The Solution</h3>
+    <h2>The first AI-native learning platform built specifically for Kerala PSC</h2>
+    <div class="pillars">
+      <div class="pillar-card">
+        <h4>🎯 Personalized Practice</h4>
+        <p>AI generates unique questions matched to your exact weak areas — not generic question banks</p>
+      </div>
+      <div class="pillar-card">
+        <h4>💬 Malayalam AI Tutor</h4>
+        <p>Ask anything in Malayalam or English. Explains concepts, creates practice, clarifies doubts</p>
+      </div>
+      <div class="pillar-card">
+        <h4>🔄 Adaptive Revision</h4>
+        <p>Knows what you're about to forget and schedules review before you do. Spaced repetition built in</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6: Product Flow -->
+<div class="slide" data-index="5">
+  <div class="slide-content">
+    <h3>How It Works</h3>
+    <h2>Product Flow</h2>
+    <div class="flow" style="flex-direction:column;gap:8px">
+      <div class="flow-item" style="min-width:240px;padding:14px 28px">Practice</div>
+      <span class="flow-arrow">↓</span>
+      <div class="flow-item" style="min-width:240px;padding:14px 28px">Detect Weakness</div>
+      <span class="flow-arrow">↓</span>
+      <div class="flow-item" style="min-width:240px;padding:14px 28px">Recommend Next Topic</div>
+      <span class="flow-arrow">↓</span>
+      <div class="flow-item" style="min-width:240px;padding:14px 28px">Generate Revision</div>
+      <span class="flow-arrow">↓</span>
+      <div class="flow-item" style="min-width:240px;padding:14px 28px">Improve Retention</div>
+    </div>
+    <div style="margin-top:32px;text-align:center">
+      <p style="color:#a78bfa;font-weight:600">Every interaction trains the model. No two students see the same path.</p>
+    </div>
+  </div>
+</div>
+
+<!-- 7: Why We Win — Data Moat -->
+<div class="slide" data-index="6">
+  <div class="slide-content">
+    <h3>Moat</h3>
+    <h2>Why We Win</h2>
+    <p style="margin-bottom:16px">Every interaction creates learning data. This is a network-effects data moat that compounds over time.</p>
+    <div class="moat-cycle">
+      <div class="moat-step">More students</div>
+      <div class="moat-arrow">↓</div>
+      <div class="moat-step">Better understanding of PSC learning patterns</div>
+      <div class="moat-arrow">↓</div>
+      <div class="moat-step">Better recommendations</div>
+      <div class="moat-arrow">↓</div>
+      <div class="moat-step">Better outcomes</div>
+      <div class="moat-arrow">↓</div>
+      <div class="moat-step" style="border-color:rgba(52,211,153,0.4);color:#34d399">More students → cycle repeats</div>
+    </div>
+    <div class="grid-2" style="margin-top:24px">
+      <div class="card">
+        <h4>🔍 What we continuously map</h4>
+        <ul class="list">
+          <li>What each student knows</li>
+          <li>What they're forgetting</li>
+          <li>What they should learn next</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>📈 The result</h4>
+        <ul class="list">
+          <li>Higher retention rates</li>
+          <li>Faster exam readiness</li>
+          <li>Competitors can't replicate years of learning data</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 8: Competitive Positioning -->
+<div class="slide" data-index="7">
+  <div class="slide-content">
+    <h3>Positioning</h3>
+    <h2>Competitive Positioning</h2>
+    <table>
+      <tr><th>Capability</th><th>Lakshyam</th><th>Others</th></tr>
+      <tr><td>Kerala PSC Focus</td><td class="highlight" style="font-weight:700">✅</td><td style="color:#fbbf24">Partial</td></tr>
+      <tr><td>Malayalam AI Tutor</td><td class="highlight" style="font-weight:700">✅</td><td style="color:#fbbf24">Limited</td></tr>
+      <tr><td>Adaptive Learning</td><td class="highlight" style="font-weight:700">✅</td><td style="color:#fb7185">Rare</td></tr>
+      <tr><td>Personalized Revision</td><td class="highlight" style="font-weight:700">✅</td><td style="color:#fb7185">No</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 9: Business Model -->
+<div class="slide" data-index="8">
   <div class="slide-content">
     <h3>Monetization</h3>
     <h2>Business Model</h2>
-    <div class="grid-3">
+    <div class="grid-2">
       <div class="card">
         <h4>🎁 Free</h4>
         <p>AI-generated questions, basic analytics, daily current affairs</p>
-        <p style="margin-top:12px;color:#34d399">₹0</p>
+        <p style="margin-top:12px;color:#34d399;font-size:2rem;font-weight:800">₹0</p>
       </div>
       <div class="card">
         <h4>⭐ Premium</h4>
-        <p>Unlimited questions, offline bank, priority AI, detailed analytics, ad-free</p>
-        <p style="margin-top:12px;color:#fbbf24">₹199/month</p>
-      </div>
-      <div class="card">
-        <h4>🚀 Pro</h4>
-        <p>Unlimited AI tutor, cognitive twin deep dive, study groups, priority support</p>
-        <p style="margin-top:12px;color:#fb7185">₹499/month</p>
+        <p>Unlimited questions, offline question bank, priority AI, detailed analytics, ad-free</p>
+        <p style="margin-top:12px;color:#fbbf24;font-size:2rem;font-weight:800">₹199/mo</p>
       </div>
     </div>
     <div style="margin-top:24px">
       <div class="card">
-        <h4>🏢 Enterprise (planned)</h4>
-        <p>Coaching center white-label, batch management, custom content, analytics dashboard</p>
-      </div>
-    </div>
-    <p style="margin-top:16px;color:#888">AI cost per question: <span style="color:#a78bfa">~₹0.001</span> (fraction of a paisa). Coaching centers charge ₹15,000-50,000/year per student.</p>
-  </div>
-</div>
-
-<!-- 13: Revenue Model -->
-<div class="slide" data-index="12">
-  <div class="slide-content">
-    <h3>Monetization</h3>
-    <h2>Revenue Model</h2>
-    <div class="grid-2" style="margin-bottom:24px">
-      <div class="card">
         <h4>📊 Unit Economics</h4>
         <ul class="list">
-          <li>AI inference cost per question: <span style="color:#a78bfa">₹0.001</span> (free tier → ₹0)</li>
-          <li>MAU ~300 questions = ₹0.30 AI cost (free → ₹0)</li>
-          <li>Premium ₹199/mo → <span style="color:#34d399">99.85% gross margin</span> with free APIs</li>
-          <li>Upgrade GPT-4o-mini: <span style="color:#fbbf24">₹5/user/mo</span> → 97.5% margin</li>
-          <li>Upgrade GPT-4o/Claude: <span style="color:#fb7185">₹80/user/mo</span> → profitable at ₹299+</li>
-        </ul>
-      </div>
-      <div class="card">
-        <h4>💰 Revenue Streams</h4>
-        <ul class="list">
-          <li><strong>B2C:</strong> Premium (₹199/mo) + Pro (₹499/mo)</li>
-          <li><strong>B2B:</strong> Coaching center white-label licensing</li>
-          <li><strong>Marketplace:</strong> Curated question sets & mock tests</li>
-          <li><strong>Future:</strong> Ad revenue, affiliate (books/courses)</li>
+          <li>AI inference cost per question: <span style="color:#a78bfa">~₹0.001</span> (free tier → ₹0)</li>
+          <li>Premium at ₹199/mo with 300 questions/user = ₹0.30 AI cost → <span style="color:#34d399">99.85% gross margin</span></li>
+          <li>Even with GPT-4o-mini upgrade: ₹5/user/mo → 97.5% margin</li>
+          <li>Coaching centers charge ₹15,000–50,000/year per student</li>
         </ul>
       </div>
     </div>
-    <table class="proj-table">
-      <tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr>
-      <tr><td>Free users</td><td>10,000</td><td>50,000</td><td>200,000</td></tr>
-      <tr><td>Conversion rate</td><td>3%</td><td>5%</td><td>8%</td></tr>
-      <tr><td>Paying users</td><td>300</td><td>2,500</td><td>16,000</td></tr>
-      <tr><td>Avg revenue/user/mo</td><td>₹199</td><td>₹249</td><td>₹299</td></tr>
-      <tr><td>Monthly recurring revenue</td><td style="color:#34d399">₹60K</td><td style="color:#34d399">₹6.2L</td><td style="color:#34d399">₹47.8L</td></tr>
-      <tr><td>Annual run rate (ARR)</td><td style="color:#fbbf24">₹7.2L</td><td style="color:#fbbf24">₹74.4L</td><td style="color:#fbbf24">₹5.7Cr</td></tr>
-      <tr style="height:8px"><td colspan="4" style="border:none;background:transparent"></td></tr>
-      <tr><td style="color:#888;font-style:italic">API cost (free tier)</td><td style="color:#34d399;font-style:italic">₹0</td><td style="color:#34d399;font-style:italic">₹0</td><td style="color:#34d399;font-style:italic">₹0</td></tr>
-      <tr><td style="color:#888;font-style:italic">API cost (GPT-4o-mini)</td><td style="color:#fbbf24;font-style:italic">₹1.5K</td><td style="color:#fbbf24;font-style:italic">₹12.5K</td><td style="color:#fbbf24;font-style:italic">₹80K</td></tr>
-      <tr><td style="color:#888;font-style:italic">API cost (GPT-4o/Claude)</td><td style="color:#fb7185;font-style:italic">₹24K</td><td style="color:#fb7185;font-style:italic">₹2L</td><td style="color:#fb7185;font-style:italic">₹12.8L</td></tr>
-    </table>
-    <p style="margin-top:12px;color:#888;font-size:0.85rem;text-align:center">Break-even: ~500 paid users (₹99.5K/mo). All API tiers remain highly profitable. Free tier sustains launch at zero inference cost.</p>
   </div>
 </div>
 
-<!-- 14: Traction -->
-<div class="slide" data-index="13">
+<!-- 10: Go-To-Market -->
+<div class="slide" data-index="9">
+  <div class="slide-content">
+    <h3>Distribution</h3>
+    <h2>Go-To-Market</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h4>📱 PSC Telegram Groups</h4>
+        <p>Largest organic community of active aspirants. Direct access to target users at zero cost.</p>
+      </div>
+      <div class="card">
+        <h4>🎥 YouTube Creators</h4>
+        <p>Partner with PSC-focused YouTube creators for reviews, tutorials, and referral campaigns.</p>
+      </div>
+      <div class="card">
+        <h4>🎓 Campus Ambassadors</h4>
+        <p>College students preparing for PSC as brand advocates. Peer-driven organic growth.</p>
+      </div>
+      <div class="card">
+        <h4>🔄 Referral Program</h4>
+        <p>Viral growth through aspirant networks. Each user brings 2-3 peers preparing for the same exams.</p>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card">
+        <h4>🏫 Coaching Partnerships</h4>
+        <p>White-label solution for 10,000+ coaching centers in Kerala. Reach their existing student base.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11: Traction -->
+<div class="slide" data-index="10">
   <div class="slide-content">
     <h3>Progress</h3>
-    <h2>Traction & Milestones</h2>
-    <div class="grid-3">
-      <div class="card"><h4>✅ AI Question Gen</h4><p>Multi-model pipeline working. 1,500+ questions/day free capacity.</p></div>
-      <div class="card"><h4>✅ Cognitive Twin</h4><p>Full implementation with gap lifecycle, retention tracking, exam weights.</p></div>
-      <div class="card"><h4>✅ Adaptive Engine</h4><p>BKT-based with real-time difficulty, prerequisite chains, learner stages.</p></div>
-      <div class="card"><h4>✅ Admin Portal</h4><p>Complete content management, quality center, learner support, analytics.</p></div>
-      <div class="card"><h4>✅ Current Affairs</h4><p>Daily auto-fetch from NewsAPI. Categorized, with images. Live on Vercel.</p></div>
-      <div class="card"><h4>✅ Spaced Rep</h4><p>SM-2 algorithm. Retention dashboard with heat maps and sparklines.</p></div>
-    </div>
-    <div style="margin-top:24px;">
-      <div class="pipeline">
-        <div class="pipeline-row"><span class="pipeline-label">Ready</span><div class="pipeline-box" style="background:rgba(52,211,153,0.15);border-color:rgba(52,211,153,0.3);color:#34d399">Live on Vercel · 10+ concurrent users supported</div></div>
-        <div class="pipeline-row"><span class="pipeline-label">Next</span><div class="pipeline-box" style="background:rgba(251,191,36,0.12);border-color:rgba(251,191,36,0.2);color:#fbbf24">Play Store / App Store launch · Premium features</div></div>
-        <div class="pipeline-row"><span class="pipeline-label">Future</span><div class="pipeline-box" style="background:rgba(251,113,133,0.12);border-color:rgba(251,113,133,0.2);color:#fb7185">Other state PSC exams · Coaching center partnerships</div></div>
+    <h2>Traction</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h4>✅ Working MVP</h4>
+        <p>Live on Vercel. Full AI question generation pipeline operational.</p>
       </div>
+      <div class="card">
+        <h4>✅ AI Question Generation</h4>
+        <p>1,500+ questions per day free capacity. Multi-provider pipeline ensures uptime.</p>
+      </div>
+      <div class="card">
+        <h4>✅ Mobile App Prototype</h4>
+        <p>iOS + Android + Web from a single React Native codebase. Offline-first.</p>
+      </div>
+      <div class="card">
+        <h4>✅ Admin Dashboard</h4>
+        <p>Content management, analytics, learner support, current affairs publishing.</p>
+      </div>
+    </div>
+    <div style="margin-top:24px;text-align:center">
+      <p style="color:#666">Next: Play Store / App Store launch · Premium features · Coaching center partnerships</p>
     </div>
   </div>
 </div>
 
-<!-- 15: Ask -->
-<div class="slide" data-index="14">
+<!-- 12: Vision -->
+<div class="slide" data-index="11">
   <div class="slide-content" style="text-align:center">
-    <h3>The Ask</h3>
-    <h2>Building the definitive AI learning platform for India's exam market</h2>
-    <div class="grid-2" style="margin-top:40px">
+    <h3>Vision</h3>
+    <h2>From Kerala PSC to India's exam prep platform</h2>
+    <div class="grid-3" style="margin-top:40px">
       <div class="card">
-        <h4>💰 Investment</h4>
-        <div class="stat-num" style="font-size:2.5rem">$50K–$100K</div>
-        <p style="margin-top:12px">Marketing in Kerala · Content partnerships · Premium features · App store launch</p>
+        <h4>📍 Phase 1</h4>
+        <p style="color:#a78bfa;font-weight:600">Kerala PSC</p>
+        <p>LDC, Secretariat Assistant, University Assistant, Police, Degree Level</p>
       </div>
       <div class="card">
-        <h4>🎯 What You Get</h4>
-        <ul class="list">
-          <li>Complete product: ~110 files, AI pipeline, admin backend</li>
-          <li>Modern stack: React Native + Supabase + Vercel — low burn</li>
-          <li>First-mover advantage in 1M+ user market</li>
-          <li>Data moat: more users = smarter AI = stronger lock-in</li>
-        </ul>
+        <h4>🗺️ Phase 2</h4>
+        <p style="color:#fbbf24;font-weight:600">Other State PSCs</p>
+        <p>Tamil Nadu PSC · Karnataka PSC</p>
       </div>
-    </div>
-    <div style="margin-top:48px">
-      <p style="font-size:1.3rem;color:#a78bfa;font-weight:600">"Lakshyam" means "target" in Malayalam.</p>
-      <p style="font-size:1.3rem;color:#a78bfa;font-weight:600">We help every aspirant hit theirs.</p>
+      <div class="card">
+        <h4>🇮🇳 Phase 3</h4>
+        <p style="color:#34d399;font-weight:600">National Exams</p>
+        <p>SSC · Railway · Banking · UPSC</p>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- 16: Thank You -->
-<div class="slide" data-index="15">
+<!-- 13: Why Now -->
+<div class="slide" data-index="12">
+  <div class="slide-content">
+    <h3>Timing</h3>
+    <h2>Why Now?</h2>
+    <div class="grid-3" style="margin-top:24px">
+      <div class="card" style="text-align:center">
+        <h4>📉 AI Cost Collapse</h4>
+        <p style="font-size:2.5rem;font-weight:800;margin:12px 0;background:linear-gradient(135deg,#a78bfa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent">99.85%</p>
+        <p>High-quality educational content can now be generated at near-zero cost. This wasn't possible 2 years ago.</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>🌐 Regional-Language Boom</h4>
+        <p style="font-size:2.5rem;font-weight:800;margin:12px 0;background:linear-gradient(135deg,#fbbf24,#fb7185);-webkit-background-clip:text;-webkit-text-fill-color:transparent">96%</p>
+        <p>Malayalam digital content consumption is growing rapidly. Students expect content in their own language.</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <h4>🧠 Personalization Expectation</h4>
+        <p style="font-size:2.5rem;font-weight:800;margin:12px 0;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent">New</p>
+        <p>Students expect personalized feeds (Instagram, YouTube, Netflix). They now expect the same from education.</p>
+      </div>
+    </div>
+    <p style="text-align:center;color:#a78bfa;font-weight:600;margin-top:16px">The window to establish a regional-language AI learning platform is now.</p>
+  </div>
+</div>
+
+<!-- 14: Thank You -->
+<div class="slide" data-index="13">
   <div class="slide-content" style="text-align:center">
     <h1 style="font-size:5rem;margin-bottom:16px">Thank You</h1>
-    <p class="tagline" style="font-size:1.5rem">Lakshyam — Your AI Coach for Kerala PSC Exams</p>
+    <p class="tagline" style="font-size:1.5rem">Lakshyam — AI-Powered Kerala PSC Preparation</p>
     <div style="margin-top:48px">
       <p style="color:#666">Built by a solo developer · React Native + Supabase + Vercel</p>
     </div>
@@ -511,7 +401,7 @@
 
 <div class="nav">
   <button onclick="prevSlide()">← Prev</button>
-  <span class="counter" id="counter">1 / 16</span>
+  <span class="counter" id="counter">1 / 14</span>
   <button onclick="nextSlide()">Next →</button>
 </div>
 
