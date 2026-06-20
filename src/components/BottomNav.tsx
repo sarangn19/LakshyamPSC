@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet, Animated, Easing, useWindowDimensions } from 'react-native';
+import React from 'react';
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { HomeIcon, LearnIcon, ChatbotIcon } from './Icons';
 
@@ -12,35 +12,16 @@ type Props = {
 export function BottomNav({ activeTab }: Props) {
   const navigation = useNavigation<any>();
   const { width: screenW } = useWindowDimensions();
-  const [navWidth, setNavWidth] = useState(0);
-  const navW = screenW - 48;
-
-  const getTargetLeft = (w: number, tab: TabName) => {
-    if (tab === 'Home') return 8;
-    if (tab === 'Learn') return (w - 54.32) / 2;
-    return w - 54.32 - 9;
-  };
-
-  const initialLeft = getTargetLeft(navW, activeTab);
-  const indicatorAnim = useRef(new Animated.Value(initialLeft)).current;
+  const navWidth = screenW - 48;
 
   const handlePress = (tab: TabName) => {
     if (tab === activeTab) return;
-    const w = navWidth || navW;
-    const targetLeft = getTargetLeft(w, tab);
-    Animated.timing(indicatorAnim, {
-      toValue: targetLeft,
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start(() => {
-      navigation.navigate(tab);
-    });
+    navigation.navigate(tab);
   };
 
   return (
-    <View style={styles.bottomNav} onLayout={(e) => { setNavWidth(e.nativeEvent.layout.width); }}>
-      <Animated.View style={[styles.navActiveBg, { left: indicatorAnim }]} />
+    <View style={styles.bottomNav}>
+      <View style={[styles.navActiveBg, { left: getLeft(navWidth, activeTab) }]} />
       <View style={styles.navItems}>
         <TouchableOpacity style={[styles.navItem, activeTab === 'Home' && styles.navItemActive]} onPress={() => handlePress('Home')}>
           <HomeIcon width={16.25} height={16} color={activeTab === 'Home' ? 'white' : 'black'} />
@@ -54,6 +35,12 @@ export function BottomNav({ activeTab }: Props) {
       </View>
     </View>
   );
+}
+
+function getLeft(w: number, tab: TabName): number {
+  if (tab === 'Home') return 8;
+  if (tab === 'Learn') return (w - 54.32) / 2;
+  return w - 54.32 - 9;
 }
 
 const styles = StyleSheet.create({
