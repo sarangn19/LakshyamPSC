@@ -10,14 +10,14 @@ interface Props {
 
 export function AdaptiveLearningCard({ title, onStart }: Props) {
   return (
-    <View style={styles.adaptiveCard}>
+    <TouchableOpacity style={styles.adaptiveCard} onPress={onStart} activeOpacity={0.8}>
       <View style={styles.adaptiveLeft}>
         <Text style={styles.adaptiveTitle}>{title.replace('\n', ' ')}</Text>
-        <TouchableOpacity style={styles.adaptiveArrowBtn} onPress={onStart} activeOpacity={0.8}>
+        <View style={styles.adaptiveArrowBtn}>
           <Arrow45Icon width={12.44} height={13.07} color="black" />
-        </TouchableOpacity>
+        </View>
       </View>
       <Image source={require('../../../icons/adaptive learning image.png')} style={styles.adaptiveImage} />
-    </View>
+    </TouchableOpacity>
   );
 }
