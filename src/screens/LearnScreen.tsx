@@ -97,7 +97,7 @@ export function LearnScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <AdaptiveLearningCard title={t('learn.adaptiveLearning')} onStart={async () => { setIsAdaptiveLoading(true); await useMCQStore.getState().startDailyDrill(); setIsAdaptiveLoading(false); navigation.navigate('MCQ'); }} />
+        <AdaptiveLearningCard title={t('learn.adaptiveLearning')} onStart={async () => { setIsAdaptiveLoading(true); try { await useMCQStore.getState().startDailyDrill(); } catch (e) { console.error('[Adaptive] startDailyDrill failed:', e); } setIsAdaptiveLoading(false); navigation.navigate('MCQ'); }} />
         <ActionCardsRow notesTitle={t('learn.notes')} notesSubtitle={t('learn.viewSavedNotes')} practiceTitle={t('learn.practice')} practiceSubtitle={t('learn.practiceMCQFlashcards')} onNotesPress={() => navigation.navigate('SavedNotes')} onPracticePress={() => { animateIn(typeSlideAnim); setShowTypeModal(true); }} />
 
       </ScrollView>
