@@ -28,7 +28,8 @@ const CACHE_TTL = 3600000;
 
 function cacheKey(req: AIGenRequest): string {
   const focusHash = req.focusInstruction ? req.focusInstruction.substring(0, 50) : '';
-  return `${req.subject}|${req.topic}|${req.subtopic || ''}|${req.difficulty}|${req.language || 'en'}|${focusHash}`;
+  const avoidHash = req.avoidTexts && req.avoidTexts.length > 0 ? req.avoidTexts.join('|').substring(0, 100) : '';
+  return `${req.subject}|${req.topic}|${req.subtopic || ''}|${req.difficulty}|${req.language || 'en'}|${focusHash}|${avoidHash}`;
 }
 
 function getFromCache(key: string): GeneratedQuestion | null {
