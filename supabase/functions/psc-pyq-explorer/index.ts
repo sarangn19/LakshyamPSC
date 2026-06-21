@@ -47,25 +47,15 @@ serve(async (req) => {
       return corsResponse({ success: true, topics: data });
 
     } else if (action === 'filters') {
-      // Get available filter options
-      const [subjects, categories, years] = await Promise.all([
-        supabase.from('psc_questions').select('subject', { count: 'exact', head: false }).not('subject', 'is', null),
-        supabase.from('psc_exams').select('category', { count: 'exact', head: false }).not('category', 'is', null),
-        supabase.from('psc_exams').select('year', { count: 'exact', head: false }).not('year', 'is', null).order('year', { ascending: false }),
+      const [subjectsRes, categoriesRes, yearsRes] = await Promise.all([
+        supabase.rpc('get_distinct_values', { table_name: 'psc_questions', column_name: 'subject' }),
+        supabase.rpc('get_distinct_values', { table_name: 'psc_exams', column_name: 'category' }),
+        supabase.rpc('get_distinct_values', { table_name: 'psc_exams', column_name: 'year' }),
       ]);
 
-      const { data: subjData } = await supabase.rpc('get_distinct_values', { table_name: 'psc_questions', column_name: 'subject' }).maybeSingle();
-      const { data: catData } = await supabase.rpc('get_distinct_values', { table_name: 'psc_exams', column_name: 'category' }).maybeSingle();
-      const { data: yearData } = await supabase.rpc('get_distinct_values', { table_name: 'psc_exams', column_name: 'year' }).maybeSingle();
-
-      // Fallback: query distinct values directly
-      const { data: subjects2 } = await supabase.from('psc_questions').select('subject').not('subject', 'is', null).limit(100);
-      const { data: categories2 } = await supabase.from('psc_exams').select('category').not('category', 'is', null).limit(50);
-      const { data: years2 } = await supabase.from('psc_exams').select('year').not('year', 'is', null).order('year', { ascending: false }).limit(30);
-
-      const uniqueSubjects = [...new Set((subjects2 || []).map(s => s.subject).filter(Boolean))].sort();
-      const uniqueCategories = [...new Set((categories2 || []).map(c => c.category).filter(Boolean))].sort();
-      const uniqueYears = [...new Set((years2 || []).map(y => y.year).filter(y => y !== null))].sort((a, b) => b - a);
+      const uniqueSubjects = (subjectsRes.data || []).map((r: { value: string }) => r.value).filter(Boolean).sort();
+      const uniqueCategories = (categoriesRes.data || []).map((r: { value: string }) => r.value).filter(Boolean).sort();
+      const uniqueYears = (yearsRes.data || []).map((r: { value: string }) => parseInt(r.value)).filter((y: number) => !isNaN(y)).sort((a: number, b: number) => b - a);
 
       return corsResponse({
         success: true,

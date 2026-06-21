@@ -195,7 +195,7 @@ create or replace function public.get_distinct_values(table_name text, column_na
 returns table (value text) as $$
 begin
   return query execute format(
-    'select distinct %I::text from %I where %I is not null and %I != '''' order by 1',
+    'select distinct %I::text from %I where %I is not null and %I::text != '''' order by 1',
     column_name, table_name, column_name, column_name
   );
 end;

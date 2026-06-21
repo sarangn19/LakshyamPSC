@@ -47,7 +47,7 @@ export async function getHighYieldTopics(forceRefresh = false): Promise<HighYiel
 
   cache = data.map((r: any) => ({
     topic: r.topic,
-    subject: r.subject,
+    subject: r.subjects,
     totalQuestions: r.total_questions,
     examCount: r.exam_count,
     distinctYears: r.distinct_years,
