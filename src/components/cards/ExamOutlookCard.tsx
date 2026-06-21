@@ -14,6 +14,9 @@ const STATUS_COLORS: Record<string, string> = {
   'Exam Ready': colors.primary,
 };
 
+const MIN_MOCK_TESTS = 3;
+const MIN_MOCK_QUESTIONS = 500;
+
 interface ExamOutlookCardProps {
   onStartBlockingTopic: (subject: string, topic: string, recId: string) => void;
   onStartRevision: (subject: string, topic: string, recId: string) => void;
@@ -22,9 +25,11 @@ interface ExamOutlookCardProps {
 export function ExamOutlookCard({ onStartBlockingTopic, onStartRevision }: ExamOutlookCardProps) {
   const outlook: ExamOutlook = computeExamOutlook();
   const recIdRef = useRef<string | null>(null);
+  const hasSufficientData = outlook.totalMockTests >= MIN_MOCK_TESTS && outlook.totalMockQuestions >= MIN_MOCK_QUESTIONS;
 
   const blocker = outlook.blockingTopics[0];
   const revisionRisk = outlook.revisionRiskTopics[0];
+  const nextActionBlocker = blocker || revisionRisk;
 
   useEffect(() => {
     const targetSubject = blocker?.subject || revisionRisk?.subject;
@@ -71,28 +76,52 @@ export function ExamOutlookCard({ onStartBlockingTopic, onStartRevision }: ExamO
   return (
     <View style={[styles.card, { borderLeftColor: statusColor, borderLeftWidth: 4 }]}>
       <View style={styles.headerRow}>
-        <View>
-          <Text style={styles.overline}>Exam Outlook</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.overline}>
+            {hasSufficientData ? 'Mock Performance Outlook' : 'Preparation Outlook'}
+          </Text>
           <Text style={[styles.status, { color: statusColor }]}>{outlook.outlookStatus}</Text>
         </View>
-        <View style={[styles.confidenceBadge, { backgroundColor: statusColor + '20' }]}>
-          <Text style={[styles.confidenceText, { color: statusColor }]}>
-            {outlook.confidenceLevel}
+        {hasSufficientData && (
+          <View style={[styles.confidenceBadge, { backgroundColor: statusColor + '20' }]}>
+            <Text style={[styles.confidenceText, { color: statusColor }]}>
+              {outlook.confidenceLevel}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {hasSufficientData ? (
+        <>
+          <View style={styles.rangeRow}>
+            <Text style={styles.rangeLabel}>Expected Mock Range</Text>
+            <Text style={styles.rangeValue}>
+              {outlook.expectedScoreRange.min}–{outlook.expectedScoreRange.max}
+            </Text>
+          </View>
+          <Text style={styles.mockTestLine}>
+            Based on {outlook.totalMockTests} Mock Test{outlook.totalMockTests !== 1 ? 's' : ''} · {outlook.totalMockQuestions} Questions
           </Text>
-        </View>
-      </View>
-
-      <View style={styles.rangeRow}>
-        <Text style={styles.rangeLabel}>Expected Score Range</Text>
-        <Text style={styles.rangeValue}>
-          {outlook.expectedScoreRange.min}–{outlook.expectedScoreRange.max} Marks
-        </Text>
-      </View>
-
-      {outlook.totalMockTests > 0 && (
-        <Text style={styles.mockTestLine}>
-          Based on {outlook.totalMockTests} Mock Test{outlook.totalMockTests !== 1 ? 's' : ''} · {outlook.totalMockQuestions} Questions
-        </Text>
+        </>
+      ) : (
+        <>
+          {outlook.strongestSubjects.length > 0 && (
+            <View style={styles.subjectsRow}>
+              <Text style={styles.subjectsLabel}>Strong</Text>
+              <Text style={styles.subjectsValue}>
+                {outlook.strongestSubjects.slice(0, 3).map((s) => s.name).join(', ')}
+              </Text>
+            </View>
+          )}
+          {outlook.weakestSubjects.length > 0 && (
+            <View style={styles.subjectsRow}>
+              <Text style={[styles.subjectsLabel, { color: colors.error }]}>Needs Work</Text>
+              <Text style={styles.subjectsValue}>
+                {outlook.weakestSubjects.slice(0, 3).map((s) => s.name).join(', ')}
+              </Text>
+            </View>
+          )}
+        </>
       )}
 
       {blocker && (
@@ -164,6 +193,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     fontFamily: typography.captionBold.fontFamily,
+  },
+  subjectsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  subjectsLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.success,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    fontFamily: typography.overline.fontFamily,
+    minWidth: 80,
+  },
+  subjectsValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+    flex: 1,
+    fontFamily: typography.bodyBold.fontFamily,
   },
   rangeRow: {
     marginBottom: spacing.md,
