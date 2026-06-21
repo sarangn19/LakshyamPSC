@@ -51,6 +51,7 @@ export interface MCQState {
   generatorPoolSize: number;
   sessionStartTime: number | null;
   sessionSubjectAccuracy: Record<string, { correct: number; total: number }>;
+  sessionDifficultyCounts: { easy: number; medium: number; hard: number };
   sessionType: string;
   lastSessionOutcome: SessionOutcome | null;
   isGenerating: boolean;
@@ -67,6 +68,7 @@ export interface MCQState {
   showAlignmentFallback: boolean;
   sessionReduced: boolean;
   questionsSkipped: number;
+  recommendationId: string;
   integrityMetrics: IntegrityMetrics;
   auditQueue: AuditEntry[];
   trustScores: QuestionTrustScore[];
@@ -102,6 +104,7 @@ export interface MCQState {
     sessionType?: string;
     recommendedSubject?: string;
     recommendedTopic?: string;
+    recommendationId?: string;
   }) => void;
   startPracticeSession: (config: {
     subjects?: string[];

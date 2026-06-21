@@ -20,6 +20,9 @@ export interface ExamOutlook {
   revisionRiskTopics: { subject: string; topic: string; daysOverdue: number }[];
   nextBestAction: string;
   outlookStatus: OutlookStatus;
+  totalMockTests: number;
+  totalMockQuestions: number;
+  averageMockAccuracy: number;
 }
 
 interface SubjectSummary {
@@ -301,6 +304,13 @@ export function computeExamOutlook(): ExamOutlook {
   const blockingTopics = computeBlockingTopics();
   const revisionRisk = computeRevisionRiskTopics();
 
+  const mockOutcomes = outcomes.filter((o) => o.sessionType === 'exam_simulation');
+  const totalMockTests = mockOutcomes.length;
+  const totalMockQuestions = mockOutcomes.reduce((s, o) => s + o.totalQuestions, 0);
+  const averageMockAccuracy = totalMockTests > 0
+    ? Math.round(mockOutcomes.reduce((s, o) => s + o.accuracy, 0) / totalMockTests * 100)
+    : 0;
+
   return {
     expectedScoreRange: scoreRange,
     confidenceLevel: computeConfidenceLevel(outcomes, summaries),
@@ -310,5 +320,8 @@ export function computeExamOutlook(): ExamOutlook {
     revisionRiskTopics: revisionRisk,
     nextBestAction: computeNextBestAction(summaries, blockingTopics, revisionRisk, computeOutlookStatus(summaries, outcomes)),
     outlookStatus: computeOutlookStatus(summaries, outcomes),
+    totalMockTests,
+    totalMockQuestions,
+    averageMockAccuracy,
   };
 }

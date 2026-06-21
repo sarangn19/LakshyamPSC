@@ -235,10 +235,11 @@ export function buildSessionOutcome(
     startTime: state.sessionStartTime || endTime, endTime,
     durationMinutes, totalQuestions: totalQ, correctAnswers: correctA, accuracy,
     subjectScores, weakestSubject: weakest, strongestSubject: strongest,
-    difficultyMix: { easy: 0, medium: 0, hard: 0 },
+    difficultyMix: state.sessionDifficultyCounts || { easy: 0, medium: 0, hard: 0 },
     alignmentScore: state.alignmentReport?.alignmentScore,
     recommendedSubject: state.alignmentReport?.recommendedSubject,
     recommendedTopic: state.alignmentReport?.recommendedTopic,
+    recommendationId: state.recommendationId,
   };
 }
 

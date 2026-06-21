@@ -9,9 +9,11 @@ import { useMCQStore } from '../store';
 import { usePerformanceStore } from '../store/performanceStore';
 import { getDueSummary, getDueSubtopics } from '../services/spacedRepetition';
 import { computeCalibrationMetrics } from '../services/confidenceCalibration';
-import { getNode, getNodePath, getNodesByLevel } from '../data/knowledgeTree';
+import { getNodePath, getNodesByLevel } from '../data/knowledgeTree';
 import { syllabus } from '../data/syllabus';
-import { Badge, ProgressBar } from '../components/common/StyledComponents';
+import { Badge } from '../components/common/StyledComponents';
+import { computeExamOutlook } from '../services/examOutlookEngine';
+import { computeRecommendationImpact } from '../services/recommendationMetrics';
 
 function Sparkline({ data, height = 24, width = 60, color = colors.primary }: { data: number[]; height?: number; width?: number; color?: string }) {
   if (data.length < 2) return null;
@@ -91,6 +93,20 @@ export function ProgressScreen({ navigation }: any) {
     return weakest;
   }, [masteryMap]);
 
+  const outlook = useMemo(() => computeExamOutlook(), []);
+  const strongSubjects = useMemo(() => subjects.filter((s) => s.percent >= 70).slice(0, 3), [subjects]);
+  const weakSubjects = useMemo(() => subjects.filter((s) => s.percent < 50).slice(0, 3), [subjects]);
+  const recImpact = useMemo(() => computeRecommendationImpact(), []);
+
+  const mockScores = useMemo(() => {
+    const mocks = usePerformanceStore.getState().sessionOutcomes
+      .filter((o) => o.sessionType === 'exam_simulation' && o.totalQuestions > 0)
+      .slice(-5);
+    return mocks.map((o) => ({ accuracy: o.accuracy, date: o.endTime }));
+  }, []);
+
+  const totalRecsCompleted = usePerformanceStore.getState().recommendations.filter((r) => r.sessionCompleted).length;
+
   const subjectRetention = useMemo(() => {
     const map: Record<string, { mastery7: number[]; mastery30: number[]; mastery90: number[]; current: number[] }> = {};
     for (const r of retentionRecords) {
@@ -128,93 +144,92 @@ export function ProgressScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      {/* Summary Cards */}
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Accuracy</Text>
-          <Text style={[typography.h2, { color: stats.overallAccuracy >= 60 ? colors.status.strong : colors.status.weakArea }]}>
-            {stats.overallAccuracy}%
+      {/* Coaching Header */}
+      <View style={styles.coachHeader}>
+        <Text style={[typography.h2, { color: colors.text }]}>
+          {outlook.outlookStatus === 'Exam Ready' ? 'You\'re on track' :
+           outlook.outlookStatus === 'Competitive' ? 'Keep pushing' :
+           'You\'re building momentum'}
+        </Text>
+        <Text style={[typography.bodySmall, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+          {outlook.expectedScoreRange.min}–{outlook.expectedScoreRange.max} marks expected · {outlook.outlookStatus}
+        </Text>
+        {mockScores.length >= 2 && (
+          <Text style={[typography.tiny, { color: mockScores[mockScores.length - 1].accuracy >= mockScores[0].accuracy ? colors.status.strong : colors.status.weakArea, marginTop: spacing.xs }]}>
+            {mockScores[mockScores.length - 1].accuracy >= mockScores[0].accuracy ? '↑' : '↓'} Last {mockScores.length} mocks: {mockScores.map((m) => m.accuracy).join(', ')}
           </Text>
+        )}
+      </View>
+
+      {/* Strong vs Weak */}
+      <View style={styles.splitRow}>
+        <View style={[styles.splitCard, { flex: 1, marginRight: spacing.xs }]}>
+          <Text style={[typography.caption, { color: colors.status.strong, fontWeight: '700', marginBottom: spacing.xs }]}>Strong Areas</Text>
+          {strongSubjects.length > 0
+            ? strongSubjects.map((s) => (
+                <Text key={s.subject} style={[typography.bodySmall, { color: colors.text }]}>✓ {s.subject}</Text>
+              ))
+            : <Text style={[typography.tiny, { color: colors.textMuted }]}>Keep practicing</Text>}
         </View>
-        <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Due for Review</Text>
-          <Text style={[typography.h2, { color: dueSummary.count > 0 ? colors.warning : colors.text }]}>{dueSummary.count}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>At Risk</Text>
-          <Text style={[typography.h2, { color: atRiskTopics.length > 0 ? colors.status.weakArea : colors.text }]}>{atRiskTopics.length}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={[typography.tiny, { color: colors.textSecondary }]}>Topics to Improve</Text>
-          <Text style={[typography.h2, { color: colors.text }]}>{gapRecords.length}</Text>
+        <View style={[styles.splitCard, { flex: 1, marginLeft: spacing.xs }]}>
+          <Text style={[typography.caption, { color: colors.status.weakArea, fontWeight: '700', marginBottom: spacing.xs }]}>Holding You Back</Text>
+          {outlook.blockingTopics.slice(0, 2).map((b) => (
+            <Text key={b.topic} style={[typography.bodySmall, { color: colors.text }]}>⚠ {b.topic}</Text>
+          ))}
+          {outlook.blockingTopics.length === 0 && weakSubjects.length > 0 &&
+            weakSubjects.map((s) => (
+              <Text key={s.subject} style={[typography.bodySmall, { color: colors.text }]}>⚠ {s.subject}</Text>
+            ))}
+          {outlook.blockingTopics.length === 0 && weakSubjects.length === 0 &&
+            <Text style={[typography.tiny, { color: colors.textMuted }]}>None identified</Text>}
         </View>
       </View>
 
-      {/* Top Weak Areas */}
-      {(weakestSubjectData.name || weakestTopicData.name) && (
+      {/* Recommendation Impact */}
+      {totalRecsCompleted > 0 && recImpact.length > 0 && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Top Weak Areas</Text>
-          {weakestSubjectData.name && (
-            <TouchableOpacity
-              style={styles.weakCard}
-              onPress={() => {
-                useMCQStore.getState().startOrchestratedSession({
-                  subjects: [weakestSubjectData.name], difficulty: 'medium', sessionType: 'weakness_practice',
-                });
-                navigation.navigate('MCQ');
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.weakRow}>
-                <View style={[styles.weakIcon, { backgroundColor: colors.status.weakArea + '20' }]}>
-                  <Text style={{ fontSize: 16 }}>📖</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodySmall, { color: colors.text, fontWeight: '600' }]}>{weakestSubjectData.name}</Text>
-                  <Text style={[typography.tiny, { color: colors.textSecondary }]}>Subject · {weakestSubjectData.mastery}% mastery</Text>
-                </View>
-                <Badge label="Practice" color={colors.primary} />
+          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Your Recommendation Impact</Text>
+          <View style={styles.impactCard}>
+            <Text style={[typography.tiny, { color: colors.textSecondary, marginBottom: spacing.sm }]}>
+              You followed {totalRecsCompleted} recommendation{totalRecsCompleted !== 1 ? 's' : ''}
+            </Text>
+            {recImpact.slice(0, 4).map((r) => (
+              <View key={r.subject} style={styles.impactRow}>
+                <Text style={[typography.bodySmall, { color: colors.text, flex: 1 }]}>{r.subject}</Text>
+                <Text style={[typography.bodySmall, {
+                  color: r.averageLift > 0 ? colors.status.strong : r.averageLift < 0 ? colors.status.weakArea : colors.textSecondary,
+                  fontWeight: '700',
+                }]}>
+                  {r.averageLift > 0 ? '+' : ''}{r.averageLift}%
+                </Text>
               </View>
-            </TouchableOpacity>
-          )}
-          {weakestTopicData.name && (
-            <TouchableOpacity
-              style={styles.weakCard}
-              onPress={() => {
-                useMCQStore.getState().startOrchestratedSession({
-                  subjects: [weakestTopicData.subject], difficulty: 'medium', sessionType: 'weakness_practice',
-                });
-                navigation.navigate('MCQ');
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.weakRow}>
-                <View style={[styles.weakIcon, { backgroundColor: colors.status.needsRevision + '20' }]}>
-                  <Text style={{ fontSize: 16 }}>📝</Text>
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.bodySmall, { color: colors.text, fontWeight: '600' }]}>{weakestTopicData.name}</Text>
-                  <Text style={[typography.tiny, { color: colors.textSecondary }]}>{weakestTopicData.subject} · {weakestTopicData.mastery}% mastery</Text>
-                </View>
-                <Badge label="Practice" color={colors.primary} />
-              </View>
-            </TouchableOpacity>
-          )}
+            ))}
+          </View>
         </View>
       )}
 
-      {/* Subject Accuracy */}
-      {subjects.length > 0 && (
+      {/* Recommended This Week */}
+      {outlook.blockingTopics.length > 0 && (
         <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Mastery by Subject</Text>
-          {subjects.map((s) => (
-            <View key={s.subject} style={styles.subjectRow}>
-              <Text style={[typography.bodySmall, { color: colors.text, flex: 1 }]}>{s.subject}</Text>
-              <View style={styles.subjectBar}>
-                <View style={[styles.subjectFill, { width: `${s.percent}%`, backgroundColor: s.percent >= 70 ? colors.status.strong : s.percent >= 50 ? colors.warning : colors.status.weakArea }]} />
+          <Text style={[typography.h3, { color: colors.text, marginBottom: spacing.sm }]}>Recommended This Week</Text>
+          {outlook.blockingTopics.slice(0, 3).map((b) => (
+            <TouchableOpacity
+              key={b.topic}
+              style={styles.recCard}
+              onPress={() => {
+                useMCQStore.getState().startOrchestratedSession({
+                  subjects: [b.subject], difficulty: 'medium', sessionType: 'orchestrated',
+                });
+                navigation.navigate('MCQ');
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.bodySmall, { color: colors.text }]}>{b.topic}</Text>
+                <Text style={[typography.tiny, { color: colors.textSecondary }]}>{b.subject} · {b.reason}</Text>
               </View>
-              <Text style={[typography.tiny, { color: colors.textSecondary, width: 40, textAlign: 'right' }]}>{s.percent}%</Text>
-            </View>
+              <Badge label="Start" color={colors.primary} />
+            </TouchableOpacity>
           ))}
         </View>
       )}
@@ -269,19 +284,6 @@ export function ProgressScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* At-Risk Topics */}
-      {atRiskTopics.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[typography.h3, { color: colors.status.weakArea, marginBottom: spacing.sm }]}>At-Risk Topics</Text>
-          {atRiskTopics.map((r) => (
-            <View key={r.gapId} style={styles.riskRow}>
-              <Text style={[typography.bodySmall, { color: colors.text, flex: 1 }]} numberOfLines={1}>{r.nodeName || r.topic}</Text>
-              <Text style={[typography.tiny, { color: colors.status.weakArea }]}>{r.retentionRate}% retained</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
       {/* Confidence Calibration */}
       {calMetrics.totalRecords > 0 && (
         <View style={styles.section}>
@@ -305,8 +307,12 @@ export function ProgressScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: 40 },
-  summaryRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.lg },
-  summaryCard: { flex: 1, backgroundColor: colors.bgCard, borderRadius: 16, padding: spacing.md, alignItems: 'center' },
+  coachHeader: { marginBottom: spacing.lg },
+  splitRow: { flexDirection: 'row', marginBottom: spacing.lg },
+  splitCard: { backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  impactCard: { backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  impactRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
+  recCard: { flexDirection: 'row', backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md, marginBottom: spacing.xs, alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   section: { marginBottom: spacing.lg },
   weakCard: {
     backgroundColor: colors.bgCard, borderRadius: borderRadius.md,

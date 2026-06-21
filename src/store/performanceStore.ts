@@ -75,6 +75,7 @@ export interface SessionOutcome {
   alignmentScore?: number;
   recommendedSubject?: string;
   recommendedTopic?: string;
+  recommendationId?: string;
 }
 
 export interface RecommendationRecord {
@@ -84,6 +85,11 @@ export interface RecommendationRecord {
   timestamp: number;
   status: 'pending' | 'accepted' | 'skipped';
   reasonFactors: string[];
+  targetSubject?: string;
+  targetTopic?: string;
+  accuracyBefore?: number;
+  accuracyAfter?: number;
+  sessionCompleted?: boolean;
 }
 
 export interface UserProfile {
@@ -116,6 +122,7 @@ interface PerformanceState {
   addSessionOutcome: (outcome: SessionOutcome) => void;
   addRecommendation: (rec: Omit<RecommendationRecord, 'id' | 'timestamp' | 'status'>) => string;
   markRecommendation: (id: string, status: 'accepted' | 'skipped') => void;
+  updateRecommendation: (id: string, updates: Partial<Pick<RecommendationRecord, 'accuracyBefore' | 'accuracyAfter' | 'sessionCompleted' | 'targetSubject' | 'targetTopic' | 'status'>>) => void;
   addConfidenceRecord: (record: Omit<ConfidenceRecord, 'timestamp'>) => void;
   setProfile: (profile: UserProfile) => void;
   setLastProfileBuild: (timestamp: number) => void;
@@ -184,6 +191,12 @@ export const usePerformanceStore = create<PerformanceState>()(
         set((state) => ({
           recommendations: state.recommendations.map((r) =>
             r.id === id ? { ...r, status } : r
+          ),
+        })),
+      updateRecommendation: (id, updates) =>
+        set((state) => ({
+          recommendations: state.recommendations.map((r) =>
+            r.id === id ? { ...r, ...updates } : r
           ),
         })),
 

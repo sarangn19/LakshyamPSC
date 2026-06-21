@@ -5,6 +5,7 @@ import { typography } from '../../theme/typography';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useAuthStore } from '../../store';
 import { fetchTotalLearners, fetchActiveLearnersToday, fetchSessionCompletionRate, fetchAverageAccuracy, fetchTotalAttempts, fetchTotalSessions, fetchPendingFlaggedCount, fetchDraftCACount, fetchOpenTicketCount, fetchCriticalTicketCount, fetchRevisionAdherenceRate, fetchRecommendationsAccepted, fetchSubscriptionStats, fetchSuggestions } from '../../services/adminDataService';
+import { computeRecommendationMetrics } from '../../services/recommendationMetrics';
 
 export function AdminDashboardScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -132,6 +133,50 @@ export function AdminDashboardScreen({ navigation }: any) {
         ))}
       </View>
 
+      {/* Recommendation Effectiveness */}
+      {(() => {
+        const rm = computeRecommendationMetrics();
+        if (rm.totalGenerated === 0) return null;
+        return (
+          <View style={styles.section}>
+            <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>
+              Recommendation Effectiveness
+            </Text>
+            <View style={styles.metricsRow}>
+              <View style={styles.metric}>
+                <Text style={[typography.h3, { color: colors.primary }]}>{rm.totalGenerated}</Text>
+                <Text style={[typography.small, { color: colors.textSecondary }]}>Generated</Text>
+              </View>
+              <View style={styles.metric}>
+                <Text style={[typography.h3, { color: colors.status.improving }]}>{rm.acceptanceRate}%</Text>
+                <Text style={[typography.small, { color: colors.textSecondary }]}>Accepted</Text>
+              </View>
+              <View style={styles.metric}>
+                <Text style={[typography.h3, { color: rm.completionRate > 70 ? colors.success : colors.warning }]}>{rm.completionRate}%</Text>
+                <Text style={[typography.small, { color: colors.textSecondary }]}>Completed</Text>
+              </View>
+              <View style={styles.metric}>
+                <Text style={[typography.h3, { color: rm.avgAccuracyImprovement > 0 ? colors.success : colors.warning }]}>
+                  {rm.avgAccuracyImprovement > 0 ? '+' : ''}{rm.avgAccuracyImprovement}%
+                </Text>
+                <Text style={[typography.small, { color: colors.textSecondary }]}>Accuracy Lift</Text>
+              </View>
+            </View>
+            {rm.topTypes.length > 0 && (
+              <View style={{ marginTop: spacing.md }}>
+                <Text style={[typography.caption, { color: colors.textTertiary, marginBottom: spacing.xs }]}>Top Recommendation Types</Text>
+                {rm.topTypes.map((t) => (
+                  <View key={t.type} style={styles.typeRow}>
+                    <Text style={[typography.body, { color: colors.text, flex: 1 }]}>{t.type}</Text>
+                    <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>{t.count}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        );
+      })()}
+
       <View style={styles.section}>
         <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>
           {t('admin.requiresAction')}
@@ -216,5 +261,8 @@ const styles = StyleSheet.create({
   },
   actionText: { flex: 1, marginLeft: spacing.md },
   badge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: borderRadius.sm, minWidth: 24, alignItems: 'center' },
+  metricsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  metric: { alignItems: 'center', minWidth: '22%' },
+  typeRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border },
 
 });

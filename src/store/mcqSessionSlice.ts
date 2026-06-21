@@ -33,6 +33,7 @@ export interface SessionSlice {
   questionStartTime: number | null;
   sessionStartTime: number | null;
   sessionSubjectAccuracy: Record<string, { correct: number; total: number }>;
+  sessionDifficultyCounts: { easy: number; medium: number; hard: number };
   sessionType: string;
   lastSessionOutcome: any | null;
   isGenerating: boolean;
@@ -42,6 +43,7 @@ export interface SessionSlice {
   sessionReduced: boolean;
   questionsSkipped: number;
   seenQuestionTexts: string[];
+  recommendationId: string;
   startDailyDrill: (exams?: string[], subjects?: string[]) => void;
   startWeaknessPractice: (exams?: string[]) => void;
   startExamMode: (examType: string) => void;
@@ -52,6 +54,7 @@ export interface SessionSlice {
     subjects?: string[]; difficulty?: 'easy' | 'medium' | 'hard';
     count?: number; examType?: string; sessionType?: string;
     recommendedSubject?: string; recommendedTopic?: string;
+    recommendationId?: string;
   }) => void;
   startPracticeSession: (config: {
     subjects?: string[]; difficulty?: 'easy' | 'medium' | 'hard';
@@ -78,6 +81,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   questionStartTime: null,
   sessionStartTime: null,
   sessionSubjectAccuracy: {},
+  sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 },
   sessionType: 'daily_drill',
   lastSessionOutcome: null,
   isGenerating: false,
@@ -87,6 +91,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   sessionReduced: false,
   questionsSkipped: 0,
   seenQuestionTexts: [],
+  recommendationId: '',
 
   startDailyDrill: async (exams, subjects) => {
     const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
@@ -107,7 +112,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
         drillMode: 'daily', sessionActive: true, questionStartTime: Date.now(), sessionStartTime: Date.now(),
-        sessionSubjectAccuracy: {}, sessionType: 'daily_drill', lastSessionOutcome: null,
+        sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: 'daily_drill', lastSessionOutcome: null,
         isGenerating: false, generationProgress: null, adaptiveState: baseState,
         alignmentReport: report, showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
       });
@@ -131,7 +136,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
         drillMode: 'weakness', sessionActive: true, questionStartTime: Date.now(), sessionStartTime: Date.now(),
-        sessionSubjectAccuracy: {}, sessionType: 'weakness_practice', lastSessionOutcome: null,
+        sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: 'weakness_practice', lastSessionOutcome: null,
         isGenerating: false, generationProgress: null, adaptiveState: makeAdaptiveState(),
       });
     } else {
@@ -156,7 +161,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       currentQuestions: finalQuestions, currentIndex: 0, selectedAnswer: null, isAnswered: false,
       score: { correct: 0, total: 0 }, drillMode: 'exam', selectedExam: examType,
       sessionActive: true, timeRemaining: 1800, questionStartTime: Date.now(), sessionStartTime: Date.now(),
-      sessionSubjectAccuracy: {}, sessionType: 'exam_simulation', lastSessionOutcome: null,
+      sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: 'exam_simulation', lastSessionOutcome: null,
       sessionReduced: skipped > 0, questionsSkipped: skipped,
     });
   },
@@ -177,12 +182,15 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const newSignals = [...state.sessionSignals, { subject: current.subject, topic: current.topic, correct: isCorrect }];
     const updatedAdaptive = recordAnswer(state.adaptiveState, current.text, current.topic, current.subject, isCorrect, current.id, current.subtopic);
     const updatedDiffSession = recordSessionAnswer(state.difficultySessionState, isCorrect);
+    const diff = current.difficulty || 'medium';
+    const prevDiff = state.sessionDifficultyCounts[diff] || 0;
     set({
       selectedAnswer: index, isAnswered: true,
       score: { correct: newCorrect, total: newTotal },
       seenQuestionTexts: state.seenQuestionTexts.includes(current.text)
         ? state.seenQuestionTexts : [...state.seenQuestionTexts, current.text].slice(-500),
       sessionSubjectAccuracy: { ...state.sessionSubjectAccuracy, [subject]: { correct: prevSub.correct + (isCorrect ? 1 : 0), total: prevSub.total + 1 } },
+      sessionDifficultyCounts: { ...state.sessionDifficultyCounts, [diff]: prevDiff + 1 },
       sessionSignals: newSignals,
       currentDifficulty: updatedDiffSession.currentDifficulty,
       difficultySessionState: updatedDiffSession,
@@ -344,6 +352,19 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const outcome = buildSessionOutcome(state, endTime);
     const perf = usePerformanceStore.getState();
     perf.addSessionOutcome(outcome);
+    if (state.recommendationId) {
+      const recs = perf.recommendations;
+      const rec = recs.find((r) => r.id === state.recommendationId);
+      if (rec && rec.targetSubject) {
+        const subjectScore = outcome.subjectScores[rec.targetSubject];
+        if (subjectScore) {
+          perf.updateRecommendation(state.recommendationId, {
+            accuracyAfter: Math.round(subjectScore.accuracy),
+            sessionCompleted: true,
+          });
+        }
+      }
+    }
     useBKTStore.getState().runParameterFitting();
     useCognitiveTwinStore.getState().detectKnowledgeGaps();
     useCognitiveTwinStore.getState().runRetentionCheck();
@@ -359,6 +380,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       currentQuestions: questions, currentIndex: startIndex ?? 0, selectedAnswer: null, isAnswered: false,
       score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', drillMode: 'daily',
       sessionSignals: [], sessionCoveredTopics: [], sessionReduced: false, questionsSkipped: 0,
+      sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 },
       difficultySessionState: makeInitialDifficultyState(), currentDifficulty: 'medium',
     }),
 
@@ -369,7 +391,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const recommendedSubject = (config.subjects && config.subjects.length > 0) ? config.subjects[0]
       : config.recommendedSubject || twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = config.recommendedTopic || twinRec.topic || undefined;
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0 });
+    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '' });
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, config.difficulty || 'medium', get().adaptiveState, [],
       false, recommendedSubject, recommendedTopic, targetExams,
@@ -380,7 +402,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
         drillMode: 'daily', sessionActive: true, questionStartTime: Date.now(), sessionStartTime: Date.now(),
-        sessionSubjectAccuracy: {}, sessionType: config.sessionType || 'orchestrated', lastSessionOutcome: null,
+        sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: config.sessionType || 'orchestrated', lastSessionOutcome: null,
         isGenerating: false, generationProgress: null, adaptiveState: makeAdaptiveState(),
         alignmentReport: report, showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
       });
@@ -400,7 +422,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     });
     const validated = raw.filter((q) => validateQuestionIntegrity(q).valid);
     const skipped = raw.length - validated.length;
-    set({ currentQuestions: validated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: skipped, questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
+    set({ currentQuestions: validated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: skipped, questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
   },
 
   clearLastSessionOutcome: () => set({ lastSessionOutcome: null }),
@@ -411,6 +433,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     questionStartTime: null, sessionStartTime: null, sessionSubjectAccuracy: {},
     lastSessionOutcome: null, isGenerating: false, generationProgress: null,
     sessionSignals: [], sessionCoveredTopics: [], sessionReduced: false, questionsSkipped: 0,
+    sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 },
     currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(),
     generatingNext: false, adaptiveState: makeAdaptiveState(),
   }),

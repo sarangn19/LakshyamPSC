@@ -6,7 +6,6 @@ import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
 import { useTranslation } from '../i18n/useTranslation';
 import { useUserStore } from '../store/userStore';
-import { usePerformanceStore } from '../store/performanceStore';
 import { useMCQStore } from '../store';
 import { BottomNav } from '../components/BottomNav';
 import { ExamOutlookCard } from '../components/cards/ExamOutlookCard';
@@ -91,6 +90,16 @@ export function HomeScreen({ navigation }: any) {
     navigation.navigate('MCQ');
   };
 
+  const handleExamOutlookStart = (subject: string, topic: string, recId: string) => {
+    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'blocking_topic', recommendationId: recId });
+    navigation.navigate('MCQ');
+  };
+
+  const handleExamOutlookRevision = (subject: string, topic: string, recId: string) => {
+    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'revision', recommendationId: recId });
+    navigation.navigate('MCQ');
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -111,7 +120,7 @@ export function HomeScreen({ navigation }: any) {
         </View>
 
         {/* Section 1: Exam Outlook */}
-        <ExamOutlookCard />
+        <ExamOutlookCard onStartBlockingTopic={handleExamOutlookStart} onStartRevision={handleExamOutlookRevision} />
 
         {/* Section 2: Continue Learning */}
         <ContinueLearningCard onStartSession={handleStartSession} />

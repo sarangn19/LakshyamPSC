@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, borderRadius } from '../../theme';
 import { typography } from '../../theme/typography';
 import { computeExamOutlook } from '../../services/examOutlookEngine';
+import { usePerformanceStore } from '../../store/performanceStore';
 import type { ExamOutlook } from '../../services/examOutlookEngine';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -13,18 +14,69 @@ const STATUS_COLORS: Record<string, string> = {
   'Exam Ready': colors.primary,
 };
 
-export function ExamOutlookCard() {
+interface ExamOutlookCardProps {
+  onStartBlockingTopic: (subject: string, topic: string, recId: string) => void;
+  onStartRevision: (subject: string, topic: string, recId: string) => void;
+}
+
+export function ExamOutlookCard({ onStartBlockingTopic, onStartRevision }: ExamOutlookCardProps) {
   const outlook: ExamOutlook = computeExamOutlook();
+  const recIdRef = useRef<string | null>(null);
+
+  const blocker = outlook.blockingTopics[0];
+  const revisionRisk = outlook.revisionRiskTopics[0];
+
+  useEffect(() => {
+    const targetSubject = blocker?.subject || revisionRisk?.subject;
+    const targetTopic = blocker?.topic || revisionRisk?.topic;
+    const bef = targetSubject
+      ? usePerformanceStore.getState().getSubjectAccuracy(targetSubject)
+      : { correct: 0, total: 0 };
+    const accuracyBefore = bef.total > 0 ? Math.round((bef.correct / bef.total) * 100) : undefined;
+
+    const title = blocker
+      ? `Practice ${blocker.topic} in ${blocker.subject}`
+      : revisionRisk
+        ? `Review ${revisionRisk.topic} in ${revisionRisk.subject}`
+        : outlook.nextBestAction;
+    const recId = usePerformanceStore.getState().addRecommendation({
+      sessionType: blocker ? 'blocking_topic' : revisionRisk ? 'revision' : 'general',
+      title,
+      reasonFactors: blocker
+        ? [blocker.reason]
+        : revisionRisk
+          ? [`${revisionRisk.daysOverdue} day(s) overdue`]
+          : [],
+      targetSubject,
+      targetTopic,
+      accuracyBefore,
+    });
+    recIdRef.current = recId;
+  }, []);
+
+  const handleStart = () => {
+    const recId = recIdRef.current;
+    if (recId) {
+      usePerformanceStore.getState().markRecommendation(recId, 'accepted');
+    }
+    if (blocker) {
+      onStartBlockingTopic(blocker.subject, blocker.topic, recId || '');
+    } else if (revisionRisk) {
+      onStartRevision(revisionRisk.subject, revisionRisk.topic, recId || '');
+    }
+  };
+
+  const statusColor = STATUS_COLORS[outlook.outlookStatus] || colors.primary;
 
   return (
-    <View style={[styles.card, { borderLeftColor: STATUS_COLORS[outlook.outlookStatus] || colors.primary, borderLeftWidth: 4 }]}>
+    <View style={[styles.card, { borderLeftColor: statusColor, borderLeftWidth: 4 }]}>
       <View style={styles.headerRow}>
         <View>
           <Text style={styles.overline}>Exam Outlook</Text>
-          <Text style={styles.status}>{outlook.outlookStatus}</Text>
+          <Text style={[styles.status, { color: statusColor }]}>{outlook.outlookStatus}</Text>
         </View>
-        <View style={[styles.confidenceBadge, { backgroundColor: STATUS_COLORS[outlook.outlookStatus] + '20' }]}>
-          <Text style={[styles.confidenceText, { color: STATUS_COLORS[outlook.outlookStatus] }]}>
+        <View style={[styles.confidenceBadge, { backgroundColor: statusColor + '20' }]}>
+          <Text style={[styles.confidenceText, { color: statusColor }]}>
             {outlook.confidenceLevel}
           </Text>
         </View>
@@ -37,12 +89,34 @@ export function ExamOutlookCard() {
         </Text>
       </View>
 
-      <View style={styles.divider} />
+      {outlook.totalMockTests > 0 && (
+        <Text style={styles.mockTestLine}>
+          Based on {outlook.totalMockTests} Mock Test{outlook.totalMockTests !== 1 ? 's' : ''} · {outlook.totalMockQuestions} Questions
+        </Text>
+      )}
+
+      {blocker && (
+        <View style={styles.blockerRow}>
+          <Text style={styles.blockerLabel}>Biggest Opportunity</Text>
+          <View style={styles.blockerContent}>
+            <Text style={styles.blockerTopic}>⚠ {blocker.topic}</Text>
+            <Text style={styles.blockerReason}>in {blocker.subject} — {blocker.reason}</Text>
+          </View>
+        </View>
+      )}
 
       <View style={styles.actionRow}>
         <Text style={styles.actionLabel}>Next Action</Text>
         <Text style={styles.actionText}>{outlook.nextBestAction}</Text>
       </View>
+
+      <TouchableOpacity
+        style={[styles.startButton, { backgroundColor: statusColor }]}
+        onPress={handleStart}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.startButtonText}>Start Now</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -107,12 +181,44 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     fontFamily: typography.displayL.fontFamily,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
+  mockTestLine: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginBottom: spacing.md,
+    fontFamily: typography.caption.fontFamily,
+  },
+  blockerRow: {
+    backgroundColor: colors.status.needsRevision + '15',
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     marginBottom: spacing.md,
   },
-  actionRow: {},
+  blockerLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textTertiary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    fontFamily: typography.overline.fontFamily,
+    marginBottom: spacing.xs,
+  },
+  blockerContent: {},
+  blockerTopic: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text,
+    fontFamily: typography.bodyBold.fontFamily,
+  },
+  blockerReason: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontFamily: typography.caption.fontFamily,
+  },
+  actionRow: {
+    marginBottom: spacing.md,
+  },
   actionLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -124,8 +230,19 @@ const styles = StyleSheet.create({
   actionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.primary,
+    color: colors.text,
     marginTop: spacing.xs,
+    fontFamily: typography.bodyBold.fontFamily,
+  },
+  startButton: {
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm + 2,
+    alignItems: 'center',
+  },
+  startButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#fff',
     fontFamily: typography.bodyBold.fontFamily,
   },
 });
