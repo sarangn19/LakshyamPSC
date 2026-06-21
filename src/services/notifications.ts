@@ -1,7 +1,5 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { useCognitiveTwinStore } from '../store/cognitiveTwinStore';
-import { getChurnRisk, getRiskAction } from './churnPrediction';
 import { getDueSummary } from './spacedRepetition';
 import { getLearnerStageName } from './learnerStage';
 
@@ -59,21 +57,8 @@ export async function scheduleReviewReminders(): Promise<void> {
       },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 3600, repeats: true },
     });
-  }
-
-  const churnRecord = await getChurnRisk();
-  if (churnRecord && churnRecord.riskScore >= 0.3) {
-    const action = getRiskAction(churnRecord.riskScore, churnRecord.features);
-    if (action.type !== 'none') {
-      await Notifications.scheduleNotificationAsync({
-        content: { title: 'Stay on Track', body: action.message },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 86400, repeats: true },
-      });
-    }
-  }
-
-  const stage = getLearnerStageName();
-  if (due.count === 0 && churnRecord && churnRecord.riskScore < 0.3) {
+  } else {
+    const stage = getLearnerStageName();
     await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Great Progress!',

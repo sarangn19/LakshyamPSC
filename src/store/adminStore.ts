@@ -40,14 +40,6 @@ export interface SupportTicket {
   createdAt: string;
 }
 
-export interface CognitiveTwinConfig {
-  weaknessWeight: number;
-  forgettingWeight: number;
-  confusionWeight: number;
-  coverageWeight: number;
-  version: number;
-}
-
 export interface SystemHealth {
   syncFailures: number;
   queueFailures: number;
@@ -55,16 +47,6 @@ export interface SystemHealth {
   dbHealth: 'healthy' | 'degraded' | 'down';
   storageUsedMb: number;
   lastChecked: string;
-}
-
-export interface Experiment {
-  id: string;
-  name: string;
-  description: string;
-  variantA: Record<string, number>;
-  variantB: Record<string, number>;
-  metrics: string[];
-  status: 'draft' | 'running' | 'paused' | 'completed' | 'archived';
 }
 
 export interface AuditEntry {
@@ -81,9 +63,7 @@ interface AdminState {
   flaggedQuestions: FlaggedQuestion[];
   caEntries: CAEntry[];
   supportTickets: SupportTicket[];
-  cognitiveTwinConfig: CognitiveTwinConfig;
   systemHealth: SystemHealth;
-  experiments: Experiment[];
   auditLogs: AuditEntry[];
   activeLearnersToday: number;
   sessionCompletionRate: number;
@@ -99,11 +79,7 @@ interface AdminState {
   setSupportTickets: (t: SupportTicket[]) => void;
   updateTicketStatus: (id: string, status: SupportTicket['status'], resolution?: string) => void;
   assignTicket: (id: string, assignee: string) => void;
-  setCognitiveTwinConfig: (c: CognitiveTwinConfig) => void;
-  updateCognitiveTwinWeight: (key: keyof CognitiveTwinConfig, value: number) => void;
   setSystemHealth: (h: SystemHealth) => void;
-  setExperiments: (e: Experiment[]) => void;
-  updateExperimentStatus: (id: string, status: Experiment['status']) => void;
   setAuditLogs: (a: AuditEntry[]) => void;
   setDashboardMetrics: (m: {
     activeLearnersToday: number;
@@ -120,13 +96,6 @@ export const useAdminStore = create<AdminState>()(
       flaggedQuestions: [],
       caEntries: [],
       supportTickets: [],
-      cognitiveTwinConfig: {
-        weaknessWeight: 30,
-        forgettingWeight: 25,
-        confusionWeight: 20,
-        coverageWeight: 25,
-        version: 1,
-      },
       systemHealth: {
         syncFailures: 2,
         queueFailures: 0,
@@ -135,7 +104,6 @@ export const useAdminStore = create<AdminState>()(
         storageUsedMb: 342,
         lastChecked: new Date().toISOString(),
       },
-      experiments: [],
       auditLogs: [],
       activeLearnersToday: 0,
       sessionCompletionRate: 0,
@@ -172,23 +140,7 @@ export const useAdminStore = create<AdminState>()(
             t.id === id ? { ...t, assignedTo: assignee, status: 'assigned' as const } : t
           ),
         })),
-      setCognitiveTwinConfig: (c) => set({ cognitiveTwinConfig: c }),
-      updateCognitiveTwinWeight: (key, value) =>
-        set((s) => ({
-          cognitiveTwinConfig: {
-            ...s.cognitiveTwinConfig,
-            [key]: Math.max(0, Math.min(100, value)),
-            version: s.cognitiveTwinConfig.version + 1,
-          },
-        })),
       setSystemHealth: (h) => set({ systemHealth: h }),
-      setExperiments: (e) => set({ experiments: e }),
-      updateExperimentStatus: (id, status) =>
-        set((s) => ({
-          experiments: s.experiments.map((ex) =>
-            ex.id === id ? { ...ex, status } : ex
-          ),
-        })),
       setAuditLogs: (a) => set({ auditLogs: a }),
       setDashboardMetrics: (m) => set(m),
     }),
@@ -196,8 +148,6 @@ export const useAdminStore = create<AdminState>()(
       name: 'lakshyam-admin',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        cognitiveTwinConfig: state.cognitiveTwinConfig,
-        experiments: state.experiments,
         flaggedQuestions: state.flaggedQuestions,
         caEntries: state.caEntries,
         supportTickets: state.supportTickets,

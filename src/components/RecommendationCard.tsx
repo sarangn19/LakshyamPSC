@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius } from '../theme';
 import { typography } from '../theme/typography';
-import { StudySessionPlan, SessionType } from '../services/sessionOrchestrator';
+import { StudySessionPlan, SessionType } from '../services/learningRecommendationEngine';
 import { useMCQStore, useFlashcardStore, useKnowledgeStore } from '../store';
 
 const SESSION_ICONS: Record<SessionType, string> = {
@@ -53,7 +53,7 @@ export function RecommendationCard({ plan, navigation, onSessionStart }: Props) 
     if (plan.focusSubjects.length > 0) {
       useKnowledgeStore.getState().setSelectedSubject(plan.focusSubjects[0]);
     }
-    navigation.navigate('Knowledge');
+    navigation.navigate('Subjects');
   };
 
   const handleAskAITutor = () => {

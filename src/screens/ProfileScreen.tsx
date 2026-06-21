@@ -7,8 +7,9 @@ import { typography } from '../theme/typography';
 import { useUserStore, usePerformanceStore, useAuthStore } from '../store';
 import { supabase } from '../services/supabase';
 import { getLearnerProfile } from '../services/learnerStage';
-import { getCognitiveTwinSummary } from '../services/cognitiveTwinRecommender';
+import { getCognitiveTwinSummary } from '../services/learningRecommendationEngine';
 import { computeCalibrationMetrics, getCalibrationInterpretation } from '../services/confidenceCalibration';
+import { BottomNav } from '../components/BottomNav';
 
 const TargetIcon = () => (
   <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -78,7 +79,8 @@ export function ProfileScreen({ navigation }: any) {
   ];
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView style={{ flex: 1 }}>
       <View style={styles.profileHeader}>
         <View style={styles.avatarLarge}>
           <Text style={{ fontSize: 48, lineHeight: 56 }}>🧑‍🎓</Text>
@@ -323,6 +325,8 @@ export function ProfileScreen({ navigation }: any) {
 
       <View style={{ height: spacing.huge }} />
     </ScrollView>
+      <BottomNav activeTab="Profile" />
+    </View>
   );
 }
 

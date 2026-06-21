@@ -5,7 +5,7 @@ import { colors, spacing, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useFlashcardStore, useMCQStore, usePerformanceStore } from '../store';
 import { refreshProfile } from '../services/profileBuilder';
-import { orchestrateSession, logOrchestratedSessionStart } from '../services/sessionOrchestrator';
+import { orchestrateSession, logOrchestratedSessionStart } from '../services/learningRecommendationEngine';
 
 export function RevisionHubScreen({ navigation }: any) {
   const { t } = useTranslation();

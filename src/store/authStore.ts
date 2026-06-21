@@ -90,6 +90,7 @@ const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
   flashcard_sm2: true,
   recommendation_engine: true,
   experiment_a_b_testing: false,
+  advanced_difficulty_engine: false,
 };
 
 interface AuthState {

@@ -7,15 +7,13 @@ export { usePerformanceStore } from './performanceStore';
 export { useAuthStore } from './authStore';
 export { useAdminStore } from './adminStore';
 export { useBKTStore } from './bktStore';
-export { useCognitiveTwinStore, hasValidQuestionMetadata } from './cognitiveTwinStore';
-export { useStudyValidationStore } from './studyValidationStore';
+export { useCognitiveTwinStore } from './cognitiveTwinStore';
 export type {
-  KnowledgeMastery, GapRecord, GapStatus, GapLifecycle,
-  CognitiveTwinState, KnowledgeTwinMetrics, GapScore,
+  KnowledgeMastery, GapRecord, GapStatus,
 } from './cognitiveTwinStore';
 export type { UserProfile, InteractionSignal, FlashcardSignal, SessionSignal, ConfusionPair } from './performanceStore';
 export type { Role, Permission } from './authStore';
 export type {
-  FlaggedQuestion, CAEntry, SupportTicket, CognitiveTwinConfig,
-  SystemHealth, Experiment, AuditEntry,
+  FlaggedQuestion, CAEntry, SupportTicket,
+  SystemHealth, AuditEntry,
 } from './adminStore';

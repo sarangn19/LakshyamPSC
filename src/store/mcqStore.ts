@@ -1,288 +1,34 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Question, EXAM_DIFFICULTY } from '../data/questions';
-import { SubjectProgress, Note, CurrentAffair } from '../data/mockData';
-import { generateMCQs, getQuestionPoolSize, GeneratedQuestion } from '../services/aiMCQGenerator';
-import { generateAIQuestion } from '../services/aiQuestionGenerator';
-import { generateNextAdaptiveQuestion, makeAdaptiveState, AdaptiveState, recordAnswer } from '../services/infinityEngine';
-import { makeInitialDifficultyState, recordSessionAnswer, DifficultySessionState } from '../services/sessionDifficultyAdapter';
-import { bandit as diffBandit, buildBanditContext } from '../services/contextualBandit';
-import { recordQuestionQualityAnswer } from '../services/questionQuality';
-import { computeChurnRisk } from '../services/churnPrediction';
-import { useUserStore } from './userStore';
-import { useKnowledgeStore } from './knowledgeStore';
-import { storeGeneratedMCQ } from '../services/questionBankStorage';
-import { usePerformanceStore, SessionOutcome } from './performanceStore';
-import { useBKTStore } from './bktStore';
-import { syllabus } from '../data/syllabus';
-import { SessionValidationReport } from '../services/sessionValidation';
-import { getTopicMatch } from '../data/topicRelations';
-import { getNodeByName, getNodePath } from '../data/knowledgeTree';
-import { validateQuestionIntegrity } from '../services/questionValidator';
-import { AuditEntry, QuestionTrustScore, buildAuditEntry, buildTrustScore, shouldSampleAudit, computeTrustScore } from '../services/questionAudit';
-import { useCognitiveTwinStore, hasValidQuestionMetadata, GapRecord, GapLifecycle, GapStatus } from './cognitiveTwinStore';
-import { getRecommendedSubjectAndTopic, getNextCognitiveGapTopic, getRandomSubjectAndTopic } from '../services/cognitiveTwinRecommender';
-import { useStudyValidationStore } from './studyValidationStore';
-import {
-  QuestionSkipRecord, SkipCategory, computeSkipAuditSummary,
-  computeAcceptanceWindow, analyzeBottleneck, categorizeRejection,
-} from '../services/skipAuditService';
-import { runSkipAuditAnalysis, SkipAuditReport } from '../services/skipAuditAnalysis';
-import { runValidationPhase1, ValidationReport } from '../services/adaptiveValidationReport';
-import {
-  recordGeneration,
-  recordAcceptance,
-  recordRejection,
-  recordPresentation,
-  recordCorrectAnswer,
-  recordIncorrectAnswer,
-  hasSufficientInventory,
-  findNearestSupportedTopic,
-  getCoverageReport,
-  getTopicCoverageReport,
-  recordTopicGenerationAttempt,
-  getSessionFocusMetrics,
-  SessionFocusMetrics,
-  CoverageReport,
-} from '../services/topicCoverageDiagnostics';
-import {
-  TopicEnforcementLog,
-} from '../services/topicEnforcement';
-import {
-  recordAcceptedQuestion,
-  isTopicReadyForRecommendation,
-  getTopicDiversity,
-  getCoverageBreadthReport,
-  getDiversityDashboard,
-  getCoverageDashboard,
-  DiversityDashboardEntry,
-  TopicDiversityReport,
-  CoverageBreadthReport,
-  CoverageDashboardEntry,
-} from '../services/topicDiversityTracker';
+import { persist } from 'zustand/middleware';
+import type { MCQState } from './mcqTypes';
+import { PERSIST_CONFIG } from './mcqHelpers';
+import { createSessionSlice } from './mcqSessionSlice';
+import { createDifficultySlice } from './mcqDifficultySlice';
+import { createQuestionSlice } from './mcqQuestionSlice';
+import { createRecommendationSlice } from './mcqRecommendationSlice';
+import { createAnalyticsSlice } from './mcqAnalyticsSlice';
+import type { SessionSlice } from './mcqSessionSlice';
+import type { DifficultySlice } from './mcqDifficultySlice';
+import type { QuestionSlice } from './mcqQuestionSlice';
+import type { RecommendationSlice } from './mcqRecommendationSlice';
+import type { AnalyticsSlice } from './mcqAnalyticsSlice';
 
-function buildEmptySubjectProgress(): SubjectProgress[] {
-  return syllabus.map((s) => ({
-    subjectId: s.id,
-    subjectName: s.name,
-    completionPercent: 0,
-    accuracyPercent: 0,
-    confidenceScore: 0,
-    revisionStatus: 'needs_attention' as const,
-    lastStudied: '',
-  }));
-}
+export type {
+  QuestionReport, IntegrityMetrics, AlignmentMetrics, MCQState,
+} from './mcqTypes';
 
-export interface QuestionReport {
-  questionId: string;
-  questionText: string;
-  subject: string;
-  topic: string;
-  reason: string;
-  timestamp: number;
-}
-
-export interface IntegrityMetrics {
-  passCount: number;
-  failCount: number;
-  fallbackCount: number;
-  regenerationCount: number;
-}
-
-export interface AlignmentMetrics {
-  totalGenerations: number;
-  alignedGenerations: number;
-}
-
-interface MCQState {
-  currentQuestions: Question[];
-  currentIndex: number;
-  selectedAnswer: number | null;
-  isAnswered: boolean;
-  score: { correct: number; total: number };
-  subjectProgress: SubjectProgress[];
-  drillMode: 'daily' | 'weakness' | 'exam';
-  selectedExam: string;
-  sessionActive: boolean;
-  timeRemaining: number;
-  questionStartTime: number | null;
-  reportedQuestions: string[];
-  questionReports: QuestionReport[];
-  disabledQuestions: string[];
-  generatorPoolSize: number;
-  sessionStartTime: number | null;
-  sessionSubjectAccuracy: Record<string, { correct: number; total: number }>;
-  sessionType: string;
-  lastSessionOutcome: SessionOutcome | null;
-  isGenerating: boolean;
-  generationProgress: { current: number; total: number } | null;
-  sessionSignals: { subject: string; topic: string; correct: boolean }[];
-  // session is infinite until user taps Finish
-  sessionCoveredTopics: string[];
-  currentDifficulty: 'easy' | 'medium' | 'hard';
-  difficultySessionState: DifficultySessionState;
-  generatingNext: boolean;
-  adaptiveState: AdaptiveState;
-  recommendedSubject: string;
-  recommendedTopic: string | undefined;
-  alignmentReport: SessionValidationReport | null;
-  showAlignmentFallback: boolean;
-  sessionReduced: boolean;
-  questionsSkipped: number;
-  integrityMetrics: IntegrityMetrics;
-  auditQueue: AuditEntry[];
-  trustScores: QuestionTrustScore[];
-  enforcementLogs: TopicEnforcementLog[];
-  skipAuditRecords: QuestionSkipRecord[];
-  alignmentMetrics: AlignmentMetrics;
-  sessionFocusMetrics: SessionFocusMetrics;
-  diversityDashboard: DiversityDashboardEntry[];
-  coverageDashboard: CoverageDashboardEntry[];
-  bookmarkedQuestions: string[];
-  bookmarkedQuestionData: Record<string, Pick<Question, 'text' | 'subject' | 'topic' | 'subtopic' | 'options' | 'correctAnswer' | 'explanation'>>;
-  seenQuestionTexts: string[];
-  toggleBookmark: (questionId: string) => void;
-  getDiversityDashboard: () => DiversityDashboardEntry[];
-  getCoverageDashboard: () => CoverageDashboardEntry[];
-  getCoverageBreadthReport: (subject: string, topic: string) => CoverageBreadthReport;
-  getTopicDiversity: (subject: string, topic: string) => TopicDiversityReport;
-  startDailyDrill: (exams?: string[], subjects?: string[]) => void;
-  startWeaknessPractice: (exams?: string[]) => void;
-  startExamMode: (examType: string) => void;
-  selectAnswer: (index: number) => void;
-  nextQuestion: () => void;
-  reportQuestion: (id: string) => void;
-  reportQuestionWithReason: (id: string, reason: string) => void;
-  setSelectedExam: (exam: string) => void;
-  startCustomSession: (questions: Question[], startIndex?: number) => void;
-  resetSession: () => void;
-  startOrchestratedSession: (config: {
-    subjects?: string[];
-    difficulty?: 'easy' | 'medium' | 'hard';
-    count?: number;
-    examType?: string;
-    sessionType?: string;
-    recommendedSubject?: string;
-    recommendedTopic?: string;
-  }) => void;
-  startPracticeSession: (config: {
-    subjects?: string[];
-    difficulty?: 'easy' | 'medium' | 'hard';
-    count?: number;
-    examType?: string;
-    sourceType?: 'chapter' | 'note' | 'paste';
-    noteId?: string;
-    pastedContent?: string;
-  }) => void;
-  getWeakSubjects: (exams?: string[]) => string[];
-  getSubjectProgress: (subject: string) => SubjectProgress | undefined;
-  getExamScore: (exam: string) => { available: number; mastered: number; accuracy: number };
-  endSession: () => void;
-  clearLastSessionOutcome: () => void;
-  addToAuditQueue: (entry: AuditEntry) => void;
-  updateTrustScore: (questionKey: string, changes: Partial<QuestionTrustScore>) => void;
-  getTrustScore: (questionKey: string) => QuestionTrustScore | undefined;
-  getAuditMetrics: () => { approvedRate: number; rejectedRate: number; editedRate: number; disabledRate: number; problematicSubjects: { subject: string; rejectCount: number }[]; problematicTopics: { topic: string; rejectCount: number }[] };
-  getCoverageReport: () => CoverageReport;
-  recordQuestionSkip: (record: QuestionSkipRecord) => void;
-  getSkipAuditSummary: () => ReturnType<typeof computeSkipAuditSummary>;
-  getAcceptanceWindow: () => ReturnType<typeof computeAcceptanceWindow>;
-  getBottleneckAnalysis: () => ReturnType<typeof analyzeBottleneck>;
-  runSkipAuditAnalysis: () => SkipAuditReport;
-  recordAlignmentAttempt: (aligned: boolean) => void;
-  getGeneratorAlignmentRate: () => number;
-  runValidationPhase1: () => ValidationReport;
-}
-
-function trackIntegrity(delta: Partial<IntegrityMetrics>): void {
-  const s = useMCQStore.getState();
-  useMCQStore.setState({ integrityMetrics: { ...s.integrityMetrics, ...delta } });
-}
-
-function recordQuestionSkip(
-  question: { subject: string; topic: string; subtopic?: string | null; source: string; id: string },
-  requestedSubject: string,
-  requestedTopic: string | undefined,
-  rejectionCategory: SkipCategory,
-  rejectionReason: string,
-  retryCount: number,
-): void {
-  const s = useMCQStore.getState();
-  const record: QuestionSkipRecord = {
-    timestamp: new Date().toISOString(),
-    requestedSubject,
-    requestedTopic,
-    generatedSubject: question.subject,
-    generatedTopic: question.topic,
-    generatedSubtopic: question.subtopic ?? '',
-    source: question.source === 'ai_generated' ? 'ai' : 'template',
-    rejectionReason,
-    rejectionCategory,
-    retryCount,
-    sessionId: s.sessionStartTime?.toString() ?? '',
-  };
-  useMCQStore.setState({ skipAuditRecords: [...s.skipAuditRecords, record] });
-}
-
-async function resolveValidQuestion(
-  weakSubjects: string[],
-  covered: string[],
-  correct: number,
-  total: number,
-  difficulty: 'easy' | 'medium' | 'hard',
-  adaptiveState: AdaptiveState,
-  recentSignals: any[],
-  wasIncorrect: boolean,
-  recommendedSubject: string,
-  recommendedTopic: string | undefined,
-  targetExams: string[],
-  reportedQuestions: string[],
-  locale: 'en' | 'ml',
-  seenQuestionTexts: string[] = [],
-): Promise<{
-  question: GeneratedQuestion | null;
-  report: SessionValidationReport | null;
-  source: 'ai' | 'cache' | 'template' | 'none';
-}> {
-  const activeAvoid = [...reportedQuestions, ...useMCQStore.getState().disabledQuestions];
-  let lastReport: SessionValidationReport | null = null;
-
-  // Check inventory AND diversity for recommended topic; fallback if either insufficient
-  // Uses MIN_INVENTORY = 10 and diversity >= medium threshold
-  let activeSubject = recommendedSubject;
-  let activeTopic = recommendedTopic;
-  if (activeTopic) {
-    const inventoryOk = hasSufficientInventory(activeSubject, activeTopic);
-    const inventory = getTopicCoverageReport(activeSubject, activeTopic).acceptedQuestions;
-    const breadthOk = isTopicReadyForRecommendation(activeSubject, activeTopic);
-    if (!inventoryOk || !breadthOk) {
-      const covReport = getTopicCoverageReport(activeSubject, activeTopic);
-      const breadthReport = getCoverageBreadthReport(activeSubject, activeTopic);
-      console.log('[BREADTH] topic', activeSubject, activeTopic,
-        `| inventory: ${covReport.acceptedQuestions} (ok: ${inventoryOk})`,
-        `| subtopics: ${breadthReport.coveredSubtopics}/${breadthReport.totalSubtopics}`,
-        `| concept coverage: ${breadthReport.conceptCoveragePercent}%`,
-        `| ok: ${breadthOk}`);
-      const fallback = findNearestSupportedTopic(activeSubject, activeTopic);
-      if (fallback) {
-        console.log('[BREADTH] falling back to', fallback.subject, fallback.topic);
-        activeSubject = fallback.subject;
-        activeTopic = fallback.topic;
-      }
-    }
-  }
-
-  // Don't use infinite engine for practice sessions (they have predefined questions)
-  if (useMCQStore.getState().sessionType === 'practice') {
-    return { question: null, report: null, source: 'none' };
-  }
-
-  // Attempt AI generation — returns whatever the adaptive engine picks
-  for (let retry = 0; retry < 3; retry++) {
-    const result = await generateNextAdaptiveQuestion(
-      weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
-    );
+export const useMCQStore = create<MCQState>()(
+  persist(
+    (...a) => ({
+      ...createSessionSlice(...a),
+      ...createDifficultySlice(...a),
+      ...createQuestionSlice(...a),
+      ...createRecommendationSlice(...a),
+      ...createAnalyticsSlice(...a),
+    }),
+    PERSIST_CONFIG,
+  ),
+);
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);
     if (!result?.question) break;
 
@@ -664,7 +410,10 @@ export const useMCQStore = create<MCQState>()(
           consecutiveIncorrect: consecIncorrect,
           streakDays: streak,
         });
-        diffBandit.recordReward(ctx, current.difficulty, reward);
+        if (useAuthStore.getState().isFeatureEnabled('advanced_difficulty_engine')) {
+          const { bandit } = await import('../services/contextualBandit');
+          bandit.recordReward(ctx, current.difficulty, reward);
+        }
 
         // Question quality tracking
         const perfSignals = usePerformanceStore.getState().interactionSignals;
@@ -823,25 +572,7 @@ export const useMCQStore = create<MCQState>()(
           });
         }
 
-        // Study validation: record question result
-        if (useStudyValidationStore.getState().enabled && current.subtopic) {
-          const twin = useCognitiveTwinStore.getState();
-          const afterMastery = hasValidQuestionMetadata(current.subject, current.topic, current.subtopic)
-            ? twin.getMastery(getNodeByName(current.subtopic, 'subtopic')?.id ?? '').masteryScore
-            : null;
-          useStudyValidationStore.getState().recordQuestionResult({
-            questionId: current.id,
-            sessionId: state.sessionStartTime?.toString() ?? '',
-            group: (state.sessionType === 'random_study' ? 'random' : 'adaptive') as any,
-            subject: current.subject,
-            topic: current.topic,
-            subtopic: current.subtopic,
-            correct: isCorrect,
-            timestamp: new Date().toISOString(),
-            beforeMastery: studyBeforeMastery,
-            afterMastery,
-          });
-        }
+
 
       },
 
@@ -926,7 +657,8 @@ export const useMCQStore = create<MCQState>()(
           consecutiveIncorrect: consecIncorrect,
           streakDays: streak,
         });
-        const banditDifficulty = diffBandit.predict(banditCtx);
+        const useAdvanced = useAuthStore.getState().isFeatureEnabled('advanced_difficulty_engine');
+        const banditDifficulty = await selectDifficulty(banditCtx, useAdvanced);
 
         const { question, report } = await resolveValidQuestion(
           weakSubjects, covered,
@@ -1029,24 +761,7 @@ export const useMCQStore = create<MCQState>()(
         console.log('[INTEGRITY] session metrics:', metrics);
         console.log('[FOCUS] metrics:', focusMetrics);
 
-        // Study validation: record session
-        const studyStore = useStudyValidationStore.getState();
-        if (studyStore.enabled) {
-          const studyGroup = state.sessionType === 'random_study' ? 'random' : 'adaptive';
-          studyStore.recordSession({
-            sessionId: outcome.sessionId,
-            group: studyGroup,
-            startTime: new Date(outcome.startTime).toISOString(),
-            endTime: new Date(endTime).toISOString(),
-            subject: outcome.recommendedSubject || weakest,
-            topic: outcome.recommendedTopic || '',
-            questionsAsked: totalQ,
-            correctAnswers: correctA,
-            accuracy: accuracy * 100,
-          });
-        }
 
-        computeChurnRisk();
       },
 
 

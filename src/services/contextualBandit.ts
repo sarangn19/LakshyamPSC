@@ -196,3 +196,20 @@ export function buildBanditContext(ctx: Partial<BanditContext>): BanditContext {
     streakDays: ctx.streakDays ?? 0,
   };
 }
+
+export function selectDifficultyByMastery(overallMastery: number): 'easy' | 'medium' | 'hard' {
+  if (overallMastery < 40) return 'easy';
+  if (overallMastery > 75) return 'hard';
+  return 'medium';
+}
+
+export async function selectDifficulty(
+  ctx: BanditContext,
+  useAdvanced: boolean,
+): Promise<'easy' | 'medium' | 'hard'> {
+  if (useAdvanced) {
+    await bandit.load();
+    return bandit.predict(ctx);
+  }
+  return selectDifficultyByMastery(ctx.overallMastery);
+}

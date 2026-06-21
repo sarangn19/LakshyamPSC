@@ -4,28 +4,27 @@ import { colors, spacing, borderRadius } from '../../theme';
 import { typography } from '../../theme/typography';
 import { useTranslation } from '../../i18n/useTranslation';
 import { fetchSubjectAnalytics } from '../../services/adminDataService';
-import { getChurnDashboard } from '../../services/churnPrediction';
 import { getQualityDashboard, getTopicQuality } from '../../services/questionQuality';
 import { getBlueprintAlignmentReport } from '../../services/blueprintAlignment';
-import { bandit } from '../../services/contextualBandit';
+
 
 export function RecommendationEngineAnalyticsScreen() {
   const { t } = useTranslation();
 
   const [subjectAnalytics, setSubjectAnalytics] = useState<{ subject: string; correct: number; total: number; accuracy: number }[]>([]);
-  const [churnData, setChurnData] = useState<any>(null);
   const [qualityData, setQualityData] = useState<any>(null);
   const [blueprintData, setBlueprintData] = useState<any>(null);
   const [banditStats, setBanditStats] = useState<{ totalTrials: number; armCounts: Record<string, number> } | null>(null);
 
   useEffect(() => {
     fetchSubjectAnalytics().then(setSubjectAnalytics);
-    setChurnData(getChurnDashboard());
     setQualityData(getQualityDashboard());
     try {
       setBlueprintData(getBlueprintAlignmentReport());
     } catch { /* noop */ }
-    setBanditStats(bandit.getStats());
+    import('../../services/contextualBandit').then(({ bandit }) => {
+      setBanditStats(bandit.getStats());
+    });
   }, []);
 
   const totalCorrect = subjectAnalytics.reduce((s, a) => s + a.correct, 0);
@@ -144,47 +143,6 @@ export function RecommendationEngineAnalyticsScreen() {
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.sm }]}>
           {t('superadmin.recTimelineDesc')}
         </Text>
-      </View>
-
-      {/* Churn Risk Trends */}
-      <View style={styles.section}>
-        <Text style={[typography.h4, { color: colors.text, marginBottom: spacing.md }]}>Churn Risk Trends</Text>
-        {churnData ? (
-          <View>
-            <View style={styles.churnSummary}>
-              <Text style={[typography.h2, { color: churnData.currentRisk < 0.3 ? colors.success : churnData.currentRisk < 0.5 ? colors.warning : colors.error }]}>
-                {Math.round(churnData.currentRisk * 100)}%
-              </Text>
-              <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: spacing.sm }]}>
-                current risk · trend: {churnData.riskTrend === 'declining' ? '↑ rising' : churnData.riskTrend === 'improving' ? '↓ falling' : '→ stable'}
-              </Text>
-            </View>
-            {churnData.topFactors && churnData.topFactors.length > 0 && (
-              <View style={{ marginTop: spacing.sm }}>
-                <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: spacing.xs }]}>Top factors:</Text>
-                {churnData.topFactors.slice(0, 3).map((f: any, i: number) => (
-                  <View key={i} style={styles.factorRow}>
-                    <Text style={[typography.small, { color: colors.text, flex: 1 }]}>{f.name}: {f.value}</Text>
-                    <Text style={[typography.small, { color: f.direction === 'bad' ? colors.error : colors.success }]}>
-                      {f.direction === 'bad' ? '⚠' : '✓'}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-            <View style={{ marginTop: spacing.sm }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>Risk history</Text>
-              <View style={styles.sparkline}>
-                {(churnData.history || []).slice(-12).map((r: any, i: number) => {
-                  const h = Math.min(40, Math.max(4, r.riskScore * 40));
-                  return <View key={i} style={[styles.sparkBar, { height: h, backgroundColor: r.riskScore < 0.3 ? colors.success : r.riskScore < 0.5 ? colors.warning : colors.error }]} />;
-                })}
-              </View>
-            </View>
-          </View>
-        ) : (
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>No churn data yet</Text>
-        )}
       </View>
 
       {/* Question Quality Heatmap */}

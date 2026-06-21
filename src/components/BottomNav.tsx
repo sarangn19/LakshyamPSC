@@ -1,18 +1,33 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, useWindowDimensions, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { HomeIcon, LearnIcon, ChatbotIcon } from './Icons';
+import { HomeIcon, LearnIcon, PracticeIcon, AIIcon, ProfileIcon } from './Icons';
 
-type TabName = 'Home' | 'Learn' | 'Chatbot';
+export type TabName = 'Home' | 'Learn' | 'Practice' | 'AITutor' | 'Profile';
 
 type Props = {
   activeTab: TabName;
 };
 
+type TabConfig = {
+  name: TabName;
+  label: string;
+  icon: (color: string) => React.ReactNode;
+};
+
+const TABS: TabConfig[] = [
+  { name: 'Home', label: 'Home', icon: (c) => <HomeIcon width={18} height={18} color={c} /> },
+  { name: 'Learn', label: 'Learn', icon: (c) => <LearnIcon width={20} height={20} color={c} /> },
+  { name: 'Practice', label: 'Practice', icon: (c) => <PracticeIcon width={20} height={20} color={c} /> },
+  { name: 'AITutor', label: 'AI Tutor', icon: (c) => <AIIcon width={20} height={20} color={c} /> },
+  { name: 'Profile', label: 'Profile', icon: (c) => <ProfileIcon width={18} height={20} color={c} /> },
+];
+
 export function BottomNav({ activeTab }: Props) {
   const navigation = useNavigation<any>();
   const { width: screenW } = useWindowDimensions();
   const navWidth = screenW - 48;
+  const tabCount = TABS.length;
 
   const handlePress = (tab: TabName) => {
     if (tab === activeTab) return;
@@ -21,26 +36,27 @@ export function BottomNav({ activeTab }: Props) {
 
   return (
     <View style={styles.bottomNav}>
-      <View style={[styles.navActiveBg, { left: getLeft(navWidth, activeTab) }]} />
       <View style={styles.navItems}>
-        <TouchableOpacity style={[styles.navItem, activeTab === 'Home' && styles.navItemActive]} onPress={() => handlePress('Home')}>
-          <HomeIcon width={16.25} height={16} color={activeTab === 'Home' ? 'white' : 'black'} />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, activeTab === 'Learn' && styles.navItemActive]} onPress={() => handlePress('Learn')}>
-          <LearnIcon width={18.97} height={16} color={activeTab === 'Learn' ? 'white' : 'black'} />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, activeTab === 'Chatbot' && styles.navItemActive]} onPress={() => handlePress('Chatbot')}>
-          <ChatbotIcon width={19} height={16} color={activeTab === 'Chatbot' ? 'white' : 'black'} />
-        </TouchableOpacity>
+        {TABS.map((tab, i) => {
+          const isActive = tab.name === activeTab;
+          return (
+            <TouchableOpacity
+              key={tab.name}
+              style={styles.navItem}
+              onPress={() => handlePress(tab.name)}
+              activeOpacity={0.7}
+            >
+              {tab.icon(isActive ? '#FFFFFF' : '#8E8E93')}
+              <Text style={[styles.navLabel, { color: isActive ? '#FFFFFF' : '#8E8E93' }]}>
+                {tab.label}
+              </Text>
+              {isActive && <View style={styles.activeDot} />}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
-}
-
-function getLeft(w: number, tab: TabName): number {
-  if (tab === 'Home') return 8;
-  if (tab === 'Learn') return (w - 54.32) / 2;
-  return w - 54.32 - 9;
 }
 
 const styles = StyleSheet.create({
@@ -50,37 +66,39 @@ const styles = StyleSheet.create({
     right: 24,
     bottom: 24,
     height: 72,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 999,
+    backgroundColor: '#1C1C1E',
+    borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
     justifyContent: 'center',
     zIndex: 10,
   },
-  navActiveBg: {
-    position: 'absolute',
-    top: 8.84,
-    width: 54.32,
-    height: 54.32,
-    borderRadius: 999,
-    backgroundColor: '#F7B11A',
-  },
   navItems: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
   },
   navItem: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+    minWidth: 52,
   },
-  navItemActive: {
-    zIndex: 1,
+  navLabel: {
+    fontSize: 9,
+    fontWeight: '600',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#F7B11A',
+    marginTop: 2,
   },
 });

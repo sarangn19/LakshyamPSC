@@ -66,6 +66,44 @@ export function BackIcon({ width = 9, height = 17, color = 'black' }: IconProps)
   );
 }
 
+export function PracticeIcon({ width = 20, height = 20, color = 'black', strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 20 20" fill="none">
+      <Path d="M4 16L16 4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M7 14L9 12" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M14 7L16 5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M12 4L16 8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M4 12L8 16" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M2 18L4 16" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+export function ProfileIcon({ width = 18, height = 20, color = 'black', strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 18 20" fill="none">
+      <Path d="M9 10C11.2091 10 13 8.20914 13 6C13 3.79086 11.2091 2 9 2C6.79086 2 5 3.79086 5 6C5 8.20914 6.79086 10 9 10Z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M15 18C15 15.7909 12.3137 14 9 14C5.68629 14 3 15.7909 3 18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+export function AIIcon({ width = 20, height = 20, color = 'black', strokeWidth = 2 }: IconProps) {
+  return (
+    <Svg width={width} height={height} viewBox="0 0 20 20" fill="none">
+      <Path d="M10 2V4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M10 16V18" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M4 10H2" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M18 10H16" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M5.5 5.5L4 4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M16 16L14.5 14.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M14.5 5.5L16 4" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Path d="M4 16L5.5 14.5" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      <Circle cx="10" cy="10" r="3" stroke={color} strokeWidth={strokeWidth} />
+    </Svg>
+  );
+}
+
 export function Arrow45Icon({ width = 19, height = 19, color = 'black', strokeWidth = 1.5 }: IconProps) {
   return (
     <Svg width={width} height={height} viewBox="0 0 19 19" fill="none">

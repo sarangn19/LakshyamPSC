@@ -39,20 +39,26 @@ import { HomeScreen } from '../screens/HomeScreen';
 import { LearnScreen } from '../screens/LearnScreen';
 import { ChatbotScreen } from '../screens/ChatbotScreen';
 import { SavedNotesScreen } from '../screens/SavedNotesScreen';
-import { KnowledgeRepositoryScreen } from '../screens/KnowledgeRepositoryScreen';
 import { MCQEngineScreen } from '../screens/MCQEngineScreen';
 import { FlashcardsScreen } from '../screens/FlashcardsScreen';
 import { AITutorScreen } from '../screens/AITutorScreen';
+import { PracticeScreen } from '../screens/PracticeScreen';
 import { RevisionHubScreen } from '../screens/RevisionHubScreen';
-import { KnowledgeMapScreen } from '../screens/KnowledgeMapScreen';
-import { AnalyticsScreen } from '../screens/AnalyticsScreen';
 import { CurrentAffairsScreen } from '../screens/CurrentAffairsScreen';
-import { GoalTrackerScreen } from '../screens/GoalTrackerScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { PostSessionScreen } from '../screens/PostSessionScreen';
 import { NoteDetailScreen } from '../screens/NoteDetailScreen';
 import { CreateNoteScreen } from '../screens/CreateNoteScreen';
-import { RetentionDashboardScreen } from '../screens/RetentionDashboardScreen';
+// Consolidated screens (Phase 1)
+import { SubjectsScreen } from '../screens/SubjectsScreen';
+import { ProgressScreen } from '../screens/ProgressScreen';
+import { AchievementsScreen } from '../screens/AchievementsScreen';
+// Redirect wrappers for backward compat (remove after 1 release)
+import { KnowledgeRepositoryRedirect } from '../screens/KnowledgeRepositoryRedirect';
+import { KnowledgeMapRedirect } from '../screens/KnowledgeMapRedirect';
+import { AnalyticsRedirect } from '../screens/AnalyticsRedirect';
+import { RetentionDashboardRedirect } from '../screens/RetentionDashboardRedirect';
+import { GoalTrackerRedirect } from '../screens/GoalTrackerRedirect';
 import { BookmarkedQuestionsScreen } from '../screens/BookmarkedQuestionsScreen';
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
@@ -74,6 +80,9 @@ function HomeTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Learn" component={LearnScreen} />
       <Tab.Screen name="Chatbot" component={ChatbotScreen} />
+      <Tab.Screen name="Practice" component={PracticeScreen} />
+      <Tab.Screen name="AITutor" component={AITutorScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -121,15 +130,20 @@ export function AppNavigator() {
           <Stack.Screen name="MainTabs" component={HomeTabs} />
           <Stack.Screen name="MCQ" component={MCQEngineScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
-            <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
+          <Stack.Screen name="Practice" component={PracticeScreen} options={{ ...screenHeaderStyle, title: 'Practice', animation: 'slide_from_right' }} />
+          <Stack.Screen name="AITutor" component={AITutorScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+          <Stack.Screen name="Subjects" component={SubjectsScreen} options={{ ...screenHeaderStyle, title: 'Subjects', animation: 'slide_from_right' }} />
+          <Stack.Screen name="Progress" component={ProgressScreen} options={{ ...screenHeaderStyle, title: 'Progress', animation: 'slide_from_right' }} />
+          <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ ...screenHeaderStyle, title: 'Achievements', animation: 'slide_from_right' }} />
+          <Stack.Screen name="Knowledge" component={KnowledgeRepositoryRedirect} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
+          <Stack.Screen name="Map" component={KnowledgeMapRedirect} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
+            <Stack.Screen name="Analytics" component={AnalyticsRedirect} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+            <Stack.Screen name="Retention" component={RetentionDashboardRedirect} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
             <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
           <Stack.Screen name="Leaderboard" component={LeaderboardScreen} options={{ ...screenHeaderStyle, title: 'Leaderboard', animation: 'slide_from_right' }} />
           <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ ...screenHeaderStyle, title: 'Subscription', animation: 'slide_from_right' }} />
           <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
-          <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
+          <Stack.Screen name="Goals" component={GoalTrackerRedirect} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
           <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
           <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />
@@ -149,15 +163,20 @@ export function AppNavigator() {
         <Stack.Screen name="MainTabs" component={HomeTabs} />
         <Stack.Screen name="MCQ" component={MCQEngineScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="Flashcards" component={FlashcardsScreen} options={{ ...screenHeaderStyle, title: t('flashcards.title'), animation: 'slide_from_right' }} />
-        <Stack.Screen name="Knowledge" component={KnowledgeRepositoryScreen} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
-        <Stack.Screen name="Map" component={KnowledgeMapScreen} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
-        <Stack.Screen name="Analytics" component={AnalyticsScreen} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
-        <Stack.Screen name="Retention" component={RetentionDashboardScreen} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Practice" component={PracticeScreen} options={{ ...screenHeaderStyle, title: 'Practice', animation: 'slide_from_right' }} />
+        <Stack.Screen name="AITutor" component={AITutorScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="Subjects" component={SubjectsScreen} options={{ ...screenHeaderStyle, title: 'Subjects', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Progress" component={ProgressScreen} options={{ ...screenHeaderStyle, title: 'Progress', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Achievements" component={AchievementsScreen} options={{ ...screenHeaderStyle, title: 'Achievements', animation: 'slide_from_right' }} />
+        <Stack.Screen name="Knowledge" component={KnowledgeRepositoryRedirect} options={{ ...screenHeaderStyle, title: t('knowledge.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Map" component={KnowledgeMapRedirect} options={{ ...screenHeaderStyle, title: t('knowledgeMap.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Analytics" component={AnalyticsRedirect} options={{ ...screenHeaderStyle, title: t('analytics.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Retention" component={RetentionDashboardRedirect} options={{ ...screenHeaderStyle, title: 'Retention Dashboard', animation: 'slide_from_right' }} />
         <Stack.Screen name="Bookmarks" component={BookmarkedQuestionsScreen} options={{ ...screenHeaderStyle, title: 'Bookmarked Questions', animation: 'slide_from_right' }} />
         <Stack.Screen name="Leaderboard" component={LeaderboardScreen} options={{ ...screenHeaderStyle, title: 'Leaderboard', animation: 'slide_from_right' }} />
         <Stack.Screen name="Subscription" component={SubscriptionScreen} options={{ ...screenHeaderStyle, title: 'Subscription', animation: 'slide_from_right' }} />
         <Stack.Screen name="Affairs" component={CurrentAffairsScreen} options={{ ...screenHeaderStyle, title: t('currentAffairs.title'), animation: 'slide_from_right' }} />
-        <Stack.Screen name="Goals" component={GoalTrackerScreen} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
+        <Stack.Screen name="Goals" component={GoalTrackerRedirect} options={{ ...screenHeaderStyle, title: t('goals.title'), animation: 'slide_from_right' }} />
         <Stack.Screen name="Profile" component={ProfileScreen} options={{ ...screenHeaderStyle, title: t('profile.title'), animation: 'slide_from_right' }} />
         <Stack.Screen name="NoteDetail" component={NoteDetailScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
         <Stack.Screen name="SavedNotes" component={SavedNotesScreen} options={{ animation: 'slide_from_right' }} />

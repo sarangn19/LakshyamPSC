@@ -5,12 +5,10 @@ import { colors } from '../theme';
 import { useTranslation } from '../i18n/useTranslation';
 
 import { ExecutiveDashboardScreen } from '../screens/superadmin/ExecutiveDashboardScreen';
-import { CognitiveTwinControlScreen } from '../screens/superadmin/CognitiveTwinControlScreen';
 import { RecommendationEngineAnalyticsScreen } from '../screens/superadmin/RecommendationEngineAnalyticsScreen';
 import { UserManagementScreen } from '../screens/superadmin/UserManagementScreen';
 import { AccessControlScreen } from '../screens/superadmin/AccessControlScreen';
 import { SystemMonitoringScreen } from '../screens/superadmin/SystemMonitoringScreen';
-import { ExperimentCenterScreen } from '../screens/superadmin/ExperimentCenterScreen';
 import { AuditLogsScreen } from '../screens/superadmin/AuditLogsScreen';
 import { BillingDashboardScreen } from '../screens/superadmin/BillingDashboardScreen';
 import { SuggestionManagementScreen } from '../screens/admin/SuggestionManagementScreen';
@@ -19,13 +17,11 @@ const Tab = createBottomTabNavigator();
 
 const SUPER_ADMIN_TABS = [
   { name: 'ExecDashboard', component: ExecutiveDashboardScreen, icon: '📊', labelKey: 'superadmin.execTab' },
-  { name: 'CognitiveTwinControl', component: CognitiveTwinControlScreen, icon: '🧠', labelKey: 'superadmin.cognitiveTab' },
   { name: 'RecEngine', component: RecommendationEngineAnalyticsScreen, icon: '🎯', labelKey: 'superadmin.recTab' },
   { name: 'UserManagement', component: UserManagementScreen, icon: '👥', labelKey: 'superadmin.usersTab' },
   { name: 'AccessControl', component: AccessControlScreen, icon: '🔐', labelKey: 'superadmin.accessTab' },
   { name: 'Billing', component: BillingDashboardScreen, icon: '💰', labelKey: 'superadmin.billingTab' },
   { name: 'SystemMonitoring', component: SystemMonitoringScreen, icon: '⚙️', labelKey: 'superadmin.systemTab' },
-  { name: 'ExperimentCenter', component: ExperimentCenterScreen, icon: '🧪', labelKey: 'superadmin.expTab' },
   { name: 'AuditLogs', component: AuditLogsScreen, icon: '📋', labelKey: 'superadmin.auditTab' },
   { name: 'Suggestions', component: SuggestionManagementScreen, icon: '💡', labelKey: 'superadmin.suggestionsTab' },
 ];

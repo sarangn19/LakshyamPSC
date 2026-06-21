@@ -1,12 +1,10 @@
 import { GeneratedQuestion } from './aiMCQGenerator';
 import { generateAIQuestion } from './aiQuestionGenerator';
-import { computePriorities, TopicPriority, checkPrerequisites } from './revisionEngine';
+import { computePriorities, TopicPriority, checkPrerequisites, getScorableTopics, getUnifiedPriorities } from './learningRecommendationEngine';
 import { getSubtopicsForTopic } from './knowledgeEngine';
-import { getScorableTopics } from './infinityScorer';
 import { useBKTStore } from '../store/bktStore';
 import { useUserStore } from '../store/userStore';
 import { InteractionSignal } from '../store/performanceStore';
-import { getUnifiedPriorities } from './cognitiveTwinRecommender';
 import { getLearnerProfile, getStageConfig } from './learnerStage';
 import { getBlueprintBoost, recordBlueprintGeneration } from './blueprintAlignment';
 

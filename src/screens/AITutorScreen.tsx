@@ -4,6 +4,7 @@ import { colors, spacing, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
+import { BottomNav } from '../components/BottomNav';
 
 interface QuizOption {
   key: string;
@@ -410,6 +411,7 @@ export function AITutorScreen({ route, navigation }: any) {
           <Text style={{ fontSize: 16, color: '#fff', transform: [{ rotate: '45deg' }], marginLeft: 2 }}>➤</Text>
         </TouchableOpacity>
       </View>
+      <BottomNav activeTab="AITutor" />
     </KeyboardAvoidingView>
   );
 }

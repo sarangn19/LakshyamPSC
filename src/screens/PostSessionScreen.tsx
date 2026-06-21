@@ -7,7 +7,7 @@ import { useMCQStore } from '../store';
 import { usePerformanceStore } from '../store/performanceStore';
 import { generateImprovementMessages, buildSessionSummary } from '../services/sessionFeedback';
 import { useFlashcardStore } from '../store/flashcardStore';
-import { getRecommendedSubjectAndTopic } from '../services/cognitiveTwinRecommender';
+import { getRecommendedSubjectAndTopic } from '../services/learningRecommendationEngine';
 import { getLearnerProfile } from '../services/learnerStage';
 
 export function PostSessionScreen({ navigation }: any) {
