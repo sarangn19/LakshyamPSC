@@ -9,9 +9,6 @@ import { useUserStore } from '../store/userStore';
 import { useMCQStore } from '../store';
 import { BottomNav } from '../components/BottomNav';
 import { ExamOutlookCard } from '../components/cards/ExamOutlookCard';
-import { ContinueLearningCard } from '../components/cards/ContinueLearningCard';
-
-import { RevisionDueCard } from '../components/cards/RevisionDueCard';
 import { WeakAreasCard } from '../components/cards/WeakAreasCard';
 import { CurrentAffairsCard } from '../components/cards/CurrentAffairsCard';
 import type { CurrentAffair } from '../data/mockData';
@@ -75,16 +72,6 @@ export function HomeScreen({ navigation }: any) {
   const hour = new Date().getHours();
   const greetingText = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  const handleStartSession = () => {
-    useMCQStore.getState().startOrchestratedSession({});
-    navigation.navigate('MCQ');
-  };
-
-  const handleStartTopic = (subject: string, topic: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'focused' });
-    navigation.navigate('MCQ');
-  };
-
   const handlePracticeSubject = (subject: string) => {
     useMCQStore.getState().startOrchestratedSession({ subjects: [subject], sessionType: 'focused' });
     navigation.navigate('MCQ');
@@ -122,16 +109,10 @@ export function HomeScreen({ navigation }: any) {
         {/* Section 1: Exam Outlook */}
         <ExamOutlookCard onStartBlockingTopic={handleExamOutlookStart} onStartRevision={handleExamOutlookRevision} />
 
-        {/* Section 2: Continue Learning */}
-        <ContinueLearningCard onStartSession={handleStartSession} />
-
-        {/* Section 3: Revision Due */}
-        <RevisionDueCard onStartRevision={handleStartTopic} />
-
-        {/* Section 4: Top Weak Areas */}
+        {/* Section 2: Top Weak Areas */}
         <WeakAreasCard onPracticeSubject={handlePracticeSubject} />
 
-        {/* Section 6: Current Affairs */}
+        {/* Section 3: Current Affairs */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Current Affairs</Text>
           {caItems.length > 0 && (
@@ -150,7 +131,7 @@ export function HomeScreen({ navigation }: any) {
           <Text style={styles.emptyText}>No current affairs available</Text>
         )}
 
-        {/* Section 7: Streak */}
+        {/* Section 4: Streak */}
         <StreakBadge current={streak.current} longest={streak.longest} />
 
         <View style={{ height: spacing.xxxl }} />
