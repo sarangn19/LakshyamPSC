@@ -7,6 +7,10 @@ import { getCompositeExamWeight } from '../data/examBlueprints';
 import { getAllScorableSubtopics } from './knowledgeEngine';
 import type { SessionOutcome } from '../store/performanceStore';
 
+function safeReduce<T, U>(arr: T[] | null | undefined, fn: (acc: U, item: T) => U, initial: U): U {
+  return Array.isArray(arr) ? arr.reduce(fn, initial) : initial;
+}
+
 export type ConfidenceLevel = 'Low Confidence' | 'Medium Confidence' | 'High Confidence';
 
 export type OutlookStatus = 'Getting Started' | 'Building Foundation' | 'Making Progress' | 'Competitive' | 'Exam Ready';
@@ -156,7 +160,8 @@ function computeSubjectSummaries(): SubjectSummary[] {
       ? Math.min(1, 1 / (1 + profile.forgettingRates[name]))
       : 0.5;
 
-    const sessionOutcomes = usePerformanceStore.getState().sessionOutcomes || [];
+    const rawOutcomes = usePerformanceStore.getState().sessionOutcomes;
+    const sessionOutcomes = Array.isArray(rawOutcomes) ? rawOutcomes : [];
     const subjectSessions = sessionOutcomes.filter((o) => o.subjectScores && name in o.subjectScores);
     const consistency = subjectSessions.length > 0
       ? subjectSessions.filter((s) => s.accuracy >= 40).length / subjectSessions.length
@@ -298,7 +303,7 @@ function computeNextBestAction(
 
 export function computeExamOutlook(): ExamOutlook {
   const { sessionOutcomes } = usePerformanceStore.getState();
-  const outcomes = sessionOutcomes || [];
+  const outcomes = Array.isArray(sessionOutcomes) ? sessionOutcomes : [];
   const summaries = computeSubjectSummaries();
   const scoreRange = computeScoreRange(summaries, outcomes);
   const blockingTopics = computeBlockingTopics();
@@ -306,9 +311,9 @@ export function computeExamOutlook(): ExamOutlook {
 
   const mockOutcomes = outcomes.filter((o) => o.sessionType === 'exam_simulation');
   const totalMockTests = mockOutcomes.length;
-  const totalMockQuestions = mockOutcomes.reduce((s, o) => s + o.totalQuestions, 0);
+  const totalMockQuestions = safeReduce(mockOutcomes, (s, o) => s + o.totalQuestions, 0);
   const averageMockAccuracy = totalMockTests > 0
-    ? Math.round(mockOutcomes.reduce((s, o) => s + o.accuracy, 0) / totalMockTests * 100)
+    ? Math.round(safeReduce(mockOutcomes, (s, o) => s + o.accuracy, 0) / totalMockTests * 100)
     : 0;
 
   return {

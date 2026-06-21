@@ -353,7 +353,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const perf = usePerformanceStore.getState();
     perf.addSessionOutcome(outcome);
     if (state.recommendationId) {
-      const recs = perf.recommendations;
+      const recs = Array.isArray(perf.recommendations) ? perf.recommendations : [];
       const rec = recs.find((r) => r.id === state.recommendationId);
       if (rec && rec.targetSubject) {
         const subjectScore = outcome.subjectScores[rec.targetSubject];

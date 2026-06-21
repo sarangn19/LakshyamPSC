@@ -1,5 +1,9 @@
 import { usePerformanceStore } from '../store/performanceStore';
 
+function safeReduce<T, U>(arr: T[] | null | undefined, fn: (acc: U, item: T) => U, initial: U): U {
+  return Array.isArray(arr) ? arr.reduce(fn, initial) : initial;
+}
+
 export interface RecommendationMetrics {
   totalGenerated: number;
   accepted: number;
@@ -14,7 +18,7 @@ export interface RecommendationMetrics {
 
 export function computeRecommendationMetrics(): RecommendationMetrics {
   const perf = usePerformanceStore.getState();
-  const recs = perf.recommendations;
+  const recs = Array.isArray(perf.recommendations) ? perf.recommendations : [];
   const total = recs.length;
 
   const accepted = recs.filter((r) => r.status === 'accepted').length;
@@ -25,7 +29,7 @@ export function computeRecommendationMetrics(): RecommendationMetrics {
     recs.filter((r) => r.status === 'accepted').map((r) => r.id),
   );
 
-  const outcomes = perf.sessionOutcomes;
+  const outcomes = Array.isArray(perf.sessionOutcomes) ? perf.sessionOutcomes : [];
   const recOutcomes = outcomes.filter(
     (o) => o.recommendationId && acceptedRecIds.has(o.recommendationId),
   );
@@ -45,11 +49,11 @@ export function computeRecommendationMetrics(): RecommendationMetrics {
 
   const avgRecAccuracy =
     recAccuracies.length > 0
-      ? recAccuracies.reduce((s, a) => s + a, 0) / recAccuracies.length
+      ? safeReduce(recAccuracies, (s, a) => s + a, 0) / recAccuracies.length
       : 0;
   const avgAllAccuracy =
     allAccuracies.length > 0
-      ? allAccuracies.reduce((s, a) => s + a, 0) / allAccuracies.length
+      ? safeReduce(allAccuracies, (s, a) => s + a, 0) / allAccuracies.length
       : 0;
 
   const completedRecs = recs.filter((r) => r.sessionCompleted && r.accuracyBefore != null && r.accuracyAfter != null);
@@ -92,7 +96,8 @@ export interface PerSubjectImpact {
 
 export function computeRecommendationImpact(): PerSubjectImpact[] {
   const perf = usePerformanceStore.getState();
-  const completedRecs = perf.recommendations.filter(
+  const recommendations = Array.isArray(perf.recommendations) ? perf.recommendations : [];
+  const completedRecs = recommendations.filter(
     (r) => r.sessionCompleted && r.accuracyBefore != null && r.accuracyAfter != null && r.targetSubject,
   );
   const grouped: Record<string, { lifts: number[] }> = {};
@@ -103,7 +108,7 @@ export function computeRecommendationImpact(): PerSubjectImpact[] {
   }
   return Object.entries(grouped)
     .map(([subject, data]) => {
-      const avgLift = data.lifts.reduce((s, l) => s + l, 0) / data.lifts.length;
+      const avgLift = safeReduce(data.lifts, (s, l) => s + l, 0) / data.lifts.length;
       return {
         subject,
         totalRecommendations: data.lifts.length,
