@@ -20,7 +20,7 @@ export function MCQEngineScreen({ route, navigation }: any) {
   const {
     currentQuestions, currentIndex, selectedAnswer, isAnswered, score,
     sessionActive, startDailyDrill, selectAnswer,
-    nextQuestion, endSession, recommendedSubject, recommendedTopic,
+    nextQuestion, endSession,
     reportQuestionWithReason, questionReports, lastSessionOutcome,
     isGenerating, generatingNext,
   } = useMCQStore();
@@ -184,10 +184,10 @@ export function MCQEngineScreen({ route, navigation }: any) {
           </TouchableOpacity>
         </View>
       </LinearGradient>
-      {(recommendedSubject || recommendedTopic) && (
+      {current && (
         <View style={styles.focusBanner}>
-          <Text style={styles.focusLabel}>{t('mcqEngine.recommendedFocus')}</Text>
-          <Text style={styles.focusValue}>{recommendedTopic || recommendedSubject}</Text>
+          <Text style={styles.focusLabel}>{current.subject}</Text>
+          <Text style={styles.focusValue}>{current.topic}</Text>
         </View>
       )}
 
