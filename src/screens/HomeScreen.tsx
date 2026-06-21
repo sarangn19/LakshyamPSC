@@ -10,7 +10,7 @@ import { useMCQStore } from '../store';
 import { BottomNav } from '../components/BottomNav';
 import { ExamOutlookCard } from '../components/cards/ExamOutlookCard';
 import { ContinueLearningCard } from '../components/cards/ContinueLearningCard';
-import { TodayFocusCard } from '../components/cards/TodayFocusCard';
+
 import { RevisionDueCard } from '../components/cards/RevisionDueCard';
 import { WeakAreasCard } from '../components/cards/WeakAreasCard';
 import { CurrentAffairsCard } from '../components/cards/CurrentAffairsCard';
@@ -125,13 +125,10 @@ export function HomeScreen({ navigation }: any) {
         {/* Section 2: Continue Learning */}
         <ContinueLearningCard onStartSession={handleStartSession} />
 
-        {/* Section 3: Today's Focus */}
-        <TodayFocusCard onStartTopic={handleStartTopic} />
-
-        {/* Section 4: Revision Due */}
+        {/* Section 3: Revision Due */}
         <RevisionDueCard onStartRevision={handleStartTopic} />
 
-        {/* Section 5: Top Weak Areas */}
+        {/* Section 4: Top Weak Areas */}
         <WeakAreasCard onPracticeSubject={handlePracticeSubject} />
 
         {/* Section 6: Current Affairs */}
