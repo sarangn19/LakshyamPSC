@@ -306,7 +306,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const covered = [...state.sessionCoveredTopics, `${current.subject}::${current.topic}`];
     set({ generatingNext: true });
     const allWeak = get().getWeakSubjects(useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant']);
-    const isFocused = state.sessionType === 'blocking_topic' || state.sessionType === 'revision';
+    const isFocused = state.sessionType === 'blocking_topic' || state.sessionType === 'revision' || state.sessionType === 'focused';
     const weakSubjects = isFocused && state.recommendedSubject
       ? [state.recommendedSubject] : allWeak;
     const dynamicRec = isFocused ? null : getNextCognitiveGapTopic(allWeak, covered);

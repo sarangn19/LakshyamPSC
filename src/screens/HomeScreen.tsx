@@ -81,12 +81,12 @@ export function HomeScreen({ navigation }: any) {
   };
 
   const handleStartTopic = (subject: string, topic: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic });
+    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'focused' });
     navigation.navigate('MCQ');
   };
 
   const handlePracticeSubject = (subject: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject] });
+    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], sessionType: 'focused' });
     navigation.navigate('MCQ');
   };
 
