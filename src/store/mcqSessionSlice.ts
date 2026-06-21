@@ -10,7 +10,7 @@ import { generateMCQs } from '../services/aiMCQGenerator';
 import { validateQuestionIntegrity } from '../services/questionValidator';
 import { buildBanditContext, selectDifficulty } from '../services/contextualBandit';
 import { getNextCognitiveGapTopic, getRandomSubjectAndTopic } from '../services/learningRecommendationEngine';
-import { getNodeByName, getNodePath } from '../services/knowledgeTree';
+import { getNodeByName, getNodePath } from '../data/knowledgeTree';
 import { recordPresentation, recordCorrectAnswer, recordIncorrectAnswer, getSessionFocusMetrics } from '../services/topicCoverageDiagnostics';
 import { recordQuestionQualityAnswer } from '../services/questionQuality';
 import { makeAdaptiveState, recordAnswer } from '../services/infinityEngine';
