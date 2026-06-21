@@ -159,12 +159,14 @@ export async function resolveValidQuestion(
     }
     const integrity = validateQuestionIntegrity(result.question);
     if (!integrity.valid) {
+      seenQuestionTexts.push(result.question.text);
       recordRejection(result.question);
       recordQuestionSkip(result.question, activeSubject, activeTopic, 'integrity_failure', `Integrity: ${integrity.result.failures.map((f: any) => f.reason).join('; ')}`, retry);
       trackIntegrity({ failCount: useMCQStore.getState().integrityMetrics.failCount + 1, regenerationCount: retry > 0 ? useMCQStore.getState().integrityMetrics.regenerationCount + 1 : useMCQStore.getState().integrityMetrics.regenerationCount });
       continue;
     }
     if (weakSubjects.length > 0 && !weakSubjects.includes(result.question.subject)) {
+      seenQuestionTexts.push(result.question.text);
       recordRejection(result.question);
       recordQuestionSkip(result.question, activeSubject, activeTopic, 'subject_mismatch', `Expected subject in [${weakSubjects.join(', ')}], got ${result.question.subject}`, retry);
       trackIntegrity({ failCount: useMCQStore.getState().integrityMetrics.failCount + 1, regenerationCount: retry > 0 ? useMCQStore.getState().integrityMetrics.regenerationCount + 1 : useMCQStore.getState().integrityMetrics.regenerationCount });
