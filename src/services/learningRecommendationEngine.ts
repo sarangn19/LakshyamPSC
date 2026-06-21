@@ -25,10 +25,11 @@ export {
   resetScorerWeights,
   getScorerWeights,
   getScorableTopics,
-  computeTopicScores,
-  pickBestTopic,
 } from './infinityScorer';
 export type { TopicScore, ScorerWeights } from './infinityScorer';
+
+// ─── PSC Frequency Boost (applies to infinity scorer results) ───
+export { boostWithPSCFrequency, seedPSCFrequency } from './pscFrequencyBoost';
 
 // ─── Session Orchestration ───
 export { orchestrateSession, logOrchestratedSessionStart } from './sessionOrchestrator';

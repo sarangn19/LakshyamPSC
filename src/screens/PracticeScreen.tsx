@@ -24,6 +24,46 @@ export function PracticeScreen({ navigation }: any) {
 
   const cards: PracticeCard[] = [
     {
+      id: 'pyq',
+      title: 'PYQ Explorer',
+      subtitle: 'Browse 17K previous year questions from 114 exams',
+      icon: '📜',
+      screen: 'PYQExplorer',
+      color: colors.warning || '#E67E22',
+    },
+    {
+      id: 'high_yield',
+      title: 'High Yield Practice',
+      subtitle: '70% weak areas · 30% high-frequency PSC topics',
+      icon: '🎯',
+      screen: 'HighYieldPractice',
+      color: '#FF5722',
+    },
+    {
+      id: 'topic_intel',
+      title: 'Topic Intelligence',
+      subtitle: 'Yield scores, mastery status, and trends per topic',
+      icon: '🧠',
+      screen: 'TopicIntelligence',
+      color: colors.accent,
+    },
+    {
+      id: 'impact',
+      title: 'Impact Dashboard',
+      subtitle: 'How recommendations improve your learning outcomes',
+      icon: '📊',
+      screen: 'ImpactDashboard',
+      color: '#9C27B0',
+    },
+    {
+      id: 'corpus_health',
+      title: 'Corpus Health',
+      subtitle: 'Coverage stats: answers, options, topics, duplicates',
+      icon: '💊',
+      screen: 'CorpusHealth',
+      color: colors.info,
+    },
+    {
       id: 'mcq',
       title: 'MCQ Practice',
       subtitle: 'Adaptive questions tailored to your weak areas',

@@ -1,0 +1,135 @@
+{
+  "total_questions": 17165,
+  "total_exams": 266,
+  "total_duplicates": 8481,
+  "quiz_ready": 1870,
+  "has_answer": 4663,
+  "topic_counts": {},
+  "year_distribution": {
+    "2011": 2,
+    "2013": 2,
+    "2014": 7,
+    "2015": 5,
+    "2016": 11,
+    "2017": 4,
+    "2018": 3,
+    "2019": 5,
+    "2020": 5,
+    "2021": 4,
+    "2022": 27,
+    "2023": 22,
+    "2024": 36,
+    "2025": 36,
+    "2026": 2
+  },
+  "exam_category_distribution": {
+    "other": 182,
+    "ldc": 29,
+    "police": 16,
+    "teaching": 14,
+    "lgs": 9,
+    "veo": 5,
+    "sslc_level": 4,
+    "degree_level": 4,
+    "plus_two_level": 3
+  },
+  "most_repeated_topics": [
+    {
+      "topic": "Current Affairs",
+      "count": 2405
+    },
+    {
+      "topic": "Arithmetic",
+      "count": 345
+    },
+    {
+      "topic": "Constitution",
+      "count": 237
+    },
+    {
+      "topic": "Science and Technology",
+      "count": 201
+    },
+    {
+      "topic": "Malayalam Grammar",
+      "count": 183
+    },
+    {
+      "topic": "Biology",
+      "count": 177
+    },
+    {
+      "topic": "Physical Geography",
+      "count": 155
+    },
+    {
+      "topic": "Mental Ability",
+      "count": 150
+    },
+    {
+      "topic": "Geography",
+      "count": 136
+    },
+    {
+      "topic": "Physics",
+      "count": 123
+    },
+    {
+      "topic": "Malayalam",
+      "count": 121
+    },
+    {
+      "topic": "Union Executive",
+      "count": 119
+    },
+    {
+      "topic": "Malayalam Literature",
+      "count": 119
+    },
+    {
+      "topic": "Fundamental Rights",
+      "count": 98
+    },
+    {
+      "topic": "Modern Kerala",
+      "count": 87
+    },
+    {
+      "topic": "Kerala History",
+      "count": 86
+    },
+    {
+      "topic": "Kerala Renaissance",
+      "count": 61
+    },
+    {
+      "topic": "Indian Constitution",
+      "count": 60
+    },
+    {
+      "topic": "Chemistry",
+      "count": 59
+    },
+    {
+      "topic": "Renaissance",
+      "count": 57
+    },
+    {
+      "topic": "Quantitative Aptitude",
+      "count": 32
+    },
+    {
+      "topic": "Science",
+      "count": 28
+    },
+    {
+      "topic": "Kerala Geography",
+      "count": 10
+    },
+    {
+      "topic": "Ancient Kerala",
+      "count": 3
+    }
+  ],
+  "most_repeated_questions": []
+}

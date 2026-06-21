@@ -62,6 +62,11 @@ import { BookmarkedQuestionsScreen } from '../screens/BookmarkedQuestionsScreen'
 import { LeaderboardScreen } from '../screens/LeaderboardScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { BulkUploadScreen } from '../screens/admin/BulkUploadScreen';
+import { PYQExplorerScreen } from '../screens/PYQExplorerScreen';
+import { HighYieldPracticeScreen } from '../screens/HighYieldPracticeScreen';
+import { ImpactDashboardScreen } from '../screens/ImpactDashboardScreen';
+import { TopicIntelligenceScreen } from '../screens/TopicIntelligenceScreen';
+import { CorpusHealthScreen } from '../screens/CorpusHealthScreen';
 import { AdminNavigator } from './AdminNavigator';
 import { SuperAdminNavigator } from './SuperAdminNavigator';
 
@@ -160,7 +165,12 @@ export function AppNavigator() {
         <Stack.Screen name="PostSession" component={PostSessionScreen} options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="AdminPortal" component={AdminNavigator} options={{ ...screenHeaderStyle, title: 'Admin Portal', animation: 'slide_from_right' }} />
         <Stack.Screen name="SuperAdminPortal" component={SuperAdminNavigator} options={{ ...screenHeaderStyle, title: 'Super Admin Portal', animation: 'slide_from_right' }} />
-        <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+         <Stack.Screen name="BulkUpload" component={BulkUploadScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="PYQExplorer" component={PYQExplorerScreen} options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <Stack.Screen name="HighYieldPractice" component={HighYieldPracticeScreen} options={{ ...screenHeaderStyle, title: 'High Yield Practice', animation: 'slide_from_right' }} />
+        <Stack.Screen name="ImpactDashboard" component={ImpactDashboardScreen} options={{ ...screenHeaderStyle, title: 'Recommendation Impact', animation: 'slide_from_right' }} />
+        <Stack.Screen name="TopicIntelligence" component={TopicIntelligenceScreen} options={{ ...screenHeaderStyle, title: 'Topic Intelligence', animation: 'slide_from_right' }} />
+        <Stack.Screen name="CorpusHealth" component={CorpusHealthScreen} options={{ ...screenHeaderStyle, title: 'Corpus Health', animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

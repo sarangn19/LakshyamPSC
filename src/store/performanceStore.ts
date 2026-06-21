@@ -59,6 +59,29 @@ export interface SubjectScore {
   accuracy: number;
 }
 
+export interface RecommendationAction {
+  id: string;
+  recommendationId: string;
+  questionsAttempted: number;
+  correctAnswers: number;
+  timeSpentMinutes: number;
+  completed: boolean;
+  timestamp: number;
+}
+
+export interface OutcomeRecord {
+  id: string;
+  recommendationId?: string;
+  mockBefore?: number;
+  mockAfter?: number;
+  score?: number;
+  total?: number;
+  accuracy: number;
+  date: number;
+  sessionType: string;
+  notes?: string;
+}
+
 export interface SessionOutcome {
   sessionId: string;
   sessionType: string;
@@ -113,6 +136,8 @@ interface PerformanceState {
   sessionSignals: SessionSignal[];
   sessionOutcomes: SessionOutcome[];
   recommendations: RecommendationRecord[];
+  recommendationActions: RecommendationAction[];
+  outcomeRecords: OutcomeRecord[];
   confidenceRecords: ConfidenceRecord[];
   profile: UserProfile | null;
   lastProfileBuild: number | null;
@@ -123,6 +148,26 @@ interface PerformanceState {
   addRecommendation: (rec: Omit<RecommendationRecord, 'id' | 'timestamp' | 'status'>) => string;
   markRecommendation: (id: string, status: 'accepted' | 'skipped') => void;
   updateRecommendation: (id: string, updates: Partial<Pick<RecommendationRecord, 'accuracyBefore' | 'accuracyAfter' | 'sessionCompleted' | 'targetSubject' | 'targetTopic' | 'status'>>) => void;
+  addRecommendationAction: (action: Omit<RecommendationAction, 'id' | 'timestamp'>) => string;
+  updateRecommendationAction: (id: string, updates: Partial<Pick<RecommendationAction, 'questionsAttempted' | 'correctAnswers' | 'timeSpentMinutes' | 'completed'>>) => void;
+  addOutcomeRecord: (record: Omit<OutcomeRecord, 'id'>) => string;
+  getRecommendationActions: (recommendationId: string) => RecommendationAction[];
+  getOutcomesForPeriod: (startDate: number, endDate: number) => OutcomeRecord[];
+  getActionCompletionRate: () => number;
+  getRecommendationStats: () => {
+    totalRecs: number;
+    acceptedRecs: number;
+    completedActions: number;
+    avgAccuracyBefore?: number;
+    avgAccuracyAfter?: number;
+    avgAccuracyGain?: number;
+  };
+  getOutcomeTrend: (weeks?: number) => {
+    date: number;
+    mockBefore: number;
+    mockAfter: number;
+    accuracy: number;
+  }[];
   addConfidenceRecord: (record: Omit<ConfidenceRecord, 'timestamp'>) => void;
   setProfile: (profile: UserProfile) => void;
   setLastProfileBuild: (timestamp: number) => void;
@@ -143,6 +188,8 @@ export const usePerformanceStore = create<PerformanceState>()(
       sessionSignals: [],
       sessionOutcomes: [],
       recommendations: [],
+      recommendationActions: [],
+      outcomeRecords: [],
       confidenceRecords: [],
       profile: null,
       lastProfileBuild: null,
@@ -199,6 +246,77 @@ export const usePerformanceStore = create<PerformanceState>()(
             r.id === id ? { ...r, ...updates } : r
           ),
         })),
+
+      addRecommendationAction: (action) => {
+        const id = `ra_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        set((state) => ({
+          recommendationActions: [
+            ...state.recommendationActions,
+            { ...action, id, timestamp: Date.now() },
+          ],
+        }));
+        return id;
+      },
+
+      updateRecommendationAction: (id, updates) =>
+        set((state) => ({
+          recommendationActions: state.recommendationActions.map((a) =>
+            a.id === id ? { ...a, ...updates } : a
+          ),
+        })),
+
+      addOutcomeRecord: (record) => {
+        const id = `or_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        set((state) => ({
+          outcomeRecords: [...state.outcomeRecords, { ...record, id }],
+        }));
+        return id;
+      },
+
+      getRecommendationActions: (recommendationId) =>
+        get().recommendationActions.filter((a) => a.recommendationId === recommendationId),
+
+      getOutcomesForPeriod: (startDate, endDate) =>
+        get().outcomeRecords.filter((o) => o.date >= startDate && o.date <= endDate),
+
+      getActionCompletionRate: () => {
+        const actions = get().recommendationActions;
+        if (actions.length === 0) return 0;
+        const completed = actions.filter((a) => a.completed).length;
+        return completed / actions.length;
+      },
+
+      getRecommendationStats: () => {
+        const recs = get().recommendations;
+        const actions = get().recommendationActions;
+        const totalRecs = recs.length;
+        const acceptedRecs = recs.filter((r) => r.status === 'accepted').length;
+        const completedActions = actions.filter((a) => a.completed).length;
+        const withBefore = recs.filter((r) => r.accuracyBefore != null);
+        const withAfter = recs.filter((r) => r.accuracyAfter != null);
+        const avgBefore = withBefore.length > 0
+          ? withBefore.reduce((s, r) => s + (r.accuracyBefore ?? 0), 0) / withBefore.length : undefined;
+        const avgAfter = withAfter.length > 0
+          ? withAfter.reduce((s, r) => s + (r.accuracyAfter ?? 0), 0) / withAfter.length : undefined;
+        const paired = recs.filter((r) => r.accuracyBefore != null && r.accuracyAfter != null);
+        const avgGain = paired.length > 0
+          ? paired.reduce((s, r) => s + ((r.accuracyAfter ?? 0) - (r.accuracyBefore ?? 0)), 0) / paired.length
+          : undefined;
+        return { totalRecs, acceptedRecs, completedActions, avgAccuracyBefore: avgBefore, avgAccuracyAfter: avgAfter, avgAccuracyGain: avgGain };
+      },
+
+      getOutcomeTrend: (weeks = 8) => {
+        const cutoff = Date.now() - weeks * 7 * 86400000;
+        return get().outcomeRecords
+          .filter((o) => o.date >= cutoff)
+          .sort((a, b) => a.date - b.date)
+          .map((o) => ({
+            date: o.date,
+            mockBefore: o.mockBefore ?? 0,
+            mockAfter: o.mockAfter ?? 0,
+            accuracy: o.accuracy,
+          }));
+      },
 
       addConfidenceRecord: (record) =>
         set((state) => ({

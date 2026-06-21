@@ -12,6 +12,7 @@ import { ExamOutlookCard } from '../components/cards/ExamOutlookCard';
 import { WeakAreasCard } from '../components/cards/WeakAreasCard';
 import { CurrentAffairsCard } from '../components/cards/CurrentAffairsCard';
 import type { CurrentAffair } from '../data/mockData';
+import { seedPSCFrequency } from '../services/pscFrequencyBoost';
 
 const CATEGORY_COLORS: Record<string, string> = {
   kerala: '#F7B11A',
@@ -67,6 +68,7 @@ export function HomeScreen({ navigation }: any) {
       })));
       setLoadingCA(false);
     }).catch(() => setLoadingCA(false));
+    seedPSCFrequency();
   }, []);
 
   const hour = new Date().getHours();

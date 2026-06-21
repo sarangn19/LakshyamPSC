@@ -11,7 +11,7 @@ export { useCognitiveTwinStore } from './cognitiveTwinStore';
 export type {
   KnowledgeMastery, GapRecord, GapStatus,
 } from './cognitiveTwinStore';
-export type { UserProfile, InteractionSignal, FlashcardSignal, SessionSignal, ConfusionPair } from './performanceStore';
+export type { UserProfile, InteractionSignal, FlashcardSignal, SessionSignal, ConfusionPair, RecommendationAction, OutcomeRecord, SessionOutcome } from './performanceStore';
 export type { Role, Permission } from './authStore';
 export type {
   FlaggedQuestion, CAEntry, SupportTicket,

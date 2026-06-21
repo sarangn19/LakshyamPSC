@@ -93,6 +93,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   questionsSkipped: 0,
   seenQuestionTexts: [],
   recommendationId: '',
+  recommendationActionId: undefined,
 
   startDailyDrill: async (exams, subjects) => {
     const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
@@ -369,11 +370,39 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         }
       }
     }
+    if (state.recommendationActionId) {
+      const durationMinutes = state.sessionStartTime
+        ? Math.max(1, Math.round((endTime - state.sessionStartTime) / 60000)) : 0;
+      perf.updateRecommendationAction(state.recommendationActionId, {
+        questionsAttempted: state.score.total,
+        correctAnswers: state.score.correct,
+        timeSpentMinutes: durationMinutes,
+        completed: true,
+      });
+    }
+    if (state.sessionType === 'exam_simulation' && state.score.total > 0) {
+      const lastMockOutcomes = perf.outcomeRecords
+        .filter((o) => o.sessionType === 'exam_simulation')
+        .sort((a, b) => b.date - a.date);
+      const mockBefore = lastMockOutcomes.length > 0
+        ? lastMockOutcomes[0].mockAfter ?? lastMockOutcomes[0].accuracy
+        : undefined;
+      perf.addOutcomeRecord({
+        recommendationId: state.recommendationId || undefined,
+        mockBefore,
+        mockAfter: Math.round((state.score.correct / state.score.total) * 100),
+        score: state.score.correct,
+        total: state.score.total,
+        accuracy: state.score.total > 0 ? state.score.correct / state.score.total : 0,
+        date: endTime,
+        sessionType: 'exam_simulation',
+      });
+    }
     useBKTStore.getState().runParameterFitting();
     useCognitiveTwinStore.getState().detectKnowledgeGaps();
     useCognitiveTwinStore.getState().runRetentionCheck();
     useCognitiveTwinStore.getState().scheduleRetentionAssessments();
-    set({ sessionActive: false, questionStartTime: null, lastSessionOutcome: outcome });
+    set({ sessionActive: false, questionStartTime: null, lastSessionOutcome: outcome, recommendationActionId: undefined });
     if (state.sessionReduced || state.questionsSkipped > 0) {
       console.log('[INTEGRITY] session completed with reduction:', state.questionsSkipped, 'questions skipped');
     }
@@ -403,12 +432,20 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       get().seenQuestionTexts,
     );
     if (question) {
+      const actionId = config.recommendationId
+        ? usePerformanceStore.getState().addRecommendationAction({
+            recommendationId: config.recommendationId,
+            questionsAttempted: 0, correctAnswers: 0,
+            timeSpentMinutes: 0, completed: false,
+          })
+        : undefined;
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
         drillMode: 'daily', sessionActive: true, questionStartTime: Date.now(), sessionStartTime: Date.now(),
         sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: config.sessionType || 'orchestrated', sessionSubjects: config.subjects || [], lastSessionOutcome: null,
         isGenerating: false, generationProgress: null, adaptiveState: makeAdaptiveState(),
         alignmentReport: report, showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
+        recommendationActionId: actionId,
       });
     } else {
       set({ isGenerating: false, generationProgress: null, sessionReduced: true });
@@ -440,5 +477,6 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 },
     currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(),
     generatingNext: false, adaptiveState: makeAdaptiveState(), sessionSubjects: [],
+    recommendationActionId: undefined,
   }),
 });

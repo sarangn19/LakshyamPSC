@@ -70,6 +70,7 @@ export interface MCQState {
   sessionReduced: boolean;
   questionsSkipped: number;
   recommendationId: string;
+  recommendationActionId?: string;
   integrityMetrics: IntegrityMetrics;
   auditQueue: AuditEntry[];
   trustScores: QuestionTrustScore[];
