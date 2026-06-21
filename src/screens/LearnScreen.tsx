@@ -66,9 +66,9 @@ export function LearnScreen({ navigation }: any) {
 
   const handleSourceSelect = (source: string) => {
     setSelectedChapter(null); setSelectedNote(null); setPasteContent('');
-    if (source === 'Chaptewise') { setChapterSearch(''); setShowChapterModal(true); }
-    else if (source === 'Saved note') { setNoteSearch(''); setShowNoteModal(true); }
-    else if (source === 'Paste text') { setShowPasteModal(true); }
+    if (source === 'Chaptewise') { setChapterSearch(''); animateIn(chapterSlideAnim); setShowChapterModal(true); }
+    else if (source === 'Saved note') { setNoteSearch(''); animateIn(noteSlideAnim); setShowNoteModal(true); }
+    else if (source === 'Paste text') { animateIn(pasteSlideAnim); setShowPasteModal(true); }
   };
 
   const handleFinalContinue = async () => {
@@ -113,7 +113,7 @@ export function LearnScreen({ navigation }: any) {
         </View>
 
         <AdaptiveLearningCard title={t('learn.adaptiveLearning')} onStart={async () => { setIsAdaptiveLoading(true); await useMCQStore.getState().startDailyDrill(); setIsAdaptiveLoading(false); navigation.navigate('MCQ'); }} />
-        <ActionCardsRow notesTitle={t('learn.notes')} notesSubtitle={t('learn.viewSavedNotes')} practiceTitle={t('learn.practice')} practiceSubtitle={t('learn.practiceMCQFlashcards')} onNotesPress={() => navigation.navigate('SavedNotes')} onPracticePress={() => setShowTypeModal(true)} />
+        <ActionCardsRow notesTitle={t('learn.notes')} notesSubtitle={t('learn.viewSavedNotes')} practiceTitle={t('learn.practice')} practiceSubtitle={t('learn.practiceMCQFlashcards')} onNotesPress={() => navigation.navigate('SavedNotes')} onPracticePress={() => { animateIn(typeSlideAnim); setShowTypeModal(true); }} />
 
         <TouchableOpacity style={styles.feedbackBtn} onPress={() => { setSuggestionSubject(''); setSuggestionMessage(''); setSuggestionSuccess(false); animateIn(suggestionSlideAnim); setShowSuggestionModal(true); }} activeOpacity={0.7}>
           <Animated.Text style={styles.feedbackBtnText}>Give Feedback</Animated.Text>
