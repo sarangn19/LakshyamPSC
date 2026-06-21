@@ -53,6 +53,7 @@ export interface MCQState {
   sessionSubjectAccuracy: Record<string, { correct: number; total: number }>;
   sessionDifficultyCounts: { easy: number; medium: number; hard: number };
   sessionType: string;
+  sessionSubjects: string[];
   lastSessionOutcome: SessionOutcome | null;
   isGenerating: boolean;
   generationProgress: { current: number; total: number } | null;
