@@ -162,7 +162,7 @@ export function getCompositeExamWeight(
   subjectName: string,
   topicName?: string,
 ): number {
-  if (examNames.length === 0) return 5;
+  if (!Array.isArray(examNames) || examNames.length === 0) return 5;
   const total = examNames.reduce((sum, name) => {
     return sum + getWeightedPriority(name, subjectName, topicName);
   }, 0);

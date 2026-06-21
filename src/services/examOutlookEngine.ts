@@ -40,7 +40,8 @@ interface SubjectSummary {
 
 function getExamTargets(): string[] {
   const { targetExams, primaryExam } = useUserStore.getState();
-  return targetExams.length > 0 ? targetExams : primaryExam ? [primaryExam] : ['LDC'];
+  const exams = Array.isArray(targetExams) ? targetExams : [];
+  return exams.length > 0 ? exams : primaryExam ? [primaryExam] : ['LDC'];
 }
 
 function computeScoreRange(
@@ -154,7 +155,7 @@ function computeSubjectSummaries(): SubjectSummary[] {
 
     const mastery = g.count > 0 ? g.masteryTotal / g.count : 0;
     const accuracy = g.accuracyCount > 0 ? g.accuracyTotal / g.accuracyCount : 0;
-    const weight = exams.reduce((w, e) => w + getCompositeExamWeight(e, name), 0);
+    const weight = getCompositeExamWeight(exams, name);
     const coverage = g.count / (g.count + 1);
     const daysSinceLastPractice = profile?.forgettingRates?.[name]
       ? Math.min(1, 1 / (1 + profile.forgettingRates[name]))
@@ -217,7 +218,7 @@ function computeBlockingTopics(): { subject: string; topic: string; reason: stri
   const topicWeights: Record<string, number> = {};
   for (const s of allTopics) {
     const key = `${s.subject}::${s.topic}${s.subtopic ? `::${s.subtopic}` : ''}`;
-    const weight = exams.reduce((w, e) => w + getCompositeExamWeight(e, s.subject, s.topic), 0);
+    const weight = getCompositeExamWeight(exams, s.subject, s.topic);
     topicWeights[key] = weight || 0.1;
   }
 
