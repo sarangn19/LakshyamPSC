@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors, spacing, borderRadius } from '../theme';
 import { BottomNav } from '../components/BottomNav';
-import { supabase } from './supabase';
+import { supabase } from '../services/supabase';
 
 interface CorpusHealth {
   total_questions: number;
