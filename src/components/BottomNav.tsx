@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, useWindowDimensions, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { HomeIcon, LearnIcon, PracticeIcon, AIIcon, ProfileIcon } from './Icons';
+import { HomeIcon, LearnIcon, AIIcon, ProfileIcon } from './Icons';
 
-export type TabName = 'Home' | 'Learn' | 'Practice' | 'AITutor' | 'Profile';
+export type TabName = 'Home' | 'Learn' | 'AITutor' | 'Profile';
 
 type Props = {
   activeTab: TabName;
@@ -18,7 +18,6 @@ type TabConfig = {
 const TABS: TabConfig[] = [
   { name: 'Home', label: 'Home', icon: (c) => <HomeIcon width={18} height={18} color={c} /> },
   { name: 'Learn', label: 'Learn', icon: (c) => <LearnIcon width={20} height={20} color={c} /> },
-  { name: 'Practice', label: 'Practice', icon: (c) => <PracticeIcon width={20} height={20} color={c} /> },
   { name: 'AITutor', label: 'AI Tutor', icon: (c) => <AIIcon width={20} height={20} color={c} /> },
   { name: 'Profile', label: 'Profile', icon: (c) => <ProfileIcon width={18} height={20} color={c} /> },
 ];

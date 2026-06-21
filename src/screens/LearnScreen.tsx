@@ -7,7 +7,6 @@ import { syllabus } from '../data/syllabus';
 import { LoadingAnimation } from '../components/common/LoadingAnimation';
 import { useTranslation } from '../i18n/useTranslation';
 import { BottomNav } from '../components/BottomNav';
-import { submitSuggestion } from '../services/adminDataService';
 import { styles } from './LearnScreen/styles';
 import { AdaptiveLearningCard } from './LearnScreen/AdaptiveLearningCard';
 import { ActionCardsRow } from './LearnScreen/ActionCardsRow';
@@ -16,7 +15,6 @@ import { SourceSelectModal } from './LearnScreen/SourceSelectModal';
 import { SelectListModal } from './LearnScreen/SelectListModal';
 import { PasteModal } from './LearnScreen/PasteModal';
 import { TasksModal } from './LearnScreen/TasksModal';
-import { SuggestionModal } from './LearnScreen/SuggestionModal';
 
 const SOURCES = ['Chaptewise', 'Saved note', 'Paste text'];
 const TASK_PRESETS = [5, 20, 50, 100];
@@ -38,11 +36,7 @@ export function LearnScreen({ navigation }: any) {
   const [selectedTaskPreset, setSelectedTaskPreset] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isAdaptiveLoading, setIsAdaptiveLoading] = useState(false);
-  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
-  const [suggestionSubject, setSuggestionSubject] = useState('');
-  const [suggestionMessage, setSuggestionMessage] = useState('');
-  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
-  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
+
   const notes = useKnowledgeStore((s) => s.notes);
   const { t } = useTranslation();
   const generationProgress = useMCQStore((s) => s.generationProgress);
@@ -53,7 +47,6 @@ export function LearnScreen({ navigation }: any) {
   const noteSlideAnim = useRef(new Animated.Value(300)).current;
   const pasteSlideAnim = useRef(new Animated.Value(300)).current;
   const tasksSlideAnim = useRef(new Animated.Value(300)).current;
-  const suggestionSlideAnim = useRef(new Animated.Value(300)).current;
   const chapterScrollRef = useRef<ScrollView>(null);
   const noteScrollRef = useRef<ScrollView>(null);
   const [chapterScrollOffset, setChapterScrollOffset] = useState(0);
@@ -86,14 +79,6 @@ export function LearnScreen({ navigation }: any) {
     }
   };
 
-  const handleSubmitSuggestion = async () => {
-    if (!suggestionMessage.trim()) return;
-    setSuggestionSubmitting(true);
-    try { await submitSuggestion(suggestionSubject.trim(), suggestionMessage.trim()); setSuggestionSuccess(true); setTimeout(() => { setShowSuggestionModal(false); setSuggestionSubject(''); setSuggestionMessage(''); setSuggestionSuccess(false); }, 1500); }
-    catch (err) { console.error('Failed to submit suggestion:', err); }
-    finally { setSuggestionSubmitting(false); }
-  };
-
   const allSubjects = syllabus.map((s) => s.name);
   const filteredSubjects = allSubjects.filter((s) => s.toLowerCase().includes(chapterSearch.toLowerCase()));
   const filteredNotes = notes.filter((n) => n.title.toLowerCase().includes(noteSearch.toLowerCase()));
@@ -115,9 +100,6 @@ export function LearnScreen({ navigation }: any) {
         <AdaptiveLearningCard title={t('learn.adaptiveLearning')} onStart={async () => { setIsAdaptiveLoading(true); await useMCQStore.getState().startDailyDrill(); setIsAdaptiveLoading(false); navigation.navigate('MCQ'); }} />
         <ActionCardsRow notesTitle={t('learn.notes')} notesSubtitle={t('learn.viewSavedNotes')} practiceTitle={t('learn.practice')} practiceSubtitle={t('learn.practiceMCQFlashcards')} onNotesPress={() => navigation.navigate('SavedNotes')} onPracticePress={() => { animateIn(typeSlideAnim); setShowTypeModal(true); }} />
 
-        <TouchableOpacity style={styles.feedbackBtn} onPress={() => { setSuggestionSubject(''); setSuggestionMessage(''); setSuggestionSuccess(false); animateIn(suggestionSlideAnim); setShowSuggestionModal(true); }} activeOpacity={0.7}>
-          <Animated.Text style={styles.feedbackBtnText}>Give Feedback</Animated.Text>
-        </TouchableOpacity>
       </ScrollView>
 
       <TypeSelectModal visible={showTypeModal} slideAnim={typeSlideAnim} title={t('learn.selectType')} mcqLabel={t('learn.mcq')} flashcardLabel={t('learn.flashcard')} onClose={() => setShowTypeModal(false)} onSelect={(type) => { setPracticeType(type); setShowTypeModal(false); animateIn(sourceSlideAnim); setShowSourceModal(true); }} />
@@ -126,7 +108,6 @@ export function LearnScreen({ navigation }: any) {
       <SelectListModal visible={showNoteModal} slideAnim={noteSlideAnim} title={t('learn.selectNote')} searchPlaceholder={t('learn.search')} searchValue={noteSearch} onSearchChange={setNoteSearch} items={filteredNotes.map((n) => ({ id: n.id, title: n.title }))} selectedId={selectedNote} onSelect={setSelectedNote} onContinue={() => { setShowNoteModal(false); handleFinalContinue(); }} onClose={() => setShowNoteModal(false)} continueDisabled={selectedNote === null} scrollRef={noteScrollRef} scrollOffset={noteScrollOffset} contentHeight={noteContentHeight} onScroll={(o, h) => { setNoteScrollOffset(o); setNoteContentHeight(h); }} />
       <PasteModal visible={showPasteModal} slideAnim={pasteSlideAnim} title={t('learn.pasteContent')} placeholder={t('learn.pastePlaceholder')} value={pasteContent} onChange={setPasteContent} onContinue={() => { setShowPasteModal(false); handleFinalContinue(); }} onClose={() => setShowPasteModal(false)} />
       <TasksModal visible={showTasksModal} slideAnim={tasksSlideAnim} title={t('learn.numberOfTasks')} inputPlaceholder={t('learn.taskCountPlaceholder')} taskCount={taskCount} onTaskCountChange={(v) => { setTaskCount(v); setSelectedTaskPreset(null); }} selectedPreset={selectedTaskPreset} presets={TASK_PRESETS} onPresetSelect={(v) => { setSelectedTaskPreset(v); setTaskCount(String(v)); }} onContinue={() => { setShowTasksModal(false); handleFinalContinue(); }} onClose={() => setShowTasksModal(false)} />
-      <SuggestionModal visible={showSuggestionModal} slideAnim={suggestionSlideAnim} subject={suggestionSubject} onSubjectChange={setSuggestionSubject} message={suggestionMessage} onMessageChange={setSuggestionMessage} onSubmit={handleSubmitSuggestion} onClose={() => setShowSuggestionModal(false)} isSubmitting={suggestionSubmitting} isSuccess={suggestionSuccess} />
 
       {isLoading && <LoadingAnimation message={generationProgress ? t('learn.generatingQuestion', { current: generationProgress.current + 1, total: generationProgress.total }) : t('learn.preparingPractice')} progress={generationProgress ?? undefined} />}
       {isAdaptiveLoading && <LoadingAnimation message={t('learn.generatingAdaptiveSession')} />}

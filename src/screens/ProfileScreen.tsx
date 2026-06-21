@@ -1,11 +1,13 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTranslation } from '../i18n/useTranslation';
 import { colors, spacing, borderRadius, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore, usePerformanceStore, useAuthStore } from '../store';
 import { supabase } from '../services/supabase';
+import { submitSuggestion } from '../services/adminDataService';
+import { SuggestionModal } from './LearnScreen/SuggestionModal';
 import { getLearnerProfile } from '../services/learnerStage';
 import { getCognitiveTwinSummary } from '../services/learningRecommendationEngine';
 import { computeCalibrationMetrics, getCalibrationInterpretation } from '../services/confidenceCalibration';
@@ -72,6 +74,22 @@ export function ProfileScreen({ navigation }: any) {
 
   const displayName = userName || t('profile.pscAspirant');
   const hasData = streak.current > 0 || masteredTopics.length > 0 || (profile?.totalQuestionsAttempted ?? 0) > 0;
+
+  const [showSuggestionModal, setShowSuggestionModal] = useState(false);
+  const [suggestionSubject, setSuggestionSubject] = useState('');
+  const [suggestionMessage, setSuggestionMessage] = useState('');
+  const [suggestionSubmitting, setSuggestionSubmitting] = useState(false);
+  const [suggestionSuccess, setSuggestionSuccess] = useState(false);
+  const suggestionSlideAnim = useRef(new Animated.Value(300)).current;
+  const animateIn = (anim: Animated.Value) => { anim.setValue(300); Animated.timing(anim, { toValue: 0, duration: 250, useNativeDriver: true }).start(); };
+
+  const handleSubmitSuggestion = async () => {
+    if (!suggestionMessage.trim()) return;
+    setSuggestionSubmitting(true);
+    try { await submitSuggestion(suggestionSubject.trim(), suggestionMessage.trim()); setSuggestionSuccess(true); setTimeout(() => { setShowSuggestionModal(false); setSuggestionSubject(''); setSuggestionMessage(''); setSuggestionSuccess(false); }, 1500); }
+    catch (err) { console.error('Failed to submit suggestion:', err); }
+    finally { setSuggestionSubmitting(false); }
+  };
 
   const settings = [
     { icon: <TargetIcon />, label: t('profile.targetPosts'), value: targetExams.length > 0 ? targetExams.join(', ') : t('profile.notSet') },
@@ -153,6 +171,13 @@ export function ProfileScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity style={styles.settingRow} onPress={() => { setSuggestionSubject(''); setSuggestionMessage(''); setSuggestionSuccess(false); animateIn(suggestionSlideAnim); setShowSuggestionModal(true); }}>
+          <Text style={{ fontSize: 18 }}>💬</Text>
+          <View style={{ flex: 1, marginLeft: spacing.md }}>
+            <Text style={[tx.body, { color: colors.text }]}>Give Feedback</Text>
+            <Text style={[tx.small, { color: colors.textMuted }]}>Suggestions or report issues</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {(role === 'admin' || role === 'superadmin') && (
@@ -325,6 +350,7 @@ export function ProfileScreen({ navigation }: any) {
 
       <View style={{ height: spacing.huge }} />
     </ScrollView>
+      <SuggestionModal visible={showSuggestionModal} slideAnim={suggestionSlideAnim} subject={suggestionSubject} onSubjectChange={setSuggestionSubject} message={suggestionMessage} onMessageChange={setSuggestionMessage} onSubmit={handleSubmitSuggestion} onClose={() => setShowSuggestionModal(false)} isSubmitting={suggestionSubmitting} isSuccess={suggestionSuccess} />
       <BottomNav activeTab="Profile" />
     </View>
   );
