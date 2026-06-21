@@ -305,12 +305,15 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     }
     const covered = [...state.sessionCoveredTopics, `${current.subject}::${current.topic}`];
     set({ generatingNext: true });
-    const weakSubjects = get().getWeakSubjects(useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant']);
-    const recentSignals = usePerformanceStore.getState().interactionSignals;
-    const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
-    const dynamicRec = getNextCognitiveGapTopic(weakSubjects, covered);
+    const allWeak = get().getWeakSubjects(useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant']);
+    const isFocused = state.sessionType === 'blocking_topic' || state.sessionType === 'revision';
+    const weakSubjects = isFocused && state.recommendedSubject
+      ? [state.recommendedSubject] : allWeak;
+    const dynamicRec = isFocused ? null : getNextCognitiveGapTopic(allWeak, covered);
     const nextSubject = dynamicRec?.subject || state.recommendedSubject;
     const nextTopic = dynamicRec?.topic || state.recommendedTopic;
+    const recentSignals = usePerformanceStore.getState().interactionSignals;
+    const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
     const last5 = state.sessionSignals.slice(-5);
     const sessionAcc = last5.length > 0 ? last5.filter((s) => s.correct).length / last5.length : 0.5;
     let consecCorrect = 0; let consecIncorrect = 0;
