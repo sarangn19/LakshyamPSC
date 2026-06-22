@@ -1,3 +1,7 @@
+/** @deprecated Use knowledgeTree.ts instead for subject/topic hierarchy.
+ *  topicTaxonomy only covers 9 of 18 subjects and uses non-canonical naming.
+ *  Preserved for topicRelations.ts alignment scoring until migrated. */
+
 export interface TaxonomyNode {
   subject: string;
   children: string[];

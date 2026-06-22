@@ -2,9 +2,9 @@ import { TopicScore } from './infinityScorer';
 
 // Maps PSC corpus topic names to infinity scorer subject::topic keys
 const PSC_TOPIC_MAP: Record<string, string[]> = {
-  'Indian Constitution::Constitutional Framework': ['Indian Constitution'],
-  'Indian Constitution::Fundamental Rights': ['Fundamental Rights'],
-  'Indian Constitution::Directive Principles & Fundamental Duties': ['Directive Principles'],
+  'Constitution::Constitutional Framework': ['Indian Constitution'],
+  'Constitution::Fundamental Rights': ['Fundamental Rights'],
+  'Constitution::Directive Principles & Fundamental Duties': ['Directive Principles'],
   'Constitution::Constitutional Bodies': ['Indian Constitution'],
   'Geography::Kerala Geography': ['Kerala Geography'],
   'Geography::Physical Geography (World)': ['Physical Geography', 'Solar System'],
@@ -34,9 +34,19 @@ const PSC_SUBJECT_MAP: Record<string, string[]> = {
   'Constitution': ['Indian Constitution'],
   'Geography': ['Kerala Geography', 'Physical Geography', 'Indian Geography'],
   'Science': ['Science and Technology', 'Biology', 'Physics', 'Chemistry'],
+  'Current Affairs': ['General Knowledge', 'Current Affairs'],
+  'Indian History & National Movement': ['Indian History', 'Indian Freedom Movement'],
+  'Indian Economy': ['Indian Economy'],
   'Quantitative Aptitude': ['Profit and Loss', 'Arithmetic'],
   'Mental Ability': ['Mental Ability'],
   'Malayalam': ['Malayalam Grammar', 'Malayalam Literature'],
+  'English': ['English Grammar'],
+  'Information Technology & Cyber Laws': ['Computer Science', 'IT'],
+  'World History': ['World History'],
+  'Civics & Public Administration': ['Social Science', 'Civics'],
+  'Arts, Sports & Culture': ['Arts', 'Sports', 'Culture'],
+  'Kerala Economy': ['Kerala Economy'],
+  'Special Acts & Social Welfare': ['Special Acts', 'Social Welfare'],
 };
 
 let topicFrequencyCache: Record<string, number> = {};

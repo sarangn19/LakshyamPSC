@@ -227,6 +227,77 @@ function parseResponse(text: string): ParsedQuestion | null {
   }
 }
 
+/// Canonical taxonomy derived from syllabus.ts (18 subjects with topic sets)
+const CANONICAL: Record<string, Set<string>> = {
+  'Arts, Sports & Culture': new Set(['Classical & Ritualistic Art Forms', 'Folk & Traditional Arts', 'Malayalam Cinema', 'Sports & Athletics']),
+  'Civics & Public Administration': new Set(['Bureaucracy & Administrative Machinery', 'Digital Governance & E-Governance', 'Social Welfare & Public Policy']),
+  'Constitution': new Set(['Constitutional Framework', 'Fundamental Rights', 'Directive Principles & Fundamental Duties', 'Union Executive', 'Union Legislature', 'Judiciary', 'State Executive & Legislature', 'Federal System & Local Government', 'Constitutional Bodies']),
+  'Current Affairs': new Set(['Kerala News', 'National News', 'International News', 'Science & Technology', 'Sports']),
+  'English': new Set(['Grammar', 'Vocabulary', 'Reading Comprehension & Writing']),
+  'Geography': new Set(['Physical Geography (World)', 'Geophysical Phenomena', 'Physiography of India', 'Indian River Systems', 'Climate of India', 'Kerala Geography']),
+  'Indian Economy': new Set(['National Income & Macroeconomic Indicators', 'Banking & Monetary Policy', 'Public Finance & Fiscal System', 'Sectors of Indian Economy', 'Planning & Development']),
+  'Indian History & National Movement': new Set(['Ancient India', 'Medieval India', 'British Rule & Early Struggles', 'Indian National Movement']),
+  'Information Technology & Cyber Laws': new Set(['Computer Hardware & Architecture', 'Software & Operating Systems', 'Networks & Internet', 'Web Technologies & Languages', 'Cyber Security & Threats', 'IT Act & Legal Frameworks']),
+  'Kerala Economy': new Set(['Kerala Model of Development', 'Socio-Economic Safety Networks', 'Kerala Fiscal & Industrial Landscape']),
+  'Kerala History': new Set(['Ancient Kerala', 'Medieval Kerala', 'Arrival of Europeans & Early Resistance', 'Modern Kerala', 'Cultural History']),
+  'Malayalam': new Set(['Grammar (\u0d35\u0d4d\u0d2f\u0d3e\u0d15\u0d30\u0d23\u0d02)', 'Literature (\u0d38\u0d3e\u0d39\u0d3f\u0d24\u0d4d\u0d2f\u0d02)', 'Poetry (\u0d15\u0d35\u0d3f\u0d24)', 'Prose & Drama (\u0d17\u0d26\u0d4d\u0d2f\u0d35\u0d41\u0d02 \u0d28\u0d3e\u0d1f\u0d15\u0d35\u0d41\u0d02)']),
+  'Mental Ability': new Set(['Series & Patterns', 'Analogy & Classification', 'Coding & Decoding', 'Blood Relations & Direction Sense', 'Syllogisms & Venn Diagrams', 'Clock, Calendar & Miscellaneous']),
+  'Quantitative Aptitude': new Set(['Number System & Basic Operations', 'Arithmetic', 'Time, Speed, Distance & Work', 'Mensuration', 'Algebra & Progressions', 'Data Interpretation']),
+  'Renaissance': new Set(['Social Reform Movements', 'Temple Entry Movement', 'Major Agitations & Structural Protests', 'Literary Renaissance']),
+  'Science': new Set(['Physics \u2014 Mechanics & Properties of Matter', 'Physics \u2014 Light, Sound, Heat & Electronics', 'Chemistry \u2014 Atomic Structure & Periodicity', 'Chemistry \u2014 Acids, Bases & Chemical Reactions', 'Biology \u2014 Human Physiology', 'Biology \u2014 Biochemistry, Nutrition & Diseases', 'Biology \u2014 Plant Physiology & Ecology', 'Environmental Science & Waste Management']),
+  'Special Acts & Social Welfare': new Set(['Human Rights & Civil Rights', 'Gender & Child Welfare', 'Transparency & Anti-Corruption']),
+  'World History': new Set(['Great Revolutions', 'World Wars & International Alliances']),
+};
+
+const SUBJECT_SYNONYMS = new Map([
+  ['Polity', 'Constitution'],
+  ['Indian History', 'Indian History & National Movement'],
+  ['Social Science', 'Civics & Public Administration'],
+  ['General Science', 'Science'],
+  ['Indian Constitution', 'Constitution'],
+  ['Mathematics', 'Quantitative Aptitude'],
+  ['General Knowledge', 'Current Affairs'],
+  ['GK', 'Current Affairs'],
+]);
+
+const TOPIC_SYNONYMS = new Map<string, string>([
+  ['Constitution', 'Constitutional Framework'],
+  ['Directive Principles', 'Directive Principles & Fundamental Duties'],
+  ['Parliament', 'Union Legislature'],
+  ['President', 'Union Executive'],
+  ['Modern India', 'British Rule & Early Struggles'],
+  ['Freedom Movement', 'Indian National Movement'],
+  ['Continents and Oceans', 'Physical Geography (World)'],
+  ['World Geography', 'Physical Geography (World)'],
+  ['Geographical Features', 'Physical Geography (World)'],
+  ['Physical Geography', 'Physical Geography (World)'],
+  ['General', 'General'],
+  ['Grammar', 'Grammar (\u0d35\u0d4d\u0d2f\u0d3e\u0d15\u0d30\u0d23\u0d02)'],
+  ['Literature', 'Literature (\u0d38\u0d3e\u0d39\u0d3f\u0d24\u0d4d\u0d2f\u0d02)'],
+]);
+
+const REJECTED_SUBJECTS = new Set(['Test', 'Test Subject', 'Unknown']);
+
+function validateTaxonomy(rawSubject: string, rawTopic: string): { error?: string; subject?: string; topic?: string } {
+  if (REJECTED_SUBJECTS.has(rawSubject)) {
+    return { error: `Rejected subject "${rawSubject}"` };
+  }
+
+  const subject = SUBJECT_SYNONYMS.get(rawSubject) || rawSubject;
+  const topic = TOPIC_SYNONYMS.get(rawTopic) || rawTopic;
+
+  const validTopics = CANONICAL[subject];
+  if (!validTopics) {
+    return { error: `Unknown subject "${rawSubject}"` };
+  }
+
+  if (!validTopics.has(topic)) {
+    return { error: `Unknown topic "${rawTopic}" for subject "${subject}"` };
+  }
+
+  return { subject, topic };
+}
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -264,6 +335,12 @@ serve(async (req) => {
       return corsResponse({ error: 'subject and topic are required' }, 400);
     }
 
+    // Validate input taxonomy before calling AI
+    const inputTax = validateTaxonomy(subject, topic);
+    if (inputTax.error) {
+      return corsResponse({ error: `Invalid taxonomy: ${inputTax.error}` }, 400);
+    }
+
     const prompt = buildPrompt(subject, topic, difficulty ?? 'medium', examType ?? 'LDC', focusInstruction, recentHistory, syllabusItems, subtopic, language, topicConstraint, body.avoidTexts);
 
     const isContentBased = focusInstruction && focusInstruction.startsWith('CONTENT-BASED:');
@@ -294,185 +371,36 @@ serve(async (req) => {
       fetchHeaders['X-Title'] = 'Lakshyam';
     }
 
-    let lastError: string | null = null;
-    for (let mi = 0; mi < modelsToTry.length; mi++) {
-      const model = modelsToTry[mi];
-      console.log('[GENERATE] trying model:', model);
-      const response = await fetch(AI_API_URL, {
-        method: 'POST',
-        headers: fetchHeaders,
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: 'system', content: systemMessage },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: isContentBased ? 1024 : 800,
-        }),
-      });
+    const tryDirect = async (url: string, headers: Record<string, string>, body: Record<string, unknown>): Promise<ParsedQuestion | null> => {
+      try {
+        const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
+        if (!res.ok) { console.log('[GEN] HTTP', res.status, await res.text().catch(()=>'').then(t=>t.substring(0,80))); return null; }
+        const text = await res.text();
+        const parsed = parseResponse(text);
+        if (!parsed) console.log('[GEN] parse fail:', text.substring(0,80));
+        return parsed;
+      } catch (e) { console.log('[GEN] error:', String(e)); return null; }
+    };
 
-      if (!response.ok) {
-        const errText = await response.text();
-        lastError = `AI API error (${model}): ${response.status} ${errText}`;
-        console.log('[GENERATE] model failed:', model, response.status);
-        const backoffMs = response.status === 429 ? Math.min(2000 * Math.pow(2, mi), 8000) : 500;
-        console.log('[GENERATE] backing off', backoffMs, 'ms before next model');
-        await new Promise((r) => setTimeout(r, backoffMs));
-        continue;
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content ?? '';
-      const parsed = parseResponse(content);
-
-      if (!parsed) {
-        lastError = `Failed to parse AI response from ${model}`;
-        console.log('[GENERATE] parse failed for model:', model);
-        continue;
-      }
-
-      const alignmentWarning = parsed.topic !== topic || parsed.subject !== subject;
-      const confidence = difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75;
-
-      console.log('[GENERATE] response:', JSON.stringify({
-        requestedSubject: subject,
-        requestedTopic: topic,
-        requestedSubtopic: subtopic || '',
-        generatedSubject: parsed.subject,
-        generatedTopic: parsed.topic,
-        generatedSubtopic: parsed.subtopic,
-        aligned: !alignmentWarning,
-        model,
-      }));
-
-      const responseBody: Record<string, unknown> = {
-        subject: parsed.subject,
-        topic: parsed.topic,
-        subtopic: parsed.subtopic,
-        question: parsed.question,
-        options: parsed.options,
-        correctAnswer: parsed.correctAnswer,
-        explanation: parsed.explanation,
-        difficulty,
-        examType: [examType],
-        confidence,
-        source: 'ai_generated',
-        alignmentWarning,
-      };
-      return corsResponse(responseBody);
-    }
-
-    // Backoff before fallback provider
-    await new Promise((r) => setTimeout(r, 1000));
-
-    // Fallback provider (e.g., Groq) if all primary models failed
-    if (FALLBACK_API_KEY && FALLBACK_API_URL) {
-      const fallbackModel = FALLBACK_MODEL || 'llama-3.1-8b-instant';
-      console.log('[GENERATE] trying fallback provider:', FALLBACK_API_URL, fallbackModel);
-      const fallbackResponse = await fetch(FALLBACK_API_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${FALLBACK_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: fallbackModel,
-          messages: [
-            { role: 'system', content: systemMessage },
-            { role: 'user', content: prompt },
-          ],
-          temperature: 0.7,
-          max_tokens: isContentBased ? 1024 : 800,
-        }),
-      });
-
-      if (fallbackResponse.ok) {
-        const data = await fallbackResponse.json();
-        const content = data.choices?.[0]?.message?.content ?? '';
-        const parsed = parseResponse(content);
-        if (parsed) {
-          const alignmentWarning = parsed.topic !== topic || parsed.subject !== subject;
-          const confidence = difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75;
-          console.log('[GENERATE] fallback provider succeeded');
-          return corsResponse({
-            subject: parsed.subject,
-            topic: parsed.topic,
-            subtopic: parsed.subtopic,
-            question: parsed.question,
-            options: parsed.options,
-            correctAnswer: parsed.correctAnswer,
-            explanation: parsed.explanation,
-            difficulty,
-            examType: [examType],
-            confidence,
-            source: 'ai_generated',
-            alignmentWarning,
-          });
+    // OpenRouter (hardcoded key for testing)
+    const OR_KEY = Deno.env.get('FALLBACK_API_KEY') || '';
+    const OR_URL = Deno.env.get('FALLBACK_API_URL') || 'https://openrouter.ai/api/v1/chat/completions';
+    console.log('[GENERATE] OR_KEY length:', OR_KEY.length, 'OR_URL:', OR_URL.substring(0, 30));
+    if (OR_KEY) {
+      console.log('[GENERATE] trying OpenRouter');
+      const parsed = await tryDirect(OR_URL, { 'Authorization': `Bearer ${OR_KEY}`, 'Content-Type': 'application/json' }, { model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'system', content: systemMessage }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: isContentBased ? 1024 : 800 });
+      if (parsed) {
+        const taxResult = validateTaxonomy(parsed.subject, parsed.topic);
+        if (taxResult.error) {
+          console.log('[GEN] taxonomy rejection:', taxResult.error);
+          return corsResponse({ error: `AI generated question has invalid taxonomy: ${taxResult.error}. Regenerate.` }, 422);
         }
+        return corsResponse({ subject: taxResult.subject, topic: taxResult.topic, subtopic: parsed.subtopic, question: parsed.question, options: parsed.options, correctAnswer: parsed.correctAnswer, explanation: parsed.explanation, difficulty, examType: [examType], confidence: difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75, source: 'ai_generated', alignmentWarning: taxResult.topic !== topic || taxResult.subject !== subject });
       }
-      const errText = await fallbackResponse.text().catch(() => '');
-      lastError = `All providers failed. Last error: ${errText.substring(0, 200)}`;
     }
 
-    // Backoff before Gemini
-    await new Promise((r) => setTimeout(r, 1000));
-
-    // Gemini provider (Google AI Studio free tier: 1,500 req/day)
-    if (GEMINI_API_KEY) {
-      const geminiModel = 'gemini-2.0-flash';
-      console.log('[GENERATE] trying Gemini:', geminiModel);
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${GEMINI_API_KEY}`;
-      const geminiBody = {
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              { text: systemMessage + '\n\n' + prompt },
-            ],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: isContentBased ? 1024 : 800,
-        },
-      };
-      const geminiResponse = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiBody),
-      });
-
-      if (geminiResponse.ok) {
-        const data = await geminiResponse.json();
-        const content = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-        const cleaned = content.replace(/```(?:json)?\s*/gi, '').trim();
-        const parsed = parseResponse(cleaned);
-        if (parsed) {
-          const alignmentWarning = parsed.topic !== topic || parsed.subject !== subject;
-          const confidence = difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75;
-          console.log('[GENERATE] Gemini succeeded');
-          return corsResponse({
-            subject: parsed.subject,
-            topic: parsed.topic,
-            subtopic: parsed.subtopic,
-            question: parsed.question,
-            options: parsed.options,
-            correctAnswer: parsed.correctAnswer,
-            explanation: parsed.explanation,
-            difficulty,
-            examType: [examType],
-            confidence,
-            source: 'ai_generated',
-            alignmentWarning,
-          });
-        }
-      }
-      const errText = await geminiResponse.text().catch(() => '');
-      lastError = `All providers failed. Last error: ${errText.substring(0, 200)}`;
-    }
-
-    return corsResponse({ error: lastError || 'All models failed' }, 502);
+    console.log('[GENERATE] all providers failed');
+    return corsResponse({ error: 'All models failed' }, 502);
   } catch (err) {
     return corsResponse({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
   }

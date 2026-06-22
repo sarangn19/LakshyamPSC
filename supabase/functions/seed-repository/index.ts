@@ -23,7 +23,10 @@ interface SeedJob {
   count: number;
 }
 
-// All PSC subjects and major topics that need coverage
+// NOTE: COVERAGE_MATRIX uses pre-migration taxonomy names (Polity, Indian History, etc.).
+// generate-question now validates against canonical taxonomy (18 subjects), so running this
+// with outdated names will fail. Update matrix to canonical names before running.
+// AI API keys also expired — this function requires working AI generation.
 const COVERAGE_MATRIX: SeedJob[] = [
   // Kerala History
   { subject: 'Kerala History', topic: 'Ancient Kerala', difficulty: 'easy', examType: 'LDC', language: 'en', count: 10 },

@@ -8,6 +8,61 @@ export interface KnowledgeNode {
   prerequisites?: string[];
 }
 
+/**
+ * Canonical subject names (18 total). Maps from syllabus.ts.
+ * All subject-level nodes use these exact names.
+ */
+export const CANONICAL_SUBJECTS = [
+  'Kerala History', 'Renaissance', 'Constitution', 'Geography',
+  'Current Affairs', 'Science', 'Quantitative Aptitude', 'Mental Ability',
+  'Malayalam', 'Indian History & National Movement', 'World History',
+  'Civics & Public Administration', 'Indian Economy', 'Kerala Economy',
+  'Information Technology & Cyber Laws', 'English',
+  'Arts, Sports & Culture', 'Special Acts & Social Welfare',
+];
+
+/** Map from non-canonical subject names to canonical */
+export const SUBJECT_ALIASES: Record<string, string> = {
+  'Polity': 'Constitution',
+  'Indian History': 'Indian History & National Movement',
+  'Social Science': 'Civics & Public Administration',
+  'General Science': 'Science',
+  'Indian Constitution': 'Constitution',
+  'Mathematics': 'Quantitative Aptitude',
+  'General Knowledge': 'Current Affairs',
+  'GK': 'Current Affairs',
+};
+
+/** Map from non-canonical topic names to canonical subject::topic */
+export const TOPIC_ALIASES: Record<string, string> = {
+  'Constitution': 'Constitution::Constitutional Framework',
+  'Directive Principles': 'Constitution::Directive Principles & Fundamental Duties',
+  'Parliament': 'Constitution::Union Legislature',
+  'President': 'Constitution::Union Executive',
+  'Modern India': 'Indian History & National Movement::British Rule & Early Struggles',
+  'Freedom Movement': 'Indian History & National Movement::Indian National Movement',
+  'Continents and Oceans': 'Geography::Physical Geography (World)',
+  'World Geography': 'Geography::Physical Geography (World)',
+  'Geographical Features': 'Geography::Physical Geography (World)',
+  'Physical Geography': 'Geography::Physical Geography (World)',
+  'Grammar': 'Malayalam::Grammar (വ്യാകരണം)',
+  'Literature': 'Malayalam::Literature (സാഹിത്യം)',
+  'Logical Reasoning': 'Mental Ability::Analogy & Classification',
+};
+
+export function toCanonicalSubject(name: string): string {
+  return SUBJECT_ALIASES[name] || name;
+}
+
+export function toCanonicalTopic(subject: string, topic: string): [string, string] {
+  const key = TOPIC_ALIASES[topic];
+  if (key) {
+    const [canonSubject, canonTopic] = key.split('::');
+    return [canonSubject, canonTopic];
+  }
+  return [toCanonicalSubject(subject), topic];
+}
+
 const TREE: KnowledgeNode[] = [
   // ─── SUBJECTS ───
   { id: 'subj_history', name: 'Kerala History', level: 'subject', parentId: null },
@@ -19,6 +74,15 @@ const TREE: KnowledgeNode[] = [
   { id: 'subj_aptitude', name: 'Quantitative Aptitude', level: 'subject', parentId: null },
   { id: 'subj_mental', name: 'Mental Ability', level: 'subject', parentId: null },
   { id: 'subj_malayalam', name: 'Malayalam', level: 'subject', parentId: null },
+  { id: 'subj_indian_history', name: 'Indian History & National Movement', level: 'subject', parentId: null },
+  { id: 'subj_world_history', name: 'World History', level: 'subject', parentId: null },
+  { id: 'subj_civics', name: 'Civics & Public Administration', level: 'subject', parentId: null },
+  { id: 'subj_indian_economy', name: 'Indian Economy', level: 'subject', parentId: null },
+  { id: 'subj_kerala_economy', name: 'Kerala Economy', level: 'subject', parentId: null },
+  { id: 'subj_it', name: 'Information Technology & Cyber Laws', level: 'subject', parentId: null },
+  { id: 'subj_english', name: 'English', level: 'subject', parentId: null },
+  { id: 'subj_arts', name: 'Arts, Sports & Culture', level: 'subject', parentId: null },
+  { id: 'subj_special_acts', name: 'Special Acts & Social Welfare', level: 'subject', parentId: null },
 
   // ═══════════════════════════════════════════════
   // KERALA HISTORY
@@ -421,6 +485,158 @@ const TREE: KnowledgeNode[] = [
   { id: 'subt_prose_drama', name: 'Drama', level: 'subtopic', parentId: 'topic_mal_prose' },
   { id: 'subt_prose_autobiography', name: 'Autobiography', level: 'subtopic', parentId: 'topic_mal_prose' },
   { id: 'subt_prose_travelogue', name: 'Travelogue', level: 'subtopic', parentId: 'topic_mal_prose' },
+
+  // ═══════════════════════════════════════════════
+  // INDIAN HISTORY & NATIONAL MOVEMENT
+  // ═══════════════════════════════════════════════
+  { id: 'topic_india_ancient', name: 'Ancient India', level: 'topic', parentId: 'subj_indian_history' },
+  { id: 'topic_india_medieval', name: 'Medieval India', level: 'topic', parentId: 'subj_indian_history', prerequisites: ['topic_india_ancient'] },
+  { id: 'topic_india_british', name: 'British Rule & Early Struggles', level: 'topic', parentId: 'subj_indian_history', prerequisites: ['topic_india_medieval'] },
+  { id: 'topic_india_national', name: 'Indian National Movement', level: 'topic', parentId: 'subj_indian_history', prerequisites: ['topic_india_british'] },
+
+  { id: 'subt_india_ivc', name: 'Indus Valley Civilization', level: 'subtopic', parentId: 'topic_india_ancient' },
+  { id: 'subt_india_vedic', name: 'Vedic Period', level: 'subtopic', parentId: 'topic_india_ancient' },
+  { id: 'subt_india_maurya', name: 'Maurya Empire', level: 'subtopic', parentId: 'topic_india_ancient' },
+  { id: 'subt_india_gupta', name: 'Gupta Empire', level: 'subtopic', parentId: 'topic_india_ancient' },
+  { id: 'subt_india_south', name: 'South Indian Dynasties', level: 'subtopic', parentId: 'topic_india_ancient' },
+
+  { id: 'subt_india_delhi', name: 'Delhi Sultanate', level: 'subtopic', parentId: 'topic_india_medieval' },
+  { id: 'subt_india_mughal', name: 'Mughal Empire', level: 'subtopic', parentId: 'topic_india_medieval' },
+  { id: 'subt_india_maratha', name: 'Maratha Empire', level: 'subtopic', parentId: 'topic_india_medieval' },
+
+  { id: 'subt_india_plassey', name: 'Battle of Plassey & Buxar', level: 'subtopic', parentId: 'topic_india_british' },
+  { id: 'subt_india_1857', name: 'Revolt of 1857', level: 'subtopic', parentId: 'topic_india_british' },
+
+  { id: 'subt_india_congress', name: 'INC Formation & Early Sessions', level: 'subtopic', parentId: 'topic_india_national' },
+  { id: 'subt_india_gandhi', name: 'Gandhian Movements', level: 'subtopic', parentId: 'topic_india_national' },
+  { id: 'subt_india_quit', name: 'Quit India Movement', level: 'subtopic', parentId: 'topic_india_national' },
+  { id: 'subt_india_partition', name: 'Partition & Independence', level: 'subtopic', parentId: 'topic_india_national' },
+
+  // ═══════════════════════════════════════════════
+  // WORLD HISTORY
+  // ═══════════════════════════════════════════════
+  { id: 'topic_world_revolutions', name: 'Great Revolutions', level: 'topic', parentId: 'subj_world_history' },
+  { id: 'topic_world_wars', name: 'World Wars & International Alliances', level: 'topic', parentId: 'subj_world_history' },
+
+  { id: 'subt_world_french', name: 'French Revolution', level: 'subtopic', parentId: 'topic_world_revolutions' },
+  { id: 'subt_world_industrial', name: 'Industrial Revolution', level: 'subtopic', parentId: 'topic_world_revolutions' },
+  { id: 'subt_world_russian', name: 'Russian Revolution', level: 'subtopic', parentId: 'topic_world_revolutions' },
+
+  { id: 'subt_world_ww1', name: 'First World War', level: 'subtopic', parentId: 'topic_world_wars' },
+  { id: 'subt_world_ww2', name: 'Second World War', level: 'subtopic', parentId: 'topic_world_wars' },
+  { id: 'subt_world_un', name: 'United Nations', level: 'subtopic', parentId: 'topic_world_wars' },
+  { id: 'subt_world_cold', name: 'Cold War', level: 'subtopic', parentId: 'topic_world_wars' },
+
+  // ═══════════════════════════════════════════════
+  // CIVICS & PUBLIC ADMINISTRATION
+  // ═══════════════════════════════════════════════
+  { id: 'topic_civics_bureaucracy', name: 'Bureaucracy & Administrative Machinery', level: 'topic', parentId: 'subj_civics' },
+  { id: 'topic_civics_digital', name: 'Digital Governance & E-Governance', level: 'topic', parentId: 'subj_civics' },
+  { id: 'topic_civics_welfare', name: 'Social Welfare & Public Policy', level: 'topic', parentId: 'subj_civics' },
+
+  { id: 'subt_civics_services', name: 'Indian Civil Services', level: 'subtopic', parentId: 'topic_civics_bureaucracy' },
+  { id: 'subt_civics_kas', name: 'KAS & State Services', level: 'subtopic', parentId: 'topic_civics_bureaucracy' },
+  { id: 'subt_civics_negp', name: 'National E-Governance Plan', level: 'subtopic', parentId: 'topic_civics_digital' },
+  { id: 'subt_civics_akshaya', name: 'Kerala E-Services', level: 'subtopic', parentId: 'topic_civics_digital' },
+  { id: 'subt_civics_citizen', name: 'Citizen Charters', level: 'subtopic', parentId: 'topic_civics_welfare' },
+
+  // ═══════════════════════════════════════════════
+  // INDIAN ECONOMY
+  // ═══════════════════════════════════════════════
+  { id: 'topic_econ_national', name: 'National Income & Macroeconomic Indicators', level: 'topic', parentId: 'subj_indian_economy' },
+  { id: 'topic_econ_banking', name: 'Banking & Monetary Policy', level: 'topic', parentId: 'subj_indian_economy' },
+  { id: 'topic_econ_fiscal', name: 'Public Finance & Fiscal System', level: 'topic', parentId: 'subj_indian_economy' },
+  { id: 'topic_econ_sectors', name: 'Sectors of Indian Economy', level: 'topic', parentId: 'subj_indian_economy' },
+  { id: 'topic_econ_planning', name: 'Planning & Development', level: 'topic', parentId: 'subj_indian_economy' },
+
+  { id: 'subt_econ_gdp', name: 'GDP, GNP, NNP Concepts', level: 'subtopic', parentId: 'topic_econ_national' },
+  { id: 'subt_econ_inflation', name: 'Inflation Indicators', level: 'subtopic', parentId: 'topic_econ_national' },
+  { id: 'subt_econ_rbi', name: 'RBI Functions', level: 'subtopic', parentId: 'topic_econ_banking' },
+  { id: 'subt_econ_repo', name: 'Repo, CRR, SLR', level: 'subtopic', parentId: 'topic_econ_banking' },
+  { id: 'subt_econ_gst', name: 'GST Architecture', level: 'subtopic', parentId: 'topic_econ_fiscal' },
+  { id: 'subt_econ_budget', name: 'Union Budget', level: 'subtopic', parentId: 'topic_econ_fiscal' },
+  { id: 'subt_econ_agriculture', name: 'Agriculture & Reforms', level: 'subtopic', parentId: 'topic_econ_sectors' },
+  { id: 'subt_econ_msme', name: 'MSME & Industry', level: 'subtopic', parentId: 'topic_econ_sectors' },
+  { id: 'subt_econ_plans', name: 'Five-Year Plans', level: 'subtopic', parentId: 'topic_econ_planning' },
+  { id: 'subt_econ_hdi', name: 'HDI & Poverty', level: 'subtopic', parentId: 'topic_econ_planning' },
+
+  // ═══════════════════════════════════════════════
+  // KERALA ECONOMY
+  // ═══════════════════════════════════════════════
+  { id: 'topic_ker_econ_model', name: 'Kerala Model of Development', level: 'topic', parentId: 'subj_kerala_economy' },
+  { id: 'topic_ker_econ_safety', name: 'Socio-Economic Safety Networks', level: 'topic', parentId: 'subj_kerala_economy' },
+  { id: 'topic_ker_econ_fiscal', name: 'Kerala Fiscal & Industrial Landscape', level: 'topic', parentId: 'subj_kerala_economy' },
+
+  { id: 'subt_ker_econ_land', name: 'Land Reforms', level: 'subtopic', parentId: 'topic_ker_econ_model' },
+  { id: 'subt_ker_econ_kudumbashree', name: 'Kudumbashree Mission', level: 'subtopic', parentId: 'topic_ker_econ_safety' },
+  { id: 'subt_ker_econ_remittance', name: 'Pravasi & Remittances', level: 'subtopic', parentId: 'topic_ker_econ_safety' },
+  { id: 'subt_ker_econ_tourism', name: 'Tourism Sector', level: 'subtopic', parentId: 'topic_ker_econ_fiscal' },
+  { id: 'subt_ker_econ_it', name: 'IT Sector', level: 'subtopic', parentId: 'topic_ker_econ_fiscal' },
+
+  // ═══════════════════════════════════════════════
+  // INFORMATION TECHNOLOGY & CYBER LAWS
+  // ═══════════════════════════════════════════════
+  { id: 'topic_it_hardware', name: 'Computer Hardware & Architecture', level: 'topic', parentId: 'subj_it' },
+  { id: 'topic_it_software', name: 'Software & Operating Systems', level: 'topic', parentId: 'subj_it' },
+  { id: 'topic_it_networks', name: 'Networks & Internet', level: 'topic', parentId: 'subj_it' },
+  { id: 'topic_it_web', name: 'Web Technologies & Languages', level: 'topic', parentId: 'subj_it' },
+  { id: 'topic_it_security', name: 'Cyber Security & Threats', level: 'topic', parentId: 'subj_it' },
+  { id: 'topic_it_act', name: 'IT Act & Legal Frameworks', level: 'topic', parentId: 'subj_it' },
+
+  { id: 'subt_it_cpu', name: 'CPU & Memory', level: 'subtopic', parentId: 'topic_it_hardware' },
+  { id: 'subt_it_storage', name: 'Storage Devices', level: 'subtopic', parentId: 'topic_it_hardware' },
+  { id: 'subt_it_os', name: 'Operating Systems', level: 'subtopic', parentId: 'topic_it_software' },
+  { id: 'subt_it_lan', name: 'LAN, WAN, MAN', level: 'subtopic', parentId: 'topic_it_networks' },
+  { id: 'subt_it_osi', name: 'OSI Model', level: 'subtopic', parentId: 'topic_it_networks' },
+  { id: 'subt_it_tcpip', name: 'TCP/IP & Protocols', level: 'subtopic', parentId: 'topic_it_networks' },
+  { id: 'subt_it_html', name: 'HTML, CSS, JavaScript', level: 'subtopic', parentId: 'topic_it_web' },
+  { id: 'subt_it_malware', name: 'Malware & Attacks', level: 'subtopic', parentId: 'topic_it_security' },
+  { id: 'subt_it_crypto', name: 'Cryptography & Encryption', level: 'subtopic', parentId: 'topic_it_security' },
+  { id: 'subt_it_itact', name: 'IT Act 2000 & Amendments', level: 'subtopic', parentId: 'topic_it_act' },
+
+  // ═══════════════════════════════════════════════
+  // ENGLISH
+  // ═══════════════════════════════════════════════
+  { id: 'topic_eng_grammar', name: 'Grammar', level: 'topic', parentId: 'subj_english' },
+  { id: 'topic_eng_vocab', name: 'Vocabulary', level: 'topic', parentId: 'subj_english' },
+  { id: 'topic_eng_reading', name: 'Reading Comprehension & Writing', level: 'topic', parentId: 'subj_english' },
+
+  { id: 'subt_eng_tenses', name: 'Tenses & Voice', level: 'subtopic', parentId: 'topic_eng_grammar' },
+  { id: 'subt_eng_verbs', name: 'Subject-Verb Agreement', level: 'subtopic', parentId: 'topic_eng_grammar' },
+  { id: 'subt_eng_synonyms', name: 'Synonyms & Antonyms', level: 'subtopic', parentId: 'topic_eng_vocab' },
+  { id: 'subt_eng_idioms', name: 'Idioms & Phrases', level: 'subtopic', parentId: 'topic_eng_vocab' },
+  { id: 'subt_eng_comprehension', name: 'Unseen Passage Comprehension', level: 'subtopic', parentId: 'topic_eng_reading' },
+  { id: 'subt_eng_cloze', name: 'Cloze Test', level: 'subtopic', parentId: 'topic_eng_reading' },
+
+  // ═══════════════════════════════════════════════
+  // ARTS, SPORTS & CULTURE
+  // ═══════════════════════════════════════════════
+  { id: 'topic_arts_classical', name: 'Classical & Ritualistic Art Forms', level: 'topic', parentId: 'subj_arts' },
+  { id: 'topic_arts_folk', name: 'Folk & Traditional Arts', level: 'topic', parentId: 'subj_arts' },
+  { id: 'topic_arts_cinema', name: 'Malayalam Cinema', level: 'topic', parentId: 'subj_arts' },
+  { id: 'topic_arts_sports', name: 'Sports & Athletics', level: 'topic', parentId: 'subj_arts' },
+
+  { id: 'subt_arts_kathakali', name: 'Kathakali', level: 'subtopic', parentId: 'topic_arts_classical' },
+  { id: 'subt_arts_theyyam', name: 'Theyyam', level: 'subtopic', parentId: 'topic_arts_classical' },
+  { id: 'subt_arts_kalaripayattu', name: 'Kalaripayattu', level: 'subtopic', parentId: 'topic_arts_folk' },
+  { id: 'subt_arts_vallam', name: 'Vallam Kali', level: 'subtopic', parentId: 'topic_arts_folk' },
+  { id: 'subt_arts_film', name: 'Malayalam Film History', level: 'subtopic', parentId: 'topic_arts_cinema' },
+  { id: 'subt_arts_olympics', name: 'Olympics & Asian Games', level: 'subtopic', parentId: 'topic_arts_sports' },
+  { id: 'subt_arts_kerala_athletes', name: 'Kerala Athletes', level: 'subtopic', parentId: 'topic_arts_sports' },
+
+  // ═══════════════════════════════════════════════
+  // SPECIAL ACTS & SOCIAL WELFARE
+  // ═══════════════════════════════════════════════
+  { id: 'topic_act_human', name: 'Human Rights & Civil Rights', level: 'topic', parentId: 'subj_special_acts' },
+  { id: 'topic_act_gender', name: 'Gender & Child Welfare', level: 'topic', parentId: 'subj_special_acts' },
+  { id: 'topic_act_transparency', name: 'Transparency & Anti-Corruption', level: 'topic', parentId: 'subj_special_acts' },
+
+  { id: 'subt_act_atrocities', name: 'SC/ST Atrocities Act', level: 'subtopic', parentId: 'topic_act_human' },
+  { id: 'subt_act_domestic', name: 'Domestic Violence Act', level: 'subtopic', parentId: 'topic_act_gender' },
+  { id: 'subt_act_pocso', name: 'POCSO Act', level: 'subtopic', parentId: 'topic_act_gender' },
+  { id: 'subt_act_rti', name: 'Right to Information Act', level: 'subtopic', parentId: 'topic_act_transparency' },
+  { id: 'subt_act_consumer', name: 'Consumer Protection Act', level: 'subtopic', parentId: 'topic_act_transparency' },
+  { id: 'subt_act_cvc', name: 'CVC & Lokayukta', level: 'subtopic', parentId: 'topic_act_transparency' },
 ];
 
 const NODE_MAP = new Map<string, KnowledgeNode>(TREE.map((n) => [n.id, n]));
