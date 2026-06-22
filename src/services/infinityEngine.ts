@@ -219,6 +219,7 @@ export async function generateNextAdaptiveQuestion(
     + `Always generate a question — never return empty.`;
 
   // AI generation — single attempt, alignment is checked downstream
+  // Force English for all subjects
   const aiResult = await generateAIQuestion({
     subject: topic.subject,
     topic: topic.topic,
@@ -227,7 +228,7 @@ export async function generateNextAdaptiveQuestion(
     focusInstruction,
     recentHistory: topicHistory,
     syllabusItems,
-    language: locale,
+    language: 'en',
     topicConstraint,
     avoidTexts,
   }, options);

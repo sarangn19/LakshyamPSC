@@ -29,13 +29,14 @@ function tryTopicTemplate(
   activeSubject: string,
   activeTopic?: string,
 ): GeneratedQuestion | null {
+  // Force English for all subjects
   const pool = generateMCQs({
     subjects: [activeSubject],
     topics: activeTopic ? [activeTopic] : undefined,
     difficulty: difficulty === 'hard' ? 'medium' : difficulty,
     examType: targetExam || 'LDC',
     count: 5,
-    language: locale,
+    language: 'en',
   });
   for (const q of pool) {
     if (validateQuestionIntegrity(q).valid) {
@@ -51,12 +52,13 @@ function trySubjectTemplate(
   targetExam: string,
   locale: 'en' | 'ml',
 ): GeneratedQuestion | null {
+  // Force English for all subjects
   const pool = generateMCQs({
     subjects,
     difficulty: 'easy',
     examType: targetExam || 'LDC',
     count: 10,
-    language: locale,
+    language: 'en',
   });
   for (const q of pool) {
     if (validateQuestionIntegrity(q).valid) {
@@ -116,22 +118,16 @@ export function getFallbackQuestion(
     return { question: subjQ, source: 'template_subject' };
   }
 
-  // Absolute last resort — hardcoded emergency question
+  // Absolute last resort — hardcoded emergency question (always English)
   const lastResort: GeneratedQuestion = {
     id: `emergency_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    text: locale === 'ml'
-      ? 'ഇന്ത്യയുടെ ദേശീയ പക്ഷി ഏതാണ്?'
-      : 'What is the national bird of India?',
-    options: locale === 'ml'
-      ? ['മയിൽ', 'കാക്ക', 'പ്രാവ്', 'കിളി']
-      : ['Peacock', 'Crow', 'Dove', 'Sparrow'],
+    text: 'What is the national bird of India?',
+    options: ['Peacock', 'Crow', 'Dove', 'Sparrow'],
     correctAnswer: 0,
     subject: 'General',
     topic: 'General Knowledge',
     difficulty: 'easy',
-    explanation: locale === 'ml'
-      ? 'മയിൽ (Peacock) ഇന്ത്യയുടെ ദേശീയ പക്ഷിയാണ്.'
-      : 'The peacock (Pavo cristatus) is the national bird of India.',
+    explanation: 'The peacock (Pavo cristatus) is the national bird of India.',
     examType: ['LDC', 'Secretariat Assistant', 'Degree Level', 'University Assistant'],
     confidence: 1.0,
     source: 'template_subject',
