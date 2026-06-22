@@ -115,7 +115,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = twinRec.topic || undefined;
     console.log('[TRACE:startDailyDrill] entered', { targetExams, recommendedSubject, recommendedTopic });
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionActive: true, sessionSubjects: subjects || [], prefetchedQuestions: [] });
+    set({ sessionActive: true, isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionSubjects: subjects || [], prefetchedQuestions: [] });
     const baseState = makeAdaptiveState();
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, 'easy', get().adaptiveState, [],
@@ -417,6 +417,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   },
 
   triggerPrefetch: async () => {
+    const gen = sessionGeneration;
     const state = get();
     if (state.prefetchedQuestions.length >= state.prefetchDepth) return;
     if (!state.sessionActive) return;
@@ -435,6 +436,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       state.reportedQuestions, useUserStore.getState().locale,
       avoidTexts, { priority: 'low' },
     );
+    if (gen !== sessionGeneration) return;
     if (question) {
       const updated = [...get().prefetchedQuestions, question];
       set({ prefetchedQuestions: updated });
