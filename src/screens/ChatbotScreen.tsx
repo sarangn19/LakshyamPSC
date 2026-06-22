@@ -9,9 +9,10 @@ import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
 import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
 import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
-import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
+import { getAIResponse, buildHistory, ChatMessage, ResponseMode, logRenderer } from '../services/chatService';
 import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
 import { ActionChips } from '../components/ActionChips';
+import { ResponseModeRenderer } from '../components/renderers/ResponseModeRenderer';
 
 const INPUT_CONTAINER_GAP = 4;
 const INPUT_ROW_HEIGHT = 44;
@@ -88,11 +89,11 @@ export function ChatbotScreen({ navigation }: any) {
     }
   }, [messages.length]);
 
-  async function handleSend(text: string) {
+  async function handleSend(text: string, mode?: ResponseMode) {
     if (!text.trim() || isLoading) return;
     setInputText('');
 
-    const userMsg: ChatMessage = { role: 'user', text };
+    const userMsg: ChatMessage = { role: 'user', text, responseMode: mode };
 
     if (!chatStarted) {
       setChatStarted(true);
@@ -103,16 +104,20 @@ export function ChatbotScreen({ navigation }: any) {
         Animated.timing(greetingSlide, { toValue: 1, duration: 200, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
         Animated.timing(chatOpacity, { toValue: 1, duration: 350, delay: 50, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
       ]).start(() => setShowGreeting(false));
-      const reply = await getAIResponse(text, []);
+      const result = await getAIResponse(text, [], mode);
       setIsLoading(false);
-      setMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+      const aiMode = result.responseMode || mode || 'tutor';
+      logRenderer(`Chatbot handleSend mode=${aiMode}`);
+      setMessages((prev) => [...prev, { role: 'ai', text: result.reply, responseMode: aiMode }]);
     } else {
       setMessages((prev) => [...prev, userMsg]);
       setIsLoading(true);
       const history = buildHistory(messages);
-      const reply = await getAIResponse(text, history);
+      const result = await getAIResponse(text, history, mode);
       setIsLoading(false);
-      setMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+      const aiMode = result.responseMode || mode || 'tutor';
+      logRenderer(`Chatbot handleSend mode=${aiMode}`);
+      setMessages((prev) => [...prev, { role: 'ai', text: result.reply, responseMode: aiMode }]);
     }
 
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
@@ -304,11 +309,18 @@ export function ChatbotScreen({ navigation }: any) {
                 <View style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
                   {msg.role === 'ai' ? (
                     <>
-                      <AnswerRenderer text={plainTextToSections(msg.text)} />
+                      <ResponseModeRenderer mode={msg.responseMode || 'tutor'} text={msg.text} />
                       <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
                         <Text style={styles.saveNoteText}>{t('chatbot.saveAsNote')}</Text>
                       </TouchableOpacity>
                       <ActionChips onAction={(action) => {
+                        const MODE_MAP: Record<string, ResponseMode> = {
+                          generate_mcq: 'mcq',
+                          explain_simpler: 'simple_explanation',
+                          give_pyqs: 'pyq',
+                          related_topic: 'related_topic',
+                          create_flashcard: 'flashcard',
+                        };
                         const prompts: Record<string, string> = {
                           generate_mcq: `Generate a multiple choice question about this topic for Kerala PSC exam. Include question, 4 options, answer, and explanation.`,
                           explain_simpler: `Explain the previous response in simpler terms for exam preparation.`,
@@ -316,7 +328,7 @@ export function ChatbotScreen({ navigation }: any) {
                           related_topic: `Suggest a related topic from Kerala PSC syllabus that I should study next.`,
                           create_flashcard: `Create a flashcard summary of this response for quick revision. Format as: Front: ... Back: ...`,
                         };
-                        handleSend(prompts[action] || action);
+                        handleSend(prompts[action] || action, MODE_MAP[action] || 'tutor');
                       }} />
                     </>
                   ) : (

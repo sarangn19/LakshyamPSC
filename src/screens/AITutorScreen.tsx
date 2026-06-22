@@ -6,9 +6,10 @@ import { typography } from '../theme/typography';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
 import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
-import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
+import { getAIResponse, buildHistory, ChatMessage, ResponseMode, logRenderer } from '../services/chatService';
 import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
 import { ActionChips } from '../components/ActionChips';
+import { ResponseModeRenderer } from '../components/renderers/ResponseModeRenderer';
 
 const EXAM_ICONS: Record<string, string> = {
   'LDC': '📋',
@@ -106,16 +107,26 @@ export function AITutorScreen({ route, navigation }: any) {
     showToast('Saved securely to your notes!');
   };
 
-  const sendMessage = async (text: string) => {
+  const MODE_MAP: Record<string, ResponseMode> = {
+    generate_mcq: 'mcq',
+    explain_simpler: 'simple_explanation',
+    give_pyqs: 'pyq',
+    related_topic: 'related_topic',
+    create_flashcard: 'flashcard',
+  };
+
+  const sendMessage = async (text: string, mode?: ResponseMode) => {
     if (!text.trim() || isLoading) return;
-    const userMsg: ChatMessage = { role: 'user', text: text.trim() };
+    const userMsg: ChatMessage = { role: 'user', text: text.trim(), responseMode: mode };
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
     setIsLoading(true);
 
     const history = messages.length > 0 ? buildHistory(messages) : [];
-    const reply = await getAIResponse(text, history);
-    setMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+    const result = await getAIResponse(text, history, mode);
+    const aiMode = result.responseMode || mode || 'tutor';
+    logRenderer(`AITutor sendMessage mode=${aiMode}`);
+    setMessages((prev) => [...prev, { role: 'ai', text: result.reply, responseMode: aiMode }]);
     setIsLoading(false);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
   };
@@ -164,7 +175,7 @@ export function AITutorScreen({ route, navigation }: any) {
             <View style={[styles.msgContent, msg.role === 'user' ? styles.msgContentUser : styles.msgContentBot]}>
               {msg.role === 'ai' ? (
                 <>
-                  <AnswerRenderer text={plainTextToSections(msg.text)} />
+                  <ResponseModeRenderer mode={msg.responseMode || 'tutor'} text={msg.text} />
                   <TouchableOpacity
                     style={styles.saveBtn}
                     onPress={() => handleSaveAsNote(msg)}
@@ -174,6 +185,7 @@ export function AITutorScreen({ route, navigation }: any) {
                     <Text style={styles.saveBtnText}>Save as Note</Text>
                   </TouchableOpacity>
                   <ActionChips onAction={(action) => {
+                    const mode = MODE_MAP[action] || 'tutor';
                     const prompts: Record<string, string> = {
                       generate_mcq: `Generate a multiple choice question about this topic for ${examContext} exam. Include question, 4 options, answer, and explanation.`,
                       explain_simpler: `Explain the previous response in simpler terms for ${examContext} exam preparation.`,
@@ -181,7 +193,7 @@ export function AITutorScreen({ route, navigation }: any) {
                       related_topic: `Suggest a related topic from ${examContext} syllabus that I should study next.`,
                       create_flashcard: `Create a flashcard summary of this response for quick revision. Format as: Front: ... Back: ...`,
                     };
-                    sendMessage(prompts[action] || action);
+                    sendMessage(prompts[action] || action, mode);
                   }} />
                 </>
               ) : (
@@ -207,7 +219,7 @@ export function AITutorScreen({ route, navigation }: any) {
       <View style={styles.chipsRow}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContent}>
           {getSuggestions(t).map((s, i) => (
-            <TouchableOpacity key={i} style={styles.chip} onPress={() => sendMessage(s)} activeOpacity={0.7}>
+            <TouchableOpacity key={i} style={styles.chip} onPress={() => sendMessage(s, 'tutor')} activeOpacity={0.7}>
               <Text style={styles.chipText}>{s}</Text>
             </TouchableOpacity>
           ))}
@@ -226,7 +238,7 @@ export function AITutorScreen({ route, navigation }: any) {
           onChangeText={setInputText}
           multiline
         />
-        <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage(inputText)} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage(inputText, 'tutor')} activeOpacity={0.8}>
           <Text style={{ fontSize: 16, color: '#fff', transform: [{ rotate: '45deg' }], marginLeft: 2 }}>➤</Text>
         </TouchableOpacity>
       </View>

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { MarkdownRenderer } from './MarkdownRenderer';
 
-interface Section {
+export interface Section {
   heading: string;
   icon: string;
   content: string;
@@ -19,7 +19,7 @@ const HEADING_MAP: Record<string, { icon: string; label: string }> = {
   'summary': { icon: '📋', label: 'Summary' },
 };
 
-function extractSections(text: string): Section[] {
+export function extractSections(text: string): Section[] {
   const sections: Section[] = [];
   const headingRe = /^##\s+(.+)$/gm;
   let lastIndex = 0;

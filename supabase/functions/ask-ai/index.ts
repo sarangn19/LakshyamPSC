@@ -32,13 +32,56 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { message, history, examType } = body;
+    const { message, history, examType, responseMode } = body;
 
     if (!message || typeof message !== 'string') {
       return corsResponse({ error: 'message is required' }, 400);
     }
 
     const examContext = examType || 'Kerala PSC LDC';
+
+    const modeInstructions: Record<string, string> = {
+      tutor:
+        `Always structure your answers for PSC exam preparation using these sections as applicable:\n\n`
+        + `## Concept\nBrief explanation of the topic.\n\n`
+        + `## PSC Exam Focus\nWhat aspect is most relevant for ${examContext} exams, how questions are typically framed.\n\n`
+        + `## Memory Trick\nA mnemonic or trick to remember the key point.\n\n`
+        + `## Key Facts\nBullet list of essential facts to remember.\n\n`
+        + `## Common Confusions\nCommon mistakes or confusions about this topic.\n\n`
+        + `## Practice MCQ\nA multiple choice question with 4 options, answer, and explanation.\n\n`
+        + `## Related Topics\nRelated syllabus topics the student should study next.`,
+      mcq:
+        `Generate a standalone MCQ for ${examContext}. Use exactly this format:\n\n`
+        + `## Question\n...\n\n`
+        + `## Options\nA. ...\nB. ...\nC. ...\nD. ...\n\n`
+        + `## Answer\n...\n\n`
+        + `## Explanation\n...\n\n`
+        + `Do NOT include any other sections. Just the question, options, answer, and explanation.`,
+      simple_explanation:
+        `Explain the concept simply for ${examContext}. Use this format:\n\n`
+        + `## Simple Explanation\n...\n\n`
+        + `## Example\n...\n\n`
+        + `## Quick Summary\n...`,
+      pyq:
+        `List previous year questions from ${examContext} exams. Use this format for each question:\n\n`
+        + `## Previous Year Questions\n...\n\n`
+        + `### Exam\n...\n\n`
+        + `### Year\n...\n\n`
+        + `### Answer\n...\n\n`
+        + `### Explanation\n...`,
+      flashcard:
+        `Create a flashcard for quick revision. Use exactly this format:\n\n`
+        + `## Front\nQuestion or concept prompt\n\n`
+        + `## Back\nAnswer or explanation`,
+      related_topic:
+        `Suggest a related topic from ${examContext} syllabus. Use this format:\n\n`
+        + `## Topic Card\nName of the topic\n\n`
+        + `## Why Related\nHow this connects to the current topic\n\n`
+        + `## Key Facts\nEssential facts about this topic\n\n`
+        + `## Suggested Follow-up\nQuestions to explore next`,
+    };
+
+    const modeInstruction = modeInstructions[responseMode || 'tutor'] || modeInstructions.tutor;
 
     const systemPrompt =
       `You are Lakshyam AI Tutor — a Kerala PSC exam preparation assistant. `
@@ -47,14 +90,7 @@ serve(async (req) => {
       + `Use simple language and bullet points where helpful. `
       + `If the user asks in Malayalam, respond in Malayalam. `
       + `Never mention you are an AI. Just answer naturally as a tutor. `
-      + `Always structure your answers for PSC exam preparation using these sections as applicable:\n\n`
-      + `## Concept\nBrief explanation of the topic.\n\n`
-      + `## PSC Exam Focus\nWhat aspect is most relevant for ${examContext} exams, how questions are typically framed.\n\n`
-      + `## Memory Trick\nA mnemonic or trick to remember the key point.\n\n`
-      + `## Key Facts\nBullet list of essential facts to remember.\n\n`
-      + `## Common Confusions\nCommon mistakes or confusions about this topic.\n\n`
-      + `## Practice MCQ\nA multiple choice question with 4 options, answer, and explanation.\n\n`
-      + `## Related Topics\nRelated syllabus topics the student should study next.\n\n`
+      + `${modeInstruction}\n\n`
       + `Only include sections that are relevant. Use "## Section Name" as heading format. `
       + `Keep the response comprehensive but exam-focused.`;
 
@@ -96,14 +132,14 @@ serve(async (req) => {
 
     // Try 1: Primary provider
     let reply = await tryProvider(AI_API_URL, AI_API_KEY, AI_MODEL, primaryHeaders);
-    if (reply) return corsResponse({ reply });
+    if (reply) return corsResponse({ reply, responseMode: responseMode || 'tutor' });
 
     // Try 2: Alt models on same provider
     if (isOpenRouter) {
       const altModels = ['google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct'];
       for (const model of altModels) {
         reply = await tryProvider(AI_API_URL, AI_API_KEY, model, primaryHeaders);
-        if (reply) return corsResponse({ reply });
+        if (reply) return corsResponse({ reply, responseMode: responseMode || 'tutor' });
       }
     }
 
@@ -113,7 +149,7 @@ serve(async (req) => {
     const FB_MODEL = Deno.env.get('FALLBACK_MODEL') || 'meta-llama/llama-3.1-8b-instruct:free';
     if (FB_KEY && FB_URL) {
       reply = await tryProvider(FB_URL, FB_KEY, FB_MODEL);
-      if (reply) return corsResponse({ reply });
+      if (reply) return corsResponse({ reply, responseMode: responseMode || 'tutor' });
     }
 
     // Try 4: Gemini direct
@@ -126,7 +162,7 @@ serve(async (req) => {
         if (res.ok) {
           const data = await res.json();
           const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (text) return corsResponse({ reply: text });
+          if (text) return corsResponse({ reply: text, responseMode: responseMode || 'tutor' });
         }
       } catch {}
     }
