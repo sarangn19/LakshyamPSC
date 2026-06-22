@@ -5,22 +5,7 @@ import { typography } from '../theme/typography';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
 import { BottomNav } from '../components/BottomNav';
-
-interface QuizOption {
-  key: string;
-  text: string;
-  correct?: boolean;
-}
-
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  isLesson?: boolean;
-  title?: string;
-  quiz?: { question: string; options: QuizOption[] };
-}
+import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
 
 const EXAM_ICONS: Record<string, string> = {
   'LDC': '📋',
@@ -29,18 +14,6 @@ const EXAM_ICONS: Record<string, string> = {
   'Police Constable': '🛡️',
   'Degree Level': '📚',
 };
-
-function getDepthPrefix(exams: string[]): string {
-  if (exams.some((e) => ['Degree Level', 'University Assistant'].includes(e))) return 'deep';
-  if (exams.includes('Secretariat Assistant')) return 'moderate';
-  return 'basic';
-}
-
-function getExamContext(exams: string[]): string {
-  if (exams.length === 0) return 'general';
-  if (exams.length === 1) return exams[0];
-  return `${exams.slice(0, -1).join(', ')} and ${exams[exams.length - 1]}`;
-}
 
 const getSuggestions = (t: (key: string, params?: Record<string, string | number>) => string) => [
   t('aiTutor.suggestion1'),
@@ -82,139 +55,20 @@ function TypingDots() {
 }
 
 export function AITutorScreen({ route, navigation }: any) {
-  const { targetExams, primaryExam } = useUserStore();
+  const { targetExams } = useUserStore();
   const addNote = useKnowledgeStore((s) => s.addNote);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [savedNoteIds, setSavedNoteIds] = useState<Set<string>>(new Set());
-  const [isTyping, setIsTyping] = useState(false);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const { t } = useTranslation();
 
-  const depth = getDepthPrefix(targetExams);
-  const examContext = getExamContext(targetExams);
+  const examContext = targetExams.length > 0 ? targetExams[0] : 'Kerala PSC';
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
-  };
-
-  const getWelcomeMessage = (): Message => {
-    const contextStr = targetExams.length > 0
-      ? `I see you're preparing for **${examContext}**. I'll calibrate explanations to that level.`
-      : '';
-    return {
-      id: 'welcome',
-      text: `\u0D28\u0D2E\u0D38\u0D4D\u0D15\u0D3E\u0D30\u0D02! 👋 ${t('aiTutor.welcome')}\n\n${contextStr}\n\n${t('aiTutor.welcomeDesc')}\n• ${t('aiTutor.welcomeItem1')} (${depth} level)\n• ${t('aiTutor.welcomeItem2')}\n• ${t('aiTutor.welcomeItem3')}\n• ${t('aiTutor.welcomeItem4')}\n• ${t('aiTutor.welcomeML')}\n\n${t('aiTutor.whatLearn')}`,
-      isUser: false,
-      timestamp: new Date(),
-    };
-  };
-
-  React.useEffect(() => {
-    if (messages.length === 0) {
-      const msgs: Message[] = [getWelcomeMessage()];
-      const weaknessTopic = route?.params?.weaknessAttack as string | undefined;
-      if (weaknessTopic) {
-        msgs.push({ id: `u-init-${Date.now()}`, text: weaknessTopic, isUser: true, timestamp: new Date() });
-        setIsTyping(true);
-        setTimeout(() => {
-          setMessages((prev) => [...prev, getAIResponse(weaknessTopic)]);
-          setIsTyping(false);
-        }, 1200);
-      }
-      setMessages(msgs);
-    }
-  }, [targetExams, primaryExam]);
-
-  const getAIResponse = (query: string): Message => {
-    const lower = query.toLowerCase().trim();
-    const isDeep = depth === 'deep';
-    const isModerate = depth === 'moderate';
-
-    if (lower.includes('explain temple entry proclamation') || (lower.includes('temple') && lower.includes('entry'))) {
-      const base: Message = {
-        id: `a${Date.now()}`,
-        isUser: false,
-        timestamp: new Date(),
-        isLesson: true,
-        title: 'Temple Entry Proclamation (ക്ഷേത്രപ്രവേശന വിളംബരം)',
-        text: `Here is a high-yield summary calibrated for **LDC & Degree level exams**:\n\n1. **Date of Proclamation**: November 12, 1936 (Malayalam date: 1112 Thulam 27).\n2. **Maharaja**: Issued by **Sri Chithira Thirunal Balarama Varma**.\n3. **Key Brains**: Crafted under the advice of Dewan **Sir C.P. Ramaswami Iyer**.\n4. **Significance**: It opened the state temples of Travancore to all Hindus, regardless of caste, which Gandhiji hailed as "the spiritual charter of modern India" (ആധുനിക ഇന്ത്യയുടെ തീർത്ഥാടനം).\n\nLet's test your memory with a quick exam-style MCQ below:`,
-        quiz: {
-          question: "Who was the Dewan of Travancore during the Temple Entry Proclamation?",
-          options: [
-            { key: 'A', text: 'Colonel Munro' },
-            { key: 'B', text: 'Sir C.P. Ramaswami Iyer', correct: true },
-            { key: 'C', text: 'Velu Thampi Dalawa' },
-            { key: 'D', text: 'P.G.N. Unnithan' },
-          ],
-        },
-      };
-      if (isDeep) {
-        base.text += '\n\n**Degree-Level Depth:**\n• Compare with the Temple Entry Authorization Act of 1947 (Madras)\n• Analyse the role of the Travancore Legislative Council\n• Discuss how it intersected with the larger Devdasi abolition movement\n• Evaluate its economic impact on temple treasury systems\n• Connect to Article 25 of the Constitution (freedom of religion)';
-      }
-      return base;
-    }
-
-    if (lower.includes('nārāyaṇan guru') || lower.includes('narayana guru') || lower.includes('sree narayana') || lower.includes('sndp') || (lower.includes('guru') && lower.includes('ayyankali')) || lower.includes('difference')) {
-      return {
-        id: `a${Date.now()}`,
-        isUser: false,
-        timestamp: new Date(),
-        isLesson: true,
-        title: 'Sree Narayana Guru vs Ayyankali',
-        text: `Both are core figures of the Kerala Renaissance. Let's compare high-yield points:\n\n• **Sree Narayana Guru** (1856-1928):\n  - Focus: Spiritual, ideological & education reforms ("One Caste, One Religion, One God for Man").\n  - Epicenter: Southern Travancore (Aravipuram Prathishta, 1888).\n  - Founded: SNDP Yogam (1903).\n\n• **Ayyankali** (1863-1941):\n  - Focus: Aggressive fight for physical freedom, education rights for Dalits, and physical spaces (Chaliyar Riots, Villuvandi Protest).\n  - Epicenter: Venganoor, Travancore.\n  - Founded: Sadhu Jana Paripalana Sangham (SJPS, 1907).\n\nWould you like me to generate a 5-question test on these Renaissance leaders?`,
-      };
-    }
-
-    if (lower.includes('20') && (lower.includes('ldc') || lower.includes('question') || lower.includes('kerala geography'))) {
-      return {
-        id: `a${Date.now()}`,
-        isUser: false,
-        timestamp: new Date(),
-        text: 'Here are 5 LDC-level questions on Kerala Geography:\n\n' +
-          '1\uFE0F\u20E3 Which is the longest river in Kerala?\n   a) Periyar  b) Bharathapuzha  c) Pamba  d) Chaliyar\n   **Answer: a) Periyar (244 km)**\n\n' +
-          '2\uFE0F\u20E3 Which district has the longest coastline?\n   a) Kozhikode  b) Kannur  c) Kasaragod  d) Alappuzha\n   **Answer: d) Alappuzha**\n\n' +
-          '3\uFE0F\u20E3 The backwaters of Kerala are known as?\n   a) Kuttanad  b) Vembanad  c) Ashtamudi  d) Kayals\n   **Answer: d) Kayals**\n\n' +
-          '4\uFE0F\u20E3 Highest peak in Kerala?\n   a) Anamudi  b) Agastya Mala  c) Chembra  d) Meesapulimala\n   **Answer: a) Anamudi (2,695m)**\n\n' +
-          '5\uFE0F\u20E3 Which pass connects Kerala to Tamil Nadu?\n   a) Palakkad Gap  b) Thalassery  c) Kambam  d) Shencottah\n   **Answer: a) Palakkad Gap**\n\nWant more questions or an explanation on any of these?',
-      };
-    }
-
-    if (lower.includes('degree') || (lower.includes('deep') && (lower.includes('question') || lower.includes('mcq')))) {
-      return {
-        id: `a${Date.now()}`,
-        isUser: false,
-        timestamp: new Date(),
-        text: 'Here are 3 Degree-Level conceptual questions on Kerala Renaissance:\n\n' +
-          '1\uFE0F\u20E3 Critically analyse the socio-economic impact of SNDP Yogam on Kerala society.\n   **Hint:** Focus on caste reform, education access, and economic empowerment.\n\n' +
-          '2\uFE0F\u20E3 Evaluate the role of Sree Narayana Guru\'s "One Caste, One God, One Religion" philosophy in shaping Kerala\'s secular identity.\n   **Hint:** Compare with contemporary reform movements across India.\n\n' +
-          '3\uFE0F\u20E3 Discuss how the Temple Entry Proclamation of 1936 influenced similar movements in other princely states.\n   **Hint:** Consider Travancore\'s unique position and the role of Maharaja Sree Chithira Thirunal.\n\nWant me to provide detailed model answers for any of these?',
-      };
-    }
-
-    if (lower.includes('directive principles')) {
-      const base = "Think of Directive Principles as the **instruction manual** for the government.\n\n📖 **Simple Version:**\nThe Constitution says 'Government, here's what you SHOULD do for the people.'\n\n🎯 **Key Ideas:**\n• Every village should have schools and hospitals (Article 41)\n• Fair wages for workers (Article 43)\n• Free legal aid for the poor (Article 39A)\n• Protect the environment (Article 48A)";
-      return {
-        id: `a${Date.now()}`,
-        isUser: false,
-        timestamp: new Date(),
-        text: isDeep
-          ? base + '\n\n**Degree-Level Depth:**\n• Distinguish between Socialistic, Gandhian, and Liberal-Intellectual principles\n• Analyse the relationship between Part III (Fundamental Rights) and Part IV (DPSP)\n• Key cases: Minerva Mills (1980), Kesavananda Bharati (1973)\n• Compare with the concept of \'Directive Principles\' in the Irish Constitution\n• Critically evaluate: Are they really \'non-justiciable\' in practice? (Consider Article 21 linkage)'
-          : isModerate
-            ? base + '\n\n**SA-Level Detail:**\n• DPSPs are borrowed from the Irish Constitution\n• Key amendments: 42nd Amendment (1976) added new principles\n• Important articles: 39 (equal pay), 44 (uniform civil code), 48 (cow protection)\n• Difference between \'legal rights\' and \'directive principles\' - the \'Harijan\' vs state case'
-            : base,
-      };
-    }
-
-    return {
-      id: `a${Date.now()}`,
-      isUser: false,
-      timestamp: new Date(),
-      text: `Great question! Let me help you with that for **${examContext}** (${depth} level).\n\n📚 **Key Points:**\n• This is an important topic for Kerala PSC ${examContext} exams\n• It appears in both prelims and mains\n\n💡 **Study Tip:** Make sure to link this topic with related concepts in your Knowledge Vault for better retention.\n\nWant me to:\n1. Generate MCQ questions for ${examContext}?\n2. Create flashcards?\n3. Explain in Malayalam?\n4. Provide more detailed notes?\n\nJust let me know! 😊`,
-    };
   };
 
   const stripMarkdown = (text: string): string =>
@@ -227,13 +81,13 @@ export function AITutorScreen({ route, navigation }: any) {
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
-  const handleSaveAsNote = (msg: Message) => {
-    if (savedNoteIds.has(msg.id)) return;
-    const title = msg.title || (msg.text.split('\n')[0].replace(/[*#]/g, '').trim().slice(0, 60));
+  const handleSaveAsNote = (msg: ChatMessage) => {
+    const text = msg.text;
+    const title = text.split('\n')[0].replace(/[*#]/g, '').trim().slice(0, 60);
     addNote({
       id: `tutor-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: title || t('aiTutor.noteTitleFallback'),
-      content: stripMarkdown(msg.text),
+      content: stripMarkdown(text),
       type: 'text',
       subject: targetExams[0] || 'General',
       topicIds: [],
@@ -241,23 +95,21 @@ export function AITutorScreen({ route, navigation }: any) {
       updatedAt: new Date().toISOString(),
       tags: ['ai-tutor'],
     });
-    setSavedNoteIds((prev) => new Set(prev).add(msg.id));
     showToast('Saved securely to your notes!');
   };
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
-    const userMsg: Message = { id: `u${Date.now()}`, text: text.trim(), isUser: true, timestamp: new Date() };
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
+    const userMsg: ChatMessage = { role: 'user', text: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
-    setIsTyping(true);
+    setIsLoading(true);
 
-    setTimeout(() => {
-      const aiMsg = getAIResponse(text);
-      setMessages((prev) => [...prev, aiMsg]);
-      setIsTyping(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 1200);
+    const history = messages.length > 0 ? buildHistory(messages) : [];
+    const reply = await getAIResponse(text, history);
+    setMessages((prev) => [...prev, { role: 'ai', text: reply }]);
+    setIsLoading(false);
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
   };
 
   return (
@@ -279,7 +131,7 @@ export function AITutorScreen({ route, navigation }: any) {
           <View>
             <Text style={styles.headerTitle}>{t('aiTutor.title')}</Text>
             <Text style={styles.headerStatus}>
-              Online <Text style={{ opacity: 0.4 }}>•</Text> Calibrated for {depth} level
+              Online <Text style={{ opacity: 0.4 }}>•</Text> Lakshyam PSC
             </Text>
           </View>
         </View>
@@ -294,87 +146,30 @@ export function AITutorScreen({ route, navigation }: any) {
 
       {/* Chat */}
       <ScrollView ref={scrollRef} style={styles.chatArea} showsVerticalScrollIndicator={false} contentContainerStyle={styles.chatContent}>
-        {messages.map((msg) => {
-          const isSaved = !msg.isUser && savedNoteIds.has(msg.id);
-          return (
-            <View key={msg.id} style={[styles.msgRow, msg.isUser && styles.msgRowUser]}>
-              {!msg.isUser && (
-                <View style={styles.botAvatar}>
-                  <Text style={{ fontSize: 14 }}>🤖</Text>
-                </View>
-              )}
-              <View style={[styles.msgContent, msg.isUser ? styles.msgContentUser : styles.msgContentBot]}>
-                {msg.isLesson && (
-                  <View style={styles.lessonHeader}>
-                    <Text style={styles.lessonIcon}>✨</Text>
-                    <Text style={styles.lessonTitle}>{msg.title}</Text>
-                  </View>
-                )}
-                <Text style={[styles.msgText, msg.isUser && styles.msgTextUser]}>{msg.text}</Text>
-
-                {msg.quiz && (
-                  <View style={styles.quizSection}>
-                    <Text style={styles.quizQuestion}>{msg.quiz.question}</Text>
-                    {msg.quiz.options.map((option) => {
-                      const selected = selectedAnswers[msg.id] === option.key;
-                      const showCorrect = selectedAnswers[msg.id] && option.correct;
-                      const showWrong = selected && !option.correct;
-                      return (
-                        <TouchableOpacity
-                          key={option.key}
-                          style={[
-                            styles.quizOption,
-                            showCorrect && styles.quizOptionCorrect,
-                            showWrong && styles.quizOptionWrong,
-                            selected && !selectedAnswers[msg.id] && styles.quizOptionSelected,
-                          ]}
-                          onPress={() => {
-                            if (!selectedAnswers[msg.id]) {
-                              setSelectedAnswers((prev) => ({ ...prev, [msg.id]: option.key }));
-                            }
-                          }}
-                          disabled={!!selectedAnswers[msg.id]}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[
-                            styles.quizOptionText,
-                            showCorrect && { color: '#065F46' },
-                            showWrong && { color: '#991B1B' },
-                          ]}>
-                            {option.key}. {option.text}
-                          </Text>
-                          {showCorrect && <Text style={{ fontSize: 14, color: '#065F46' }}>✓</Text>}
-                        </TouchableOpacity>
-                      );
-                    })}
-                    {selectedAnswers[msg.id] && (
-                      <View style={styles.quizNote}>
-                        <Text style={styles.quizNoteText}>
-                          <Text style={{ fontWeight: '800', color: '#6366f1', fontFamily: fontFamily.bodyBold }}>Note:</Text> Sir C.P. Ramaswami Iyer declared this historic change, ending structural discrimination across Travancore temples!
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-
-                {!msg.isUser && (
-                  <TouchableOpacity
-                    style={[styles.saveBtn, isSaved && styles.saveBtnSaved]}
-                    onPress={() => handleSaveAsNote(msg)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ fontSize: 12, marginRight: 4 }}>{isSaved ? '✓' : '+'}</Text>
-                    <Text style={[styles.saveBtnText, isSaved && { color: '#065F46' }]}>
-                      {isSaved ? 'Saved as Note' : 'Save as Note'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+        {messages.map((msg, i) => (
+          <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
+            {msg.role === 'ai' && (
+              <View style={styles.botAvatar}>
+                <Text style={{ fontSize: 14 }}>🤖</Text>
               </View>
+            )}
+            <View style={[styles.msgContent, msg.role === 'user' ? styles.msgContentUser : styles.msgContentBot]}>
+              <Text style={[styles.msgText, msg.role === 'user' && styles.msgTextUser]}>{msg.text}</Text>
+              {msg.role === 'ai' && (
+                <TouchableOpacity
+                  style={styles.saveBtn}
+                  onPress={() => handleSaveAsNote(msg)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: 12, marginRight: 4 }}>+</Text>
+                  <Text style={styles.saveBtnText}>Save as Note</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          );
-        })}
+          </View>
+        ))}
 
-        {isTyping && (
+        {isLoading && (
           <View style={styles.typingRow}>
             <View style={styles.botAvatar}>
               <Text style={{ fontSize: 14 }}>🤖</Text>
@@ -506,60 +301,6 @@ const styles = StyleSheet.create({
   },
   msgText: { fontSize: 13, fontWeight: '600', color: '#1e293b', lineHeight: 20, fontFamily: fontFamily.bodyMedium },
   msgTextUser: { color: '#fff' },
-
-  // Lesson header
-  lessonHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eef2ff',
-    paddingBottom: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  lessonIcon: { fontSize: 14 },
-  lessonTitle: { fontSize: 14, fontWeight: '800', color: '#4338ca', flex: 1, fontFamily: fontFamily.bodyBold },
-
-  // Quiz
-  quizSection: { marginTop: spacing.md, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: spacing.md },
-  quizQuestion: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#0f172a',
-    fontFamily: fontFamily.bodyBold,
-    backgroundColor: '#f8fafc',
-    padding: spacing.sm,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#eef2ff',
-    marginBottom: spacing.sm,
-    lineHeight: 20,
-  },
-  quizOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f8fafc',
-    marginBottom: spacing.xs,
-  },
-  quizOptionCorrect: { backgroundColor: '#ecfdf5', borderColor: '#34d399' },
-  quizOptionWrong: { backgroundColor: '#fef2f2', borderColor: '#f87171' },
-  quizOptionSelected: { borderColor: '#6366f1', backgroundColor: '#eef2ff' },
-  quizOptionText: { fontSize: 12, fontWeight: '700', color: '#475569', flex: 1, fontFamily: fontFamily.bodyBold },
-  quizNote: {
-    marginTop: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-  },
-  quizNoteText: { fontSize: 11, fontWeight: '600', color: '#64748b', lineHeight: 16, fontFamily: fontFamily.bodyMedium },
 
   // Save button
   saveBtn: {

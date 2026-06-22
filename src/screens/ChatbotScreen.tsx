@@ -8,14 +8,7 @@ import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
 import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
 import { BottomNav } from '../components/BottomNav';
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y3V0Y3FsaHBldWRtYWVid21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzAzNTcsImV4cCI6MjA5NzIwNjM1N30.2s-MMZa-gjJdOBGxOzXKftT-ZA0k6hfj3IoEm0gqaKI';
-
-type Message = {
-  role: 'ai' | 'user';
-  text: string;
-};
+import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
 
 export function ChatbotScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -24,7 +17,7 @@ export function ChatbotScreen({ navigation }: any) {
     { text: t('chatbot.suggestion2') },
     { text: t('chatbot.suggestion3') },
   ];
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
@@ -69,49 +62,11 @@ export function ChatbotScreen({ navigation }: any) {
     }
   }, [messages.length]);
 
-  async function getAIResponse(userMessage: string, history: { role: string; content: string }[]) {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return t('chatbot.aiNotConfigured');
-    try {
-      const { usePerformanceStore } = require('../store/performanceStore');
-      const { useCognitiveTwinStore } = require('../store/cognitiveTwinStore');
-      const { useUserStore: us } = require('../store/userStore');
-      const perf = usePerformanceStore.getState();
-      const twin = useCognitiveTwinStore.getState();
-      const user = us.getState();
-      const accuracy = perf.interactionSignals.length > 0
-        ? Math.round(perf.interactionSignals.filter((s: any) => s.answeredCorrect).length / perf.interactionSignals.length * 100)
-        : 0;
-      const weakSubjects: string[] = perf.getSubjectAccuracy
-        ? (['Malayalam', 'English', 'Science', 'Social Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'History', 'Geography', 'Polity', 'Economics'] as string[])
-            .map((s: string) => ({ subject: s, acc: perf.getSubjectAccuracy(s) }))
-            .filter((s: any) => s.acc.total > 0)
-            .filter((s: any) => s.acc.total > 0 && s.acc.correct / s.acc.total < 0.4)
-            .map((s: any) => s.subject)
-        : [];
-      const userContext = {
-        currentAccuracy: accuracy,
-        weakSubjects: weakSubjects.slice(0, 3),
-        targetExam: (user.targetExams || ['LDC'])[0],
-        totalQuestionsAnswered: perf.interactionSignals.length,
-        openGaps: twin.gapRecords?.filter((g: any) => g.status !== 'closed').length || 0,
-      };
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-ai`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ message: userMessage, history, examType: 'LDC', userContext }),
-      });
-      const data = await res.json();
-      return data.reply || t('chatbot.noResponse');
-    } catch {
-      return t('chatbot.networkError');
-    }
-  }
-
   async function handleSend(text: string) {
     if (!text.trim() || isLoading) return;
     setInputText('');
 
-    const userMsg: Message = { role: 'user', text };
+    const userMsg: ChatMessage = { role: 'user', text };
 
     if (!chatStarted) {
       setChatStarted(true);
@@ -128,7 +83,7 @@ export function ChatbotScreen({ navigation }: any) {
     } else {
       setMessages((prev) => [...prev, userMsg]);
       setIsLoading(true);
-      const history = messages.map((m) => ({ role: m.role, content: m.text }));
+      const history = buildHistory(messages);
       const reply = await getAIResponse(text, history);
       setIsLoading(false);
       setMessages((prev) => [...prev, { role: 'ai', text: reply }]);

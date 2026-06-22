@@ -37,7 +37,7 @@ async function getUserRole(userId: string): Promise<Role> {
 
 import { HomeScreen } from '../screens/HomeScreen';
 import { LearnScreen } from '../screens/LearnScreen';
-import { ChatbotScreen } from '../screens/ChatbotScreen';
+
 import { SavedNotesScreen } from '../screens/SavedNotesScreen';
 import { MCQEngineScreen } from '../screens/MCQEngineScreen';
 import { FlashcardsScreen } from '../screens/FlashcardsScreen';
@@ -83,7 +83,6 @@ function HomeTabs() {
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Learn" component={LearnScreen} />
-      <Tab.Screen name="Chatbot" component={ChatbotScreen} />
       <Tab.Screen name="AITutor" component={AITutorScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
