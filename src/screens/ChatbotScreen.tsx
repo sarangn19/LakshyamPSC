@@ -29,7 +29,7 @@ export function ChatbotScreen({ navigation }: any) {
   const [tagInput, setTagInput] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const keyboardOffset = useRef(new Animated.Value(0)).current;
+  const keyboardOffset = useRef(new Animated.Value(100)).current;
   const greetingOpacity = useRef(new Animated.Value(1)).current;
   const greetingSlide = useRef(new Animated.Value(0)).current;
   const chatOpacity = useRef(new Animated.Value(0)).current;
@@ -47,10 +47,10 @@ export function ChatbotScreen({ navigation }: any) {
 
   useEffect(() => {
     const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
-      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height + 100, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
-      Animated.timing(keyboardOffset, { toValue: 0, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: 100, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
@@ -649,7 +649,6 @@ const styles = StyleSheet.create({
     right: 0,
     paddingTop: 16,
     paddingHorizontal: 24,
-    paddingBottom: 140,
     gap: 4,
     backgroundColor: '#FFFFFF',
     borderWidth: 0.5,
