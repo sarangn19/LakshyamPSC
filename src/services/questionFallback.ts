@@ -86,6 +86,11 @@ export function getFallbackQuestion(
       recordFallback('psc_corpus', activeSubject, activeTopic);
       return { question: toGeneratedQuestion(corpusHit), source: 'psc_corpus' };
     }
+    const subHit = searchCorpus(activeSubject, undefined, difficulty);
+    if (subHit) {
+      recordFallback('psc_corpus', activeSubject);
+      return { question: toGeneratedQuestion(subHit), source: 'psc_corpus' };
+    }
   }
   for (const sub of subjects) {
     const corpusHit = searchCorpus(sub, undefined, difficulty);

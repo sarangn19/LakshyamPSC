@@ -108,7 +108,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = twinRec.topic || undefined;
     console.log('[TRACE:startDailyDrill] entered', { targetExams, recommendedSubject, recommendedTopic });
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', prefetchedQuestions: [] });
+    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionSubjects: subjects || [], prefetchedQuestions: [] });
     const baseState = makeAdaptiveState();
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, 'easy', get().adaptiveState, [],
@@ -506,7 +506,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       : config.recommendedSubject || twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = config.recommendedTopic || twinRec.topic || undefined;
     console.log('[TRACE:startOrchestratedSession] entered', { config, recommendedSubject, recommendedTopic });
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '', sessionType: config.sessionType || 'orchestrated', prefetchedQuestions: [] });
+    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '', sessionType: config.sessionType || 'orchestrated', sessionSubjects: config.subjects || [], prefetchedQuestions: [] });
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, config.difficulty || 'medium', get().adaptiveState, [],
       false, recommendedSubject, recommendedTopic, targetExams,

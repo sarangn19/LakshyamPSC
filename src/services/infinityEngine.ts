@@ -139,8 +139,6 @@ function pickTopic(
     }));
   }
 
-  // Boost preferred topic after the fallback so it applies regardless
-  // of whether candidates came from the original computation or fallback
   if (preferredTopic) {
     const hasPreferred = candidates.some((c) => c.topic === preferredTopic);
     if (hasPreferred) {
@@ -148,6 +146,12 @@ function pickTopic(
         ...c,
         adjustedScore: c.topic === preferredTopic ? c.adjustedScore * 100 : c.adjustedScore * 0.01,
       }));
+    } else if (preferredSubject && candidates.some((c) => c.subject === preferredSubject)) {
+      candidates.push({
+        subject: preferredSubject,
+        topic: preferredTopic,
+        adjustedScore: 100,
+      });
     }
   }
 
