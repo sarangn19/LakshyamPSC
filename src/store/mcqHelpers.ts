@@ -186,6 +186,7 @@ export async function resolveValidQuestion(
     const result = await generateNextAdaptiveQuestion(
       weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
       originalTopic,
+      originalSubject,
       { priority: options?.priority },
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);

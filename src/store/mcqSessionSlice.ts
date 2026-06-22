@@ -505,6 +505,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const recommendedSubject = (config.subjects && config.subjects.length > 0) ? config.subjects[0]
       : config.recommendedSubject || twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = config.recommendedTopic || twinRec.topic || undefined;
+    console.log('[TRACE:startOrchestratedSession] entered', { config, recommendedSubject, recommendedTopic });
     set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '', sessionType: config.sessionType || 'orchestrated' });
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, config.difficulty || 'medium', get().adaptiveState, [],
@@ -513,6 +514,9 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       get().seenQuestionTexts,
     );
     if (question) {
+      console.log('[TRACE:startOrchestratedSession] resolveValidQuestion returned', {
+        questionId: question?.id || 'null', hasReport: !!report,
+      });
       const actionId = config.recommendationId
         ? usePerformanceStore.getState().addRecommendationAction({
             recommendationId: config.recommendationId,

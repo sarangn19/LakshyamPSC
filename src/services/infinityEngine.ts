@@ -89,6 +89,7 @@ function pickTopic(
   sessionCovered: string[],
   recentSignals: InteractionSignal[],
   preferredTopic?: string,
+  preferredSubject?: string,
 ): { subject: string; topic: string } | null {
   const bkt = useBKTStore.getState();
   const knowledgeMap = bkt.topicMap;
@@ -131,9 +132,12 @@ function pickTopic(
   }
 
   if (candidates.length === 0) {
-    let fallback = priorities;
+    let fallback: typeof priorities = [];
     if (preferredTopic) {
       fallback = priorities.filter((p) => p.topic === preferredTopic);
+    }
+    if (fallback.length === 0 && preferredTopic && preferredSubject) {
+      fallback = priorities.filter((p) => p.subject === preferredSubject);
     }
     if (fallback.length === 0 && weakSubjects.length > 0) {
       fallback = priorities.filter((p) => weakSubjects.includes(p.subject));
@@ -172,6 +176,7 @@ export async function generateNextAdaptiveQuestion(
   lastAnswerCorrect?: boolean,
   avoidTexts?: string[],
   preferredTopic?: string,
+  preferredSubject?: string,
   options?: { priority?: 'high' | 'low'; signal?: AbortSignal },
 ): Promise<{
   question: GeneratedQuestion | null;
@@ -190,7 +195,7 @@ export async function generateNextAdaptiveQuestion(
     topic = { subject: state.currentSubtopic.subject, topic: state.currentSubtopic.topic };
     subtopic = state.currentSubtopic.subtopic;
   } else {
-    topic = pickTopic(weakSubjects, sessionCovered, recentSignals, preferredTopic);
+    topic = pickTopic(weakSubjects, sessionCovered, recentSignals, preferredTopic, preferredSubject);
     if (!topic) {
       const allTopics = getScorableTopics();
       if (allTopics.length > 0) {
