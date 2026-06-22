@@ -172,15 +172,31 @@ export async function resolveValidQuestion(
       }
     }
   }
+  const blockedTopics: string[] = [];
+  let currentAdaptiveState = adaptiveState;
   for (let retry = 0; retry < 3; retry++) {
+    // Clear currentSubtopic if blocked to force pickTopic to choose a different topic
+    if (currentAdaptiveState?.currentSubtopic) {
+      const currentKey = `${currentAdaptiveState.currentSubtopic.subject}::${currentAdaptiveState.currentSubtopic.topic}`;
+      if (blockedTopics.includes(currentKey)) {
+        currentAdaptiveState = { ...currentAdaptiveState, currentSubtopic: null };
+      }
+    }
     const result = await generateNextAdaptiveQuestion(
-      weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
+      weakSubjects, [...covered, ...blockedTopics], correct, total, difficulty, currentAdaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
       originalTopic,
       originalSubject,
       { priority: options?.priority },
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);
-    if (!result?.question) break;
+    if (!result?.question) {
+      if (result?.adaptiveState?.currentSubtopic) {
+        const key = `${result.adaptiveState.currentSubtopic.subject}::${result.adaptiveState.currentSubtopic.topic}`;
+        if (!blockedTopics.includes(key)) blockedTopics.push(key);
+      }
+      currentAdaptiveState = result.adaptiveState;
+      continue;
+    }
     recordGeneration(result.question);
     if (seenQuestionTexts.includes(result.question.text)) {
       recordRejection(result.question);

@@ -16,3 +16,5 @@ web-build/
 .vercel
 
 .vercel-test
+
+test-api-keys.*

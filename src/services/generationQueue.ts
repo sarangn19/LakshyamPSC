@@ -195,7 +195,8 @@ function isFatalError(err: unknown): boolean {
     const msg = err.message.toLowerCase();
     return msg.includes('invalid') || msg.includes('not configured') ||
       msg.includes('400') || msg.includes('401') || msg.includes('403') ||
-      msg.includes('413');
+      msg.includes('413') || msg.includes('500') || msg.includes('502') ||
+      msg.includes('503') || msg.includes('504');
   }
   return false;
 }
