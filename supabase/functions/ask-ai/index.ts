@@ -1,8 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
 const AI_API_KEY = Deno.env.get('AI_API_KEY') || '';
-const AI_API_URL = Deno.env.get('AI_API_URL') || 'https://api.groq.com/openai/v1/chat/completions';
-const AI_MODEL = Deno.env.get('AI_MODEL') || 'llama-3.1-8b-instant';
+const AI_API_URL = Deno.env.get('AI_API_URL') || 'https://api.openai.com/v1/chat/completions';
+const AI_MODEL = Deno.env.get('AI_MODEL') || 'gpt-4o-mini';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +50,7 @@ serve(async (req) => {
       + `If the user asks for MCQs, generate 4 options with the correct answer marked. `
       + `Never mention you are an AI. Just answer naturally as a tutor.`;
 
-    const messages = [
+    const chatMessages = [
       { role: 'system', content: systemPrompt },
       ...(history || []).slice(-10).map((m: { role: string; content: string }) => ({
         role: m.role === 'ai' ? 'assistant' : m.role,
@@ -59,31 +59,71 @@ serve(async (req) => {
       { role: 'user', content: message },
     ];
 
-    console.log('[ASK-AI] sending to model:', AI_MODEL);
+    const isOpenRouter = AI_API_URL.includes('openrouter.ai');
 
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${AI_API_KEY}`,
+    const tryProvider = async (url: string, key: string, model: string, extraHeaders?: Record<string, string>): Promise<string | null> => {
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${key}`,
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages,
-        temperature: 0.7,
-        max_tokens: 2048,
-      }),
-    });
+        ...extraHeaders,
+      };
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            model,
+            messages: chatMessages,
+            temperature: 0.7,
+            max_tokens: 2048,
+          }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content || null;
+      } catch { return null; }
+    };
 
-    if (!response.ok) {
-      const errText = await response.text();
-      return corsResponse({ error: `AI API error: ${response.status} ${errText}` }, 502);
+    const primaryHeaders = isOpenRouter ? { 'HTTP-Referer': 'https://lakshyam.app', 'X-Title': 'Lakshyam' } : undefined;
+
+    // Try 1: Primary provider
+    let reply = await tryProvider(AI_API_URL, AI_API_KEY, AI_MODEL, primaryHeaders);
+    if (reply) return corsResponse({ reply });
+
+    // Try 2: Alt models on same provider
+    if (isOpenRouter) {
+      const altModels = ['google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct'];
+      for (const model of altModels) {
+        reply = await tryProvider(AI_API_URL, AI_API_KEY, model, primaryHeaders);
+        if (reply) return corsResponse({ reply });
+      }
     }
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content || '';
+    // Try 3: Fallback provider
+    const FB_KEY = Deno.env.get('FALLBACK_API_KEY') || '';
+    const FB_URL = Deno.env.get('FALLBACK_API_URL') || '';
+    const FB_MODEL = Deno.env.get('FALLBACK_MODEL') || 'meta-llama/llama-3.1-8b-instruct:free';
+    if (FB_KEY && FB_URL) {
+      reply = await tryProvider(FB_URL, FB_KEY, FB_MODEL);
+      if (reply) return corsResponse({ reply });
+    }
 
-    return corsResponse({ reply });
+    // Try 4: Gemini direct
+    const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') || '';
+    if (GEMINI_KEY) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`;
+      try {
+        const geminiBody = { contents: [{ parts: [{ text: `${systemPrompt}\n\n${chatMessages.map(m => `${m.role}: ${m.content}`).join('\n\n')}\n\nReturn a clear, helpful response.` }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 1024 } };
+        const res = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (text) return corsResponse({ reply: text });
+        }
+      } catch {}
+    }
+
+    return corsResponse({ error: 'All models failed' }, 502);
   } catch (err) {
     return corsResponse({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
   }
