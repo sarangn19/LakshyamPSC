@@ -294,13 +294,19 @@ function validateTaxonomy(rawSubject: string, rawTopic: string): { error?: strin
   }
 
   const subject = SUBJECT_SYNONYMS.get(rawSubject) || rawSubject;
-  const topic = TOPIC_SYNONYMS.get(rawTopic) || rawTopic;
 
   const validTopics = CANONICAL[subject];
   if (!validTopics) {
     return { error: `Unknown subject "${rawSubject}"` };
   }
 
+  // First try the exact topic before applying synonyms
+  if (validTopics.has(rawTopic)) {
+    return { subject, topic: rawTopic };
+  }
+
+  // Fall through to synonym-mapped topic (e.g., 'Grammar' -> Malayalam 'Grammar (വ്യാകരണം)')
+  const topic = TOPIC_SYNONYMS.get(rawTopic) || rawTopic;
   if (!validTopics.has(topic)) {
     return { error: `Unknown topic "${rawTopic}" for subject "${subject}"` };
   }

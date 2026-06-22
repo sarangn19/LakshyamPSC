@@ -118,18 +118,19 @@ serve(async (req) => {
     // Taxonomy validation
     const rawSubject = (subject as string || '').trim();
     const rawTopic = (topic as string || '').trim();
-    const mappedSubject = SUBJECT_SYNONYMS.get(rawSubject) || rawSubject;
-    const mappedTopic = TOPIC_SYNONYMS.get(rawTopic) || rawTopic;
 
     if (REJECTED_SUBJECTS.has(rawSubject)) {
       return corsResponse({ error: `Rejected subject "${rawSubject}" is not a valid PSC category` }, 400);
     }
 
+    const mappedSubject = SUBJECT_SYNONYMS.get(rawSubject) || rawSubject;
     const validTopics = CANONICAL[mappedSubject];
     if (!validTopics) {
       return corsResponse({ error: `Unknown subject "${rawSubject}". Must be one of: ${Object.keys(CANONICAL).sort().join(', ')}` }, 400);
     }
 
+    // First try exact topic match before applying synonyms
+    const mappedTopic = validTopics.has(rawTopic) ? rawTopic : (TOPIC_SYNONYMS.get(rawTopic) || rawTopic);
     if (!validTopics.has(mappedTopic)) {
       return corsResponse({
         error: `Unknown topic "${rawTopic}" for subject "${mappedSubject}". Valid topics: ${[...validTopics].sort().join(', ')}`,
@@ -155,6 +156,9 @@ serve(async (req) => {
       return corsResponse({ success: true, data: { id: existing.id }, duplicate: true });
     }
 
+    const ALLOWED_SOURCE_TYPES = ['ai_generated', 'user_created', 'admin_uploaded'];
+    const safeSourceType = ALLOWED_SOURCE_TYPES.includes(sourceType) ? sourceType : 'ai_generated';
+
     const { data, error } = await supabase
       .from('question_bank_mcqs')
       .insert({
@@ -169,7 +173,7 @@ serve(async (req) => {
         exam_type: examType,
         exam_types: [examType],
         language: language || 'en',
-        source_type: sourceType || 'ai_generated',
+        source_type: safeSourceType,
         source: sourceType === 'admin_uploaded' ? 'ai_generated' : (sourceType || 'ai_generated'),
         question_hash: hash,
         generated_by: userId || null,
