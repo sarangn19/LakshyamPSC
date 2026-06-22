@@ -6,16 +6,22 @@ import { getCognitiveTwinSummary } from '../../services/learningRecommendationEn
 import { computeExamOutlook } from '../../services/examOutlookEngine';
 
 type Props = {
-  onPracticeSubject: (subject: string) => void;
+  onPracticeSubject: (subject: string, topic?: string) => void;
 };
 
 export function WeakAreasCard({ onPracticeSubject }: Props) {
   const outlook = computeExamOutlook();
   const weakSubjects = outlook.weakestSubjects;
   const strongSubjects = outlook.strongestSubjects;
+  const blockingTopics = outlook.blockingTopics;
   const summary = getCognitiveTwinSummary();
 
-  if (weakSubjects.length === 0) {
+  // Show blocking topics (specific weak topics) if available, otherwise show weak subjects
+  const weakAreas = blockingTopics.length > 0 
+    ? blockingTopics.map(t => ({ name: t.topic, subject: t.subject, score: 30, isTopic: true }))
+    : weakSubjects.map(s => ({ name: s.name, subject: s.name, score: s.score, isTopic: false }));
+
+  if (weakAreas.length === 0) {
     return (
       <View style={styles.card}>
         <Text style={styles.overline}>Top Weak Areas</Text>
@@ -29,23 +35,24 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
       <Text style={styles.overline}>Top Weak Areas</Text>
       <Text style={styles.subtitle}>Focus on these to improve your score</Text>
 
-      {weakSubjects.map((subj, i) => {
-        const isStrongest = strongSubjects.some((s) => s.name === subj.name);
+      {weakAreas.map((area, i) => {
+        const isStrongest = strongSubjects.some((s) => s.name === area.subject);
         return (
-          <View key={subj.name} style={styles.weakItem}>
+          <View key={area.name} style={styles.weakItem}>
             <View style={styles.rankBadge}>
               <Text style={styles.rankText}>{i + 1}</Text>
             </View>
             <View style={styles.weakContent}>
-              <Text style={styles.weakName}>{subj.name}</Text>
+              <Text style={styles.weakName}>{area.name}</Text>
+              {area.isTopic && <Text style={styles.subjectLabel}>{area.subject}</Text>}
               <View style={styles.scoreRow}>
-                <View style={[styles.scoreBar, { width: `${subj.score}%`, backgroundColor: isStrongest ? colors.success : colors.error }]} />
+                <View style={[styles.scoreBar, { width: `${area.score}%`, backgroundColor: isStrongest ? colors.success : colors.error }]} />
               </View>
-              <Text style={styles.weakScore}>{subj.score}% proficiency</Text>
+              <Text style={styles.weakScore}>{area.score}% proficiency</Text>
             </View>
             <TouchableOpacity
               style={styles.practiceBtn}
-              onPress={() => onPracticeSubject(subj.name)}
+              onPress={() => onPracticeSubject(area.subject, area.isTopic ? area.name : undefined)}
               activeOpacity={0.7}
             >
               <Text style={styles.practiceBtnText}>Practice</Text>
@@ -114,6 +121,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     fontFamily: typography.bodySmall.fontFamily,
+  },
+  subjectLabel: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    marginTop: 1,
+    fontFamily: typography.tiny.fontFamily,
   },
   scoreRow: {
     height: 4,

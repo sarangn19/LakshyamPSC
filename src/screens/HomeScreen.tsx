@@ -74,8 +74,8 @@ export function HomeScreen({ navigation }: any) {
   const hour = new Date().getHours();
   const greetingText = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  const handlePracticeSubject = (subject: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], sessionType: 'focused' });
+  const handlePracticeSubject = (subject: string, topic?: string) => {
+    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'focused' });
     navigation.navigate('MCQ');
   };
 
