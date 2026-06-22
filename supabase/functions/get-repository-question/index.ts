@@ -60,7 +60,8 @@ serve(async (req) => {
     const { data: questions, error: queryError } = await query;
 
     if (queryError) {
-      console.error('Repository query error:', queryError);
+      console.error('[ERROR] Repository query error:', JSON.stringify(queryError));
+      console.error('[ERROR] Error details:', queryError.message, queryError.code, queryError.hint);
       // Fall through to AI generation
     }
 

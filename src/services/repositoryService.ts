@@ -57,6 +57,7 @@ export async function getRepositoryQuestion(
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
         body: JSON.stringify(request),
       },
@@ -97,6 +98,7 @@ export async function getRepositoryAnalytics(
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'apikey': SUPABASE_ANON_KEY,
         },
       },
     );
