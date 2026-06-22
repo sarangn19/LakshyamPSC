@@ -70,6 +70,8 @@ export interface SessionSlice {
   resetSession: () => void;
 }
 
+let sessionGeneration = 0;
+
 export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = (set, get) => ({
   currentQuestions: [],
   currentIndex: 0,
@@ -101,6 +103,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   prefetchDepth: 3,
 
   startDailyDrill: async (exams, subjects) => {
+    const gen = ++sessionGeneration;
     const existing = get();
     if (existing.sessionActive) {
       existing.endSession();
@@ -112,7 +115,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = twinRec.topic || undefined;
     console.log('[TRACE:startDailyDrill] entered', { targetExams, recommendedSubject, recommendedTopic });
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionSubjects: subjects || [], prefetchedQuestions: [] });
+    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionActive: true, sessionSubjects: subjects || [], prefetchedQuestions: [] });
     const baseState = makeAdaptiveState();
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, 'easy', get().adaptiveState, [],
@@ -120,6 +123,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       get().reportedQuestions, useUserStore.getState().locale,
       get().seenQuestionTexts,
     );
+    if (gen !== sessionGeneration) return;
     console.log('[TRACE:startDailyDrill] resolveValidQuestion returned', {
       questionId: question?.id || 'null', hasReport: !!report,
     });
@@ -503,6 +507,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     }),
 
   startOrchestratedSession: async (config) => {
+    const gen = ++sessionGeneration;
     const existing = get();
     if (existing.sessionActive) {
       existing.endSession();
@@ -514,13 +519,14 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       : config.recommendedSubject || twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = config.recommendedTopic || twinRec.topic || undefined;
     console.log('[TRACE:startOrchestratedSession] entered', { config, recommendedSubject, recommendedTopic });
-    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '', sessionType: config.sessionType || 'orchestrated', sessionSubjects: config.subjects || [], prefetchedQuestions: [] });
+    set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: config.difficulty || 'medium', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, recommendationId: config.recommendationId || '', sessionType: config.sessionType || 'orchestrated', sessionActive: true, sessionSubjects: config.subjects || [], prefetchedQuestions: [] });
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, config.difficulty || 'medium', get().adaptiveState, [],
       false, recommendedSubject, recommendedTopic, targetExams,
       get().reportedQuestions, useUserStore.getState().locale,
       get().seenQuestionTexts,
     );
+    if (gen !== sessionGeneration) return;
     if (question) {
       console.log('[TRACE:startOrchestratedSession] resolveValidQuestion returned', {
         questionId: question?.id || 'null', hasReport: !!report,
