@@ -151,12 +151,14 @@ export async function resolveValidQuestion(
   }
   // Phase 1: Repository-first lookup
   if (activeSubject) {
+    // Force English for Constitution subjects
+    const language = activeSubject === 'Constitution' ? 'en' : locale;
     const repoResult = await getRepositoryQuestion({
       subject: activeSubject,
       topic: activeTopic,
       difficulty,
       examTypes: targetExams,
-      language: locale,
+      language,
     });
     if (repoResult.found && repoResult.question) {
       const q = repoResult.question;
@@ -207,11 +209,13 @@ export async function resolveValidQuestion(
     recordAcceptedQuestion(result.question);
     if (integrity.result.confidenceScore >= 0.8) {
       const q = result.question;
+      // Force English for Constitution subjects
+      const language = activeSubject === 'Constitution' ? 'en' : locale;
       storeGeneratedMCQ({
         questionText: q.text, options: q.options, correctAnswer: q.correctAnswer,
         explanation: q.explanation || '', subject: q.subject, topic: q.topic,
         subtopic: q.subtopic, difficulty: q.difficulty, examType: targetExams[0] || 'LDC',
-        language: locale, sourceType: 'ai_generated', tags: [],
+        language, sourceType: 'ai_generated', tags: [],
       });
     }
     const match = getTopicMatch(result.question.subject, result.question.topic, activeSubject, activeTopic);
@@ -236,8 +240,10 @@ export async function resolveValidQuestion(
     return { question: result.question, report: lastReport, source: 'ai' };
   }
   // AI generation failed — use fallback chain
+  // Force English for Constitution subjects
+  const language = activeSubject === 'Constitution' ? 'en' : locale;
   const fallback = getFallbackQuestion(
-    weakSubjects, difficulty, targetExams, locale, activeSubject, activeTopic,
+    weakSubjects, difficulty, targetExams, language, activeSubject, activeTopic,
   );
   recordAcceptance(fallback.question);
   recordAcceptedQuestion(fallback.question);
@@ -255,11 +261,13 @@ export async function resolveValidQuestion(
 export function getLastResortQuestion(
   subjects: string[], difficulty: 'easy' | 'medium' | 'hard', examType: string, locale: 'en' | 'ml',
 ): any | null {
-  const pool = generateMCQs({ subjects: subjects.length > 0 ? subjects : undefined, difficulty: difficulty === 'hard' ? 'medium' : difficulty, examType: examType || 'LDC', count: 3, language: locale });
+  // Force English for Constitution subjects
+  const language = subjects.includes('Constitution') ? 'en' : locale;
+  const pool = generateMCQs({ subjects: subjects.length > 0 ? subjects : undefined, difficulty: difficulty === 'hard' ? 'medium' : difficulty, examType: examType || 'LDC', count: 3, language });
   for (const q of pool) {
     if (validateQuestionIntegrity(q).valid) return q;
   }
-  const anyPool = generateMCQs({ difficulty: 'easy', examType: examType || 'LDC', count: 5, language: locale });
+  const anyPool = generateMCQs({ difficulty: 'easy', examType: examType || 'LDC', count: 5, language });
   for (const q of anyPool) {
     if (validateQuestionIntegrity(q).valid) return q;
   }
