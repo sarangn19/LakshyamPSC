@@ -133,30 +133,18 @@ export async function resolveValidQuestion(
 }> {
   const activeAvoid = [...reportedQuestions, ...useMCQStore.getState().disabledQuestions];
   let lastReport: any | null = null;
-  let activeSubject = recommendedSubject;
-  let activeTopic = recommendedTopic;
-  // Keep the original subject and topic for AI generation even if the repository
-  // fallback jumps to a different subject/topic
+  // Keep original subject/topic for AI generation even if repository path falls back
   const originalTopic = recommendedTopic;
   const originalSubject = recommendedSubject;
-  if (activeTopic) {
-    const inventoryOk = hasSufficientInventory(activeSubject, activeTopic);
-    const breadthOk = isTopicReadyForRecommendation(activeSubject, activeTopic);
-    if (!inventoryOk || !breadthOk) {
-      const fallback = findNearestSupportedTopic(activeSubject, activeTopic);
-      if (fallback) {
-        activeSubject = fallback.subject;
-        activeTopic = fallback.topic;
-      }
-    }
-  }
   if (useMCQStore.getState().sessionType === 'practice') {
     return { question: null, report: null, source: 'none' };
   }
-  // Phase 1: Repository-first lookup — only if the inventory fallback kept the same subject
-  // If the fallback changed the subject, the repository would return off-topic questions;
-  // AI generation with originalSubject/originalTopic handles that correctly.
-  if (activeSubject && activeSubject === originalSubject) {
+  // Phase 1: Repository-first lookup — only if the original topic has sufficient inventory.
+  // If not, the repository can't help and we go straight to AI generation with the
+  // original subject/topic, avoiding off-topic inventory fallback questions.
+  const activeSubject = recommendedSubject;
+  const activeTopic = recommendedTopic;
+  if (activeSubject && activeTopic && hasSufficientInventory(activeSubject, activeTopic) && isTopicReadyForRecommendation(activeSubject, activeTopic)) {
     // Force English for all subjects
     const language = 'en';
     const repoResult = await getRepositoryQuestion({
