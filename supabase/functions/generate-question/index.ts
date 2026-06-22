@@ -178,6 +178,16 @@ The subject field MUST be "${subject}". The topic field MUST be "${topic}".`;
 }
 
 function parseResponse(text: string): ParsedQuestion | null {
+  // First, try to extract content from OpenAI-style response
+  try {
+    const apiResponse = JSON.parse(text);
+    if (apiResponse.choices && apiResponse.choices[0]?.message?.content) {
+      text = apiResponse.choices[0].message.content;
+    }
+  } catch {
+    // Not an API response, treat as direct content
+  }
+
   const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
   try {
     const parsed = JSON.parse(cleaned);
@@ -348,58 +358,76 @@ serve(async (req) => {
       ? 'You generate multiple-choice questions from provided content. Read the content carefully and create a question about a fact, concept, or term mentioned in it. Never generate questions about topics not present in the content.'
       : 'You are a Kerala PSC exam question generator. You MUST identify the subject, topic, and subtopic of every question you generate and return them in the JSON response.';
 
-    console.log('[GENERATE] requested:', JSON.stringify({ subject, topic, subtopic: subtopic || '', isContentBased }));
-
-    // Model fallback chain: try primary, then fallback models
-    const primaryModel = AI_MODEL;
-    const fallbackModels: string[] = [];
-    if (AI_API_URL.includes('openrouter.ai')) {
-      fallbackModels.push(
-        'google/gemini-2.0-flash-lite-001',
-        'meta-llama/llama-3.1-8b-instruct',
-      );
-    }
-    const modelsToTry = [primaryModel, ...fallbackModels];
-
-    const fetchHeaders: Record<string, string> = {
-      'Authorization': `Bearer ${AI_API_KEY}`,
-      'Content-Type': 'application/json',
-    };
     const isOpenRouter = AI_API_URL.includes('openrouter.ai');
-    if (isOpenRouter) {
-      fetchHeaders['HTTP-Referer'] = 'https://lakshyam.app';
-      fetchHeaders['X-Title'] = 'Lakshyam';
-    }
 
-    const tryDirect = async (url: string, headers: Record<string, string>, body: Record<string, unknown>): Promise<ParsedQuestion | null> => {
+    const tryProvider = async (url: string, key: string, model: string, extraHeaders?: Record<string, string>): Promise<ParsedQuestion | null> => {
+      const headers: Record<string, string> = {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        ...extraHeaders,
+      };
       try {
+        const body = { model, messages: [{ role: 'system', content: systemMessage }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: isContentBased ? 1024 : 800 };
         const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body) });
-        if (!res.ok) { console.log('[GEN] HTTP', res.status, await res.text().catch(()=>'').then(t=>t.substring(0,80))); return null; }
+        if (!res.ok) {
+          return null;
+        }
         const text = await res.text();
         const parsed = parseResponse(text);
-        if (!parsed) console.log('[GEN] parse fail:', text.substring(0,80));
         return parsed;
-      } catch (e) { console.log('[GEN] error:', String(e)); return null; }
+      } catch (e) {
+        return null;
+      }
     };
 
-    // OpenRouter (hardcoded key for testing)
-    const OR_KEY = Deno.env.get('FALLBACK_API_KEY') || '';
-    const OR_URL = Deno.env.get('FALLBACK_API_URL') || 'https://openrouter.ai/api/v1/chat/completions';
-    console.log('[GENERATE] OR_KEY length:', OR_KEY.length, 'OR_URL:', OR_URL.substring(0, 30));
-    if (OR_KEY) {
-      console.log('[GENERATE] trying OpenRouter');
-      const parsed = await tryDirect(OR_URL, { 'Authorization': `Bearer ${OR_KEY}`, 'Content-Type': 'application/json' }, { model: 'meta-llama/llama-3.1-8b-instruct:free', messages: [{ role: 'system', content: systemMessage }, { role: 'user', content: prompt }], temperature: 0.7, max_tokens: isContentBased ? 1024 : 800 });
-      if (parsed) {
-        const taxResult = validateTaxonomy(parsed.subject, parsed.topic);
-        if (taxResult.error) {
-          console.log('[GEN] taxonomy rejection:', taxResult.error);
-          return corsResponse({ error: `AI generated question has invalid taxonomy: ${taxResult.error}. Regenerate.` }, 422);
-        }
-        return corsResponse({ subject: taxResult.subject, topic: taxResult.topic, subtopic: parsed.subtopic, question: parsed.question, options: parsed.options, correctAnswer: parsed.correctAnswer, explanation: parsed.explanation, difficulty, examType: [examType], confidence: difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75, source: 'ai_generated', alignmentWarning: taxResult.topic !== topic || taxResult.subject !== subject });
+    const returnQuestion = (parsed: ParsedQuestion): Response => {
+      const taxResult = validateTaxonomy(parsed.subject, parsed.topic);
+      if (taxResult.error) {
+        return corsResponse({ error: `AI generated question has invalid taxonomy: ${taxResult.error}. Regenerate.` }, 422);
+      }
+      return corsResponse({ subject: taxResult.subject, topic: taxResult.topic, subtopic: parsed.subtopic, question: parsed.question, options: parsed.options, correctAnswer: parsed.correctAnswer, explanation: parsed.explanation, difficulty, examType: [examType], confidence: difficulty === 'easy' ? 88 : difficulty === 'medium' ? 82 : 75, source: 'ai_generated', alignmentWarning: taxResult.topic !== topic || taxResult.subject !== subject });
+    };
+
+    // Try 1: Primary provider (AI_API_KEY + AI_API_URL + AI_MODEL)
+    const primaryHeaders = isOpenRouter ? { 'HTTP-Referer': 'https://lakshyam.app', 'X-Title': 'Lakshyam' } : undefined;
+    let result = await tryProvider(AI_API_URL, AI_API_KEY, AI_MODEL, primaryHeaders);
+    if (result) return returnQuestion(result);
+
+    // Try 2: If primary is OpenRouter, try alternate models on same URL
+    if (isOpenRouter) {
+      const altModels = ['google/gemini-2.0-flash-lite-001', 'meta-llama/llama-3.1-8b-instruct'];
+      for (const model of altModels) {
+        result = await tryProvider(AI_API_URL, AI_API_KEY, model, primaryHeaders);
+        if (result) return returnQuestion(result);
       }
     }
 
-    console.log('[GENERATE] all providers failed');
+    // Try 3: Fallback provider (FALLBACK_API_KEY + FALLBACK_API_URL + FALLBACK_MODEL)
+    const FB_KEY = Deno.env.get('FALLBACK_API_KEY') || '';
+    const FB_URL = Deno.env.get('FALLBACK_API_URL') || '';
+    const FB_MODEL = Deno.env.get('FALLBACK_MODEL') || 'meta-llama/llama-3.1-8b-instruct:free';
+    if (FB_KEY && FB_URL) {
+      result = await tryProvider(FB_URL, FB_KEY, FB_MODEL);
+      if (result) return returnQuestion(result);
+    }
+
+    // Try 4: Gemini direct
+    const GEMINI_KEY = Deno.env.get('GEMINI_API_KEY') || '';
+    if (GEMINI_KEY) {
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`;
+      try {
+        const geminiBody = { contents: [{ parts: [{ text: `${systemMessage}\n\n${prompt}\n\nReturn ONLY valid JSON. No markdown, no code fences.` }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 1024 } };
+        const res = await fetch(geminiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(geminiBody) });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (text) {
+            const parsed = parseResponse(text);
+            if (parsed) return returnQuestion(parsed);
+          }
+        }
+      } catch (e) { }
+    }
     return corsResponse({ error: 'All models failed' }, 502);
   } catch (err) {
     return corsResponse({ error: err instanceof Error ? err.message : 'Unknown error' }, 500);
