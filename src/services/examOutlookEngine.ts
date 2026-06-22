@@ -222,31 +222,36 @@ function computeBlockingTopics(): { subject: string; topic: string; reason: stri
     topicWeights[key] = weight || 0.1;
   }
 
-  const scored = allTopics
-    .map((s) => {
-      const key = `${s.subject}::${s.topic}${s.subtopic ? `::${s.subtopic}` : ''}`;
-      const tk = topicMap[key];
-      const pMastered = tk ? tk.pMastered : 0;
-      const isGap = gaps.some((g) => g.nodeId === key || g.topic === s.topic);
-      const lowMastery = pMastered < 0.5;
-      const weight = topicWeights[key] || 0.1;
-      const blockScore = lowMastery && isGap ? weight * (1 - pMastered) : 0;
-      return { subject: s.subject, topic: s.topic, key, pMastered, blockScore, weight, isGap };
-    })
+  const topicGroups = new Map<string, { subject: string; topic: string; pMastered: number; blockScore: number }>();
+  for (const s of allTopics) {
+    const key = `${s.subject}::${s.topic}${s.subtopic ? `::${s.subtopic}` : ''}`;
+    const tk = topicMap[key];
+    const pMastered = tk ? tk.pMastered : 0;
+    const isGap = gaps.some((g) => g.nodeId === key || g.topic === s.topic);
+    const lowMastery = pMastered < 0.5;
+    const weight = topicWeights[key] || 0.1;
+    const blockScore = lowMastery && isGap ? weight * (1 - pMastered) : 0;
+    const groupKey = `${s.subject}::${s.topic}`;
+    const existing = topicGroups.get(groupKey);
+    if (!existing || blockScore > existing.blockScore) {
+      topicGroups.set(groupKey, { subject: s.subject, topic: s.topic, pMastered, blockScore });
+    }
+  }
+
+  const scored = Array.from(topicGroups.values())
+    .filter((s) => s.blockScore > 0)
     .sort((a, b) => b.blockScore - a.blockScore)
     .slice(0, 5);
 
-  return scored
-    .filter((s) => s.blockScore > 0)
-    .map((s) => ({
-      subject: s.subject,
-      topic: s.topic,
-      reason: s.pMastered < 0.3
-        ? 'Low mastery — needs focused practice'
-        : s.pMastered < 0.5
-          ? 'Improving but below target'
-          : 'Frequently missed in practice',
-    }));
+  return scored.map((s) => ({
+    subject: s.subject,
+    topic: s.topic,
+    reason: s.pMastered < 0.3
+      ? 'Low mastery — needs focused practice'
+      : s.pMastered < 0.5
+        ? 'Improving but below target'
+        : 'Frequently missed in practice',
+  }));
 }
 
 function computeRevisionRiskTopics(): { subject: string; topic: string; daysOverdue: number }[] {

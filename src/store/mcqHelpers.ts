@@ -181,6 +181,7 @@ export async function resolveValidQuestion(
   for (let retry = 0; retry < 3; retry++) {
     const result = await generateNextAdaptiveQuestion(
       weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
+      activeTopic,
       { priority: options?.priority },
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);

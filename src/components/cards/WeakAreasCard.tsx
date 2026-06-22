@@ -38,7 +38,7 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
       {weakAreas.map((area, i) => {
         const isStrongest = strongSubjects.some((s) => s.name === area.subject);
         return (
-          <View key={area.name} style={styles.weakItem}>
+          <View key={`${area.subject}::${area.name}`} style={styles.weakItem}>
             <View style={styles.rankBadge}>
               <Text style={styles.rankText}>{i + 1}</Text>
             </View>
