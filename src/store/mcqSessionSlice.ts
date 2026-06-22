@@ -101,6 +101,10 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   prefetchDepth: 3,
 
   startDailyDrill: async (exams, subjects) => {
+    const existing = get();
+    if (existing.sessionActive) {
+      existing.endSession();
+    }
     const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
     const weakSubjects = subjects ?? get().getWeakSubjects(targetExams);
     const twinRec = getRecommendedSubjectAndTopic();
@@ -482,7 +486,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     useCognitiveTwinStore.getState().detectKnowledgeGaps();
     useCognitiveTwinStore.getState().runRetentionCheck();
     useCognitiveTwinStore.getState().scheduleRetentionAssessments();
-    set({ sessionActive: false, questionStartTime: null, lastSessionOutcome: outcome, recommendationActionId: undefined });
+    set({ sessionActive: false, questionStartTime: null, lastSessionOutcome: outcome, recommendationActionId: undefined, prefetchedQuestions: [], generatingNext: false, isGenerating: false });
     if (state.sessionReduced || state.questionsSkipped > 0) {
       console.log('[INTEGRITY] session completed with reduction:', state.questionsSkipped, 'questions skipped');
     }
@@ -499,6 +503,10 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     }),
 
   startOrchestratedSession: async (config) => {
+    const existing = get();
+    if (existing.sessionActive) {
+      existing.endSession();
+    }
     const targetExams = config.examType ? [config.examType] : useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
     const weakSubjects = config.subjects ?? get().getWeakSubjects(targetExams);
     const twinRec = getRecommendedSubjectAndTopic();

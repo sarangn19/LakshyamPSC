@@ -40,10 +40,15 @@ export async function generateAIQuestion(
       request.focusInstruction,
     );
     if (cached) {
-      reliabilityTracker.recordCacheHit();
-      return { question: cached, fromCache: true };
+      if (request.avoidTexts?.includes(cached.text)) {
+        reliabilityTracker.recordCacheMiss();
+      } else {
+        reliabilityTracker.recordCacheHit();
+        return { question: cached, fromCache: true };
+      }
+    } else {
+      reliabilityTracker.recordCacheMiss();
     }
-    reliabilityTracker.recordCacheMiss();
   }
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
