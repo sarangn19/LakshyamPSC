@@ -110,16 +110,12 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     }
     const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
     const weakSubjects = subjects ?? get().getWeakSubjects(targetExams);
-    const twinRec = getRecommendedSubjectAndTopic();
-    const recommendedSubject = (subjects && subjects.length > 0) ? subjects[0]
-      : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
-    const recommendedTopic = twinRec.topic || undefined;
-    console.log('[TRACE:startDailyDrill] entered', { targetExams, recommendedSubject, recommendedTopic });
-    set({ sessionActive: true, isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionSubjects: subjects || [], prefetchedQuestions: [], currentQuestions: [], currentIndex: 0 });
+    console.log('[TRACE:startDailyDrill] entered', { targetExams, weakCount: weakSubjects.length });
+    set({ sessionActive: true, isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject: '', recommendedTopic: undefined, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill', sessionSubjects: subjects || [], prefetchedQuestions: [], currentQuestions: [], currentIndex: 0 });
     const baseState = makeAdaptiveState();
     const { question, report } = await resolveValidQuestion(
       weakSubjects, [], 0, 0, 'easy', get().adaptiveState, [],
-      false, recommendedSubject, recommendedTopic, targetExams,
+      false, '', undefined, targetExams,
       get().reportedQuestions, useUserStore.getState().locale,
       get().seenQuestionTexts,
     );
