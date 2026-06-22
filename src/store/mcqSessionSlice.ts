@@ -346,11 +346,15 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const prefetched = state.prefetchedQuestions;
     if (prefetched.length > 0) {
       const nextQ = prefetched.shift();
-      set({
-        currentQuestions: [nextQ], currentIndex: 0, selectedAnswer: null, isAnswered: false,
-        questionStartTime: Date.now(), sessionCoveredTopics: covered,
-      });
-      return;
+      if (state.seenQuestionTexts.includes(nextQ.text)) {
+        set({ generatingNext: true });
+      } else {
+        set({
+          currentQuestions: [nextQ], currentIndex: 0, selectedAnswer: null, isAnswered: false,
+          questionStartTime: Date.now(), sessionCoveredTopics: covered,
+        });
+        return;
+      }
     }
 
     set({ generatingNext: true });
@@ -422,13 +426,14 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const weakSubjects = state.sessionSubjects.length > 0 ? state.sessionSubjects : allWeak;
     const covered = state.sessionCoveredTopics;
     const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
+    const avoidTexts = [...state.seenQuestionTexts, current.text].filter(Boolean);
     const { question } = await resolveValidQuestion(
       weakSubjects, covered, state.score.correct, state.score.total,
       state.currentDifficulty, state.adaptiveState,
       usePerformanceStore.getState().interactionSignals, true,
       state.recommendedSubject, state.recommendedTopic, targetExams,
       state.reportedQuestions, useUserStore.getState().locale,
-      state.seenQuestionTexts, { priority: 'low' },
+      avoidTexts, { priority: 'low' },
     );
     if (question) {
       const updated = [...get().prefetchedQuestions, question];
