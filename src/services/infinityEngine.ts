@@ -120,17 +120,6 @@ function pickTopic(
     })
     .filter((c) => c.adjustedScore > 0);
 
-  // Boost preferred topic if provided
-  if (preferredTopic) {
-    const hasPreferred = candidates.some((c) => c.topic === preferredTopic);
-    if (hasPreferred) {
-      candidates = candidates.map((c) => ({
-        ...c,
-        adjustedScore: c.topic === preferredTopic ? c.adjustedScore * 100 : c.adjustedScore * 0.01,
-      }));
-    }
-  }
-
   if (candidates.length === 0) {
     let fallback: typeof priorities = [];
     if (preferredTopic) {
@@ -148,6 +137,18 @@ function pickTopic(
       topic: p.topic,
       adjustedScore: Math.max(0.01, p.priority),
     }));
+  }
+
+  // Boost preferred topic after the fallback so it applies regardless
+  // of whether candidates came from the original computation or fallback
+  if (preferredTopic) {
+    const hasPreferred = candidates.some((c) => c.topic === preferredTopic);
+    if (hasPreferred) {
+      candidates = candidates.map((c) => ({
+        ...c,
+        adjustedScore: c.topic === preferredTopic ? c.adjustedScore * 100 : c.adjustedScore * 0.01,
+      }));
+    }
   }
 
   return weightedRandomPick(candidates);
