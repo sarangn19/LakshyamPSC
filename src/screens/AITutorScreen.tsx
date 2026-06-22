@@ -192,6 +192,8 @@ export function AITutorScreen({ route, navigation }: any) {
         </ScrollView>
       </View>
 
+      <BottomNav activeTab="AITutor" />
+
       {/* Input */}
       <View style={styles.inputRow}>
         <TextInput
@@ -206,7 +208,6 @@ export function AITutorScreen({ route, navigation }: any) {
           <Text style={{ fontSize: 16, color: '#fff', transform: [{ rotate: '45deg' }], marginLeft: 2 }}>➤</Text>
         </TouchableOpacity>
       </View>
-      <BottomNav activeTab="AITutor" />
     </KeyboardAvoidingView>
   );
 }

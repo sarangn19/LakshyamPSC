@@ -401,6 +401,8 @@ export function ChatbotScreen({ navigation }: any) {
         </View>
       </Modal>
 
+      <BottomNav activeTab="Chatbot" />
+
       {/* Input Container - Frame 2435 */}
       <Animated.View style={[styles.inputContainer, { bottom: keyboardOffset }]}>
         {/* Text Input Row - Frame 2436 */}
@@ -467,8 +469,6 @@ export function ChatbotScreen({ navigation }: any) {
           </Animated.View>
         </TouchableOpacity>
       </Modal>
-
-      <BottomNav activeTab="Chatbot" />
     </View>
   );
 }
