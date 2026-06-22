@@ -1,7 +1,7 @@
 import { TopicKnowledge, getLearningGap, getPrerequisites, getSubtopicsForTopic } from './knowledgeEngine';
 import { getScorableTopics } from './infinityScorer';
 import { useBKTStore, getKey } from '../store/bktStore';
-import { getSubjectWeight, getTopicWeight, getCategoryBoost } from '../data/examBlueprint';
+import { getSubjectWeight, getTopicWeight } from '../data/examBlueprint';
 
 export interface TopicPriority {
   subject: string;
@@ -21,8 +21,7 @@ function daysSince(timestamp: number): number {
 function getImportance(subject: string, topic: string): number {
   const sw = getSubjectWeight(subject);
   const tw = getTopicWeight(subject, topic);
-  const cb = getCategoryBoost(subject);
-  return Math.max(0.1, Math.min(1, (sw * tw * cb) / 50));
+  return Math.max(0.1, Math.min(1, (sw * tw) / 100));
 }
 
 export function computePriorities(

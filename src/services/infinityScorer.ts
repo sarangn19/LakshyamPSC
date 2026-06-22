@@ -1,5 +1,6 @@
 import { InteractionSignal, UserProfile, ConfusionPair } from '../store/performanceStore';
-import { getSubjectWeight, getTopicWeight, getCategoryBoost } from '../data/examBlueprint';
+import { getSubjectWeight, getTopicWeight } from '../data/examBlueprint';
+import { boostWithPSCFrequency } from './pscFrequencyBoost';
 
 export interface TopicScore {
   subject: string;
@@ -12,6 +13,9 @@ export interface TopicScore {
   recencyPenalty: number;
   coverageBalance: number;
   finalScore: number;
+  // Debug telemetry (populated by boostWithPSCFrequency)
+  pscFrequencyWeight?: number;
+  scoreBeforePscBoost?: number;
 }
 
 export interface ScorerWeights {
@@ -217,8 +221,7 @@ export function computeTopicScores(input: ScorerInput): TopicScore[] {
 
     const subjectWeight = getSubjectWeight(st.subject);
     const topicWeight = getTopicWeight(st.subject, st.topic);
-    const catBoost = getCategoryBoost(st.subject);
-    const importanceScore = (subjectWeight * topicWeight * catBoost) / 100;
+    const importanceScore = (subjectWeight * topicWeight) / 100;
 
     const confusionFreq = confusionMap[st.topic] ?? 0;
     const confusionScore = confusionFreq / maxConfusionFreq;
@@ -256,7 +259,7 @@ export function computeTopicScores(input: ScorerInput): TopicScore[] {
     };
   });
 
-  return scores.sort((a, b) => b.finalScore - a.finalScore);
+  return boostWithPSCFrequency(scores);
 }
 
 export function pickBestTopic(scores: TopicScore[], excludeTopics: string[] = []): TopicScore | null {

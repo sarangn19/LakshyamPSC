@@ -82,6 +82,14 @@ export interface OutcomeRecord {
   notes?: string;
 }
 
+export interface FallbackEvent {
+  id: string;
+  source: 'psc_corpus' | 'template_topic' | 'template_subject';
+  subject: string;
+  topic?: string;
+  timestamp: number;
+}
+
 export interface SessionOutcome {
   sessionId: string;
   sessionType: string;
@@ -139,6 +147,7 @@ interface PerformanceState {
   recommendationActions: RecommendationAction[];
   outcomeRecords: OutcomeRecord[];
   confidenceRecords: ConfidenceRecord[];
+  fallbackEvents: FallbackEvent[];
   profile: UserProfile | null;
   lastProfileBuild: number | null;
   addInteractionSignal: (signal: Omit<InteractionSignal, 'id'>) => void;
@@ -168,6 +177,7 @@ interface PerformanceState {
     mockAfter: number;
     accuracy: number;
   }[];
+  addFallbackEvent: (event: Omit<FallbackEvent, 'id'>) => string;
   addConfidenceRecord: (record: Omit<ConfidenceRecord, 'timestamp'>) => void;
   setProfile: (profile: UserProfile) => void;
   setLastProfileBuild: (timestamp: number) => void;
@@ -191,6 +201,7 @@ export const usePerformanceStore = create<PerformanceState>()(
       recommendationActions: [],
       outcomeRecords: [],
       confidenceRecords: [],
+      fallbackEvents: [],
       profile: null,
       lastProfileBuild: null,
 
@@ -316,6 +327,14 @@ export const usePerformanceStore = create<PerformanceState>()(
             mockAfter: o.mockAfter ?? 0,
             accuracy: o.accuracy,
           }));
+      },
+
+      addFallbackEvent: (event) => {
+        const id = `fe_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+        set((state) => ({
+          fallbackEvents: [...state.fallbackEvents, { ...event, id }],
+        }));
+        return id;
       },
 
       addConfidenceRecord: (record) =>

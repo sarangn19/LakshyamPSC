@@ -14,6 +14,28 @@ function corsResponse(body: unknown, status = 200): Response {
   });
 }
 
+function sha256(text: string): Promise<string> {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+    .then((h) => Array.from(new Uint8Array(h)).map((b) => b.toString(16).padStart(2, '0')).join('').substring(0, 16));
+}
+
+function validateQuestion(q: Record<string, unknown>, idx: number): string | null {
+  if (!q.questionText) return `Row ${idx}: missing questionText`;
+  if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 6) return `Row ${idx}: options must be array of 2-6`;
+  const unique = new Set(q.options.map((o: string) => o.trim().toLowerCase()));
+  if (unique.size !== q.options.length) return `Row ${idx}: duplicate options`;
+  if (q.correctAnswer === undefined || q.correctAnswer === null) return `Row ${idx}: missing correctAnswer`;
+  const ca = Number(q.correctAnswer);
+  if (ca < 0 || ca >= q.options.length || !Number.isInteger(ca)) return `Row ${idx}: invalid correctAnswer`;
+  if (!q.subject) return `Row ${idx}: missing subject`;
+  if (!q.topic) return `Row ${idx}: missing topic`;
+  if (!q.difficulty) return `Row ${idx}: missing difficulty`;
+  if (!['easy', 'medium', 'hard'].includes(q.difficulty as string)) return `Row ${idx}: difficulty must be easy/medium/hard`;
+  if (!q.examType) return `Row ${idx}: missing examType`;
+  if (!q.explanation || (q.explanation as string).trim().length < 5) return `Row ${idx}: explanation too short`;
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -25,46 +47,68 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const { questions, userId } = await req.json();
     if (!Array.isArray(questions) || questions.length === 0) {
       return corsResponse({ error: 'questions must be a non-empty array' }, 400);
     }
+
+    const results = { total: questions.length, stored: 0, failed: 0, duplicates: 0, errors: [] as { index: number; error: string }[] };
+
+    // Validate all questions first
+    const valid: Array<{ record: Record<string, unknown>; hash: string }> = [];
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const validationError = validateQuestion(q, i);
+      if (validationError) {
+        results.failed++;
+        results.errors.push({ index: i, error: validationError });
+        continue;
+      }
+      const hash = await sha256(q.questionText + JSON.stringify(q.options));
+      valid.push({ record: q, hash });
+    }
+
+    // Batch check duplicates: query existing hashes
+    const hashes = valid.map((v) => v.hash);
+    const { data: existingRows } = await supabase
+      .from('question_bank_mcqs')
+      .select('question_hash')
+      .in('question_hash', hashes);
+
+    const existingSet = new Set((existingRows || []).map((r: { question_hash: string }) => r.question_hash));
+
+    // Filter out duplicates
+    const toInsert = valid.filter((v) => !existingSet.has(v.hash));
+    results.duplicates = valid.length - toInsert.length;
+
+    if (toInsert.length === 0) {
+      return corsResponse({ success: true, ...results });
+    }
+
+    // Chunked insert
     const CHUNK_SIZE = 100;
-    const results = { total: questions.length, stored: 0, failed: 0, errors: [] as { index: number; error: string }[] };
-    for (let i = 0; i < questions.length; i += CHUNK_SIZE) {
-      const chunk = questions.slice(i, i + CHUNK_SIZE);
-      const records = chunk.map((q: Record<string, unknown>, idx: number) => {
-        const {
-          questionText, options, correctAnswer, explanation, subject, topic,
-          subtopic, difficulty, examType, language, sourceType, tags,
-        } = q as Record<string, unknown>;
-        const missing: string[] = [];
-        if (!questionText) missing.push('questionText');
-        if (!options) missing.push('options');
-        if (correctAnswer === undefined || correctAnswer === null) missing.push('correctAnswer');
-        if (!subject) missing.push('subject');
-        if (!topic) missing.push('topic');
-        if (!difficulty) missing.push('difficulty');
-        if (!examType) missing.push('examType');
-        if (missing.length > 0) {
-          throw new Error(`Row ${i + idx}: missing ${missing.join(', ')}`);
-        }
-        return {
-          question_text: questionText as string,
-          options: options as string[],
-          correct_answer: Number(correctAnswer),
-          explanation: (explanation as string) || null,
-          subject: subject as string,
-          topic: topic as string,
-          subtopic: (subtopic as string) || null,
-          difficulty: difficulty as string,
-          exam_type: examType as string,
-          language: (language as string) || 'en',
-          source_type: (sourceType as string) || 'admin_uploaded',
-          generated_by: userId || null,
-          tags: (tags as string[]) || [],
-        };
-      });
+    for (let i = 0; i < toInsert.length; i += CHUNK_SIZE) {
+      const chunk = toInsert.slice(i, i + CHUNK_SIZE);
+      const records = chunk.map(({ record: q, hash }) => ({
+        question_text: q.questionText as string,
+        options: q.options as string[],
+        correct_answer: Number(q.correctAnswer),
+        explanation: (q.explanation as string) || null,
+        subject: q.subject as string,
+        topic: q.topic as string,
+        subtopic: (q.subtopic as string) || null,
+        difficulty: q.difficulty as string,
+        exam_type: q.examType as string,
+        exam_types: [q.examType as string],
+        language: (q.language as string) || 'en',
+        source_type: (q.sourceType as string) || 'admin_uploaded',
+        source: (q.sourceType as string) || 'admin_uploaded',
+        question_hash: hash,
+        generated_by: userId || null,
+        tags: (q.tags as string[]) || [],
+      }));
+
       const { data, error } = await supabase.from('question_bank_mcqs').insert(records).select('id');
       if (error) {
         results.failed += chunk.length;
@@ -73,6 +117,7 @@ serve(async (req) => {
         results.stored += (data || []).length;
       }
     }
+
     return corsResponse({ success: true, ...results });
   } catch (error) {
     console.error('Error in store-mcq-batch:', error);

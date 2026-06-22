@@ -156,6 +156,7 @@ export async function generateNextAdaptiveQuestion(
   recentSignals: InteractionSignal[],
   lastAnswerCorrect?: boolean,
   avoidTexts?: string[],
+  options?: { priority?: 'high' | 'low'; signal?: AbortSignal },
 ): Promise<{
   question: GeneratedQuestion | null;
   adaptiveState: AdaptiveState;
@@ -229,7 +230,7 @@ export async function generateNextAdaptiveQuestion(
     language: locale,
     topicConstraint,
     avoidTexts,
-  });
+  }, options);
 
   if (aiResult.question) {
     const q = aiResult.question;

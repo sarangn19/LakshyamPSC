@@ -102,6 +102,8 @@ export function boostWithPSCFrequency(scores: TopicScore[]): TopicScore[] {
     return {
       ...score,
       finalScore: blendedScore,
+      pscFrequencyWeight: pscScore,
+      scoreBeforePscBoost: score.finalScore,
     };
   }).sort((a, b) => b.finalScore - a.finalScore);
 }

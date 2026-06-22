@@ -1,5 +1,8 @@
 import { GeneratedQuestion } from './aiMCQGenerator';
 import { RecentAnswer } from './infinityEngine';
+import { generationQueue } from './generationQueue';
+import { questionCache } from './questionCache';
+import { reliabilityTracker } from './reliabilityTracker';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://cycutcqlhpeudmaebwmb.supabase.co';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN5Y3V0Y3FsaHBldWRtYWVid21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2MzAzNTcsImV4cCI6MjA5NzIwNjM1N30.2s-MMZa-gjJdOBGxOzXKftT-ZA0k6hfj3IoEm0gqaKI';
@@ -18,48 +21,29 @@ interface AIGenRequest {
   avoidTexts?: string[];
 }
 
-interface CacheEntry {
-  question: GeneratedQuestion;
-  generatedAt: number;
-}
-
-const cache = new Map<string, CacheEntry>();
-const CACHE_TTL = 3600000;
-
-function cacheKey(req: AIGenRequest): string {
-  const focusHash = req.focusInstruction ? req.focusInstruction.substring(0, 50) : '';
-  const avoidHash = req.avoidTexts && req.avoidTexts.length > 0 ? req.avoidTexts.join('|').substring(0, 100) : '';
-  return `${req.subject}|${req.topic}|${req.subtopic || ''}|${req.difficulty}|${req.language || 'en'}|${focusHash}|${avoidHash}`;
-}
-
-function getFromCache(key: string): GeneratedQuestion | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() - entry.generatedAt > CACHE_TTL) {
-    cache.delete(key);
-    return null;
-  }
-  return entry.question;
-}
-
-function addToCache(key: string, question: GeneratedQuestion): void {
-  if (cache.size >= 100) {
-    const oldest = cache.keys().next().value;
-    if (oldest) cache.delete(oldest);
-  }
-  cache.set(key, { question, generatedAt: Date.now() });
-}
+// Initialize cache on first import
+questionCache.load().catch(() => {});
 
 export async function generateAIQuestion(
   request: AIGenRequest,
-): Promise<{ question: GeneratedQuestion | null; error?: string }> {
-  // Skip cache when adapting to recent history or using content-based focus (unique per query)
+  options?: { priority?: 'high' | 'low'; signal?: AbortSignal },
+): Promise<{ question: GeneratedQuestion | null; error?: string; fromCache?: boolean }> {
   const skipCache = (request.recentHistory && request.recentHistory.length > 0) ||
     (request.focusInstruction && request.focusInstruction.startsWith('CONTENT-BASED:'));
-  const key = cacheKey(request);
-  const cached = getFromCache(key);
-  if (!skipCache && cached) {
-    return { question: cached };
+
+  if (!skipCache) {
+    const cached = await questionCache.get(
+      request.subject,
+      request.topic,
+      request.difficulty,
+      request.language,
+      request.focusInstruction,
+    );
+    if (cached) {
+      reliabilityTracker.recordCacheHit();
+      return { question: cached, fromCache: true };
+    }
+    reliabilityTracker.recordCacheMiss();
   }
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
@@ -82,77 +66,83 @@ export async function generateAIQuestion(
 
   const functionUrl = `${SUPABASE_URL}/functions/v1/generate-question`;
 
-  console.log('[AIGEN] request:', JSON.stringify({ subject: request.subject, topic: request.topic, hasFocus: !!request.focusInstruction, focusPrefix: request.focusInstruction?.substring(0, 30) }));
+  const dedupKey = options?.priority === 'low' ? undefined :
+    `${request.subject}|${request.topic}|${request.difficulty}|${request.language || 'en'}`;
 
-  const MAX_RETRIES = 2;
-  let lastError: string | undefined;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const res = await fetch(functionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify(body),
-      });
+  const execute = async (): Promise<{ question: GeneratedQuestion; fromCache: false }> => {
+    const startTime = Date.now();
 
-      if (!res.ok) {
-        const errText = await res.text().catch(() => '');
-        lastError = `HTTP ${res.status}: ${errText.substring(0, 200)}`;
-        if (attempt < MAX_RETRIES && (res.status === 502 || res.status === 429)) {
-          await new Promise((r) => setTimeout(r, 2000));
-          continue;
-        }
-        return { question: null, error: lastError };
-      }
+    const res = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
 
-      const data = await res.json();
+    const latency = Date.now() - startTime;
+    reliabilityTracker.recordLatency(latency);
 
-      if (data.error) {
-        return { question: null, error: data.error };
-      }
-
-      const actualSubject = data.subject || request.subject;
-      const actualTopic = data.topic || request.topic;
-      const actualSubtopic = data.subtopic || request.subtopic || '';
-      const alignmentWarning = data.alignmentWarning === true;
-
-      console.log(
-        '[ALIGNMENT] requested:', request.subject, request.topic, request.subtopic || '',
-        '| generated:', actualSubject, actualTopic, actualSubtopic,
-        '| aligned:', actualTopic === request.topic && actualSubject === request.subject,
-        alignmentWarning ? '| WARNING: edge function reports topic mismatch' : '',
-      );
-
-      const question: GeneratedQuestion = {
-        id: `ai_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-        text: data.question,
-        options: data.options,
-        correctAnswer: data.correctAnswer,
-        subject: actualSubject,
-        topic: actualTopic,
-        difficulty: request.difficulty,
-        explanation: data.explanation,
-        examType: [request.examType ?? 'LDC'],
-        confidence: data.confidence ?? 80,
-        source: 'ai_generated',
-        generatedAt: new Date().toISOString(),
-      };
-      question.subtopic = actualSubtopic;
-
-      if (!skipCache) addToCache(key, question);
-      return { question };
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : 'Unknown error';
-      if (attempt < MAX_RETRIES) {
-        await new Promise((r) => setTimeout(r, 2000));
-      }
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      reliabilityTracker.recordFailure('edge-function', res.status);
+      if (res.status === 429) reliabilityTracker.recordRateLimit();
+      throw new Error(`HTTP ${res.status}: ${errText.substring(0, 200)}`);
     }
+
+    const data = await res.json();
+
+    if (data.error) {
+      reliabilityTracker.recordFailure('edge-function');
+      throw new Error(data.error);
+    }
+
+    reliabilityTracker.recordSuccess();
+
+    const actualSubject = data.subject || request.subject;
+    const actualTopic = data.topic || request.topic;
+    const actualSubtopic = data.subtopic || request.subtopic || '';
+
+    const question: GeneratedQuestion = {
+      id: `ai_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      text: data.question,
+      options: data.options,
+      correctAnswer: data.correctAnswer,
+      subject: actualSubject,
+      topic: actualTopic,
+      difficulty: request.difficulty,
+      explanation: data.explanation,
+      examType: [request.examType ?? 'LDC'],
+      confidence: data.confidence ?? 80,
+      source: 'ai_generated',
+      generatedAt: new Date().toISOString(),
+    };
+    question.subtopic = actualSubtopic;
+
+    if (!skipCache) {
+      await questionCache.set(
+        question, request.subject, request.topic,
+        request.difficulty, request.language, request.focusInstruction,
+      );
+    }
+
+    return { question, fromCache: false };
+  };
+
+  try {
+    const result = await generationQueue.enqueue(execute, {
+      priority: options?.priority ?? 'high',
+      dedupKey,
+      signal: options?.signal,
+    });
+    return result;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { question: null, error: message };
   }
-  return { question: null, error: lastError };
 }
 
 export function clearAICache(): void {
-  cache.clear();
+  questionCache.clear();
 }

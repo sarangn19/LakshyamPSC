@@ -72,8 +72,14 @@ export function MCQEngineScreen({ route, navigation }: any) {
   }, [sessionActive, lastSessionOutcome, mode, score.total]);
 
   const current = currentQuestions[currentIndex];
+  console.log('[TRACE:6] MCQ screen render', {
+    questionId: current?.id || 'none', currentIndex,
+    currentQuestionsLen: currentQuestions.length, sessionActive,
+    generatingNext, isGenerating, isAnswered, hasCurrent: !!current,
+  });
 
   if (isGenerating && !current) {
+    console.log('[TRACE:6b] Render path: initial loading (isGenerating + no current)');
     return (
       <View style={styles.container}>
         <LinearGradient
@@ -93,6 +99,9 @@ export function MCQEngineScreen({ route, navigation }: any) {
   }
 
   if (!current) {
+    console.log('[TRACE:6c] Render path: no current — error screen', {
+      sessionActive, lastSessionOutcome: !!lastSessionOutcome, mode, scoreTotal: score.total,
+    });
     // If practice session ended, don't show error screen
     if (!sessionActive && lastSessionOutcome && mode === 'practice') {
       return null; // Navigation will happen in useEffect
@@ -129,6 +138,10 @@ export function MCQEngineScreen({ route, navigation }: any) {
   }
 
   const isCorrect = selectedAnswer === current.correctAnswer;
+  console.log('[TRACE:7] Rendered question', {
+    questionId: current.id, text: current.text?.slice(0, 50),
+    isAnswered, generatingNext, hasOverlay: generatingNext && current !== undefined,
+  });
 
   const handleEnd = () => {
     endSession();

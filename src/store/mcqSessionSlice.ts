@@ -44,6 +44,8 @@ export interface SessionSlice {
   questionsSkipped: number;
   seenQuestionTexts: string[];
   recommendationId: string;
+  prefetchedQuestions: any[];
+  prefetchDepth: number;
   startDailyDrill: (exams?: string[], subjects?: string[]) => void;
   startWeaknessPractice: (exams?: string[]) => void;
   startExamMode: (examType: string) => void;
@@ -62,6 +64,7 @@ export interface SessionSlice {
     sourceType?: 'chapter' | 'note' | 'paste';
     noteId?: string; pastedContent?: string;
   }) => void;
+  triggerPrefetch: () => void;
   endSession: () => void;
   clearLastSessionOutcome: () => void;
   resetSession: () => void;
@@ -94,6 +97,8 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   seenQuestionTexts: [],
   recommendationId: '',
   recommendationActionId: undefined,
+  prefetchedQuestions: [],
+  prefetchDepth: 3,
 
   startDailyDrill: async (exams, subjects) => {
     const targetExams = exams || useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
@@ -102,6 +107,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const recommendedSubject = (subjects && subjects.length > 0) ? subjects[0]
       : twinRec.subject || (weakSubjects.length > 0 ? weakSubjects[0] : '');
     const recommendedTopic = twinRec.topic || undefined;
+    console.log('[TRACE:startDailyDrill] entered', { targetExams, recommendedSubject, recommendedTopic });
     set({ isGenerating: true, generationProgress: null, generatingNext: false, sessionSignals: [], sessionCoveredTopics: [], currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(), score: { correct: 0, total: 0 }, adaptiveState: makeAdaptiveState(), recommendedSubject, recommendedTopic, alignmentReport: null, showAlignmentFallback: false, sessionReduced: false, questionsSkipped: 0, sessionType: 'daily_drill' });
     const baseState = makeAdaptiveState();
     const { question, report } = await resolveValidQuestion(
@@ -110,6 +116,9 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       get().reportedQuestions, useUserStore.getState().locale,
       get().seenQuestionTexts,
     );
+    console.log('[TRACE:startDailyDrill] resolveValidQuestion returned', {
+      questionId: question?.id || 'null', hasReport: !!report,
+    });
     if (question) {
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
@@ -118,8 +127,16 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         isGenerating: false, generationProgress: null, adaptiveState: baseState,
         alignmentReport: report, showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
       });
+      const after = get();
+      console.log('[TRACE:startDailyDrill] state after set', {
+        questionId: after.currentQuestions[0]?.id || 'none',
+        currentIndex: after.currentIndex, currentQuestionsLen: after.currentQuestions.length,
+        sessionActive: after.sessionActive, isGenerating: after.isGenerating,
+      });
+      setTimeout(() => get().triggerPrefetch?.(), 100);
     } else {
       set({ isGenerating: false, generationProgress: null, sessionReduced: true });
+      console.log('[TRACE:startDailyDrill] question is null — sessionReduced');
     }
   },
 
@@ -141,6 +158,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, sessionType: 'weakness_practice', sessionSubjects: [], lastSessionOutcome: null,
         isGenerating: false, generationProgress: null, adaptiveState: makeAdaptiveState(),
       });
+      setTimeout(() => get().triggerPrefetch?.(), 100);
     } else {
       set({ isGenerating: false, generationProgress: null, sessionReduced: true });
     }
@@ -291,7 +309,16 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   nextQuestion: async () => {
     const state = get();
     const current = state.currentQuestions[state.currentIndex];
-    if (!current) return;
+    console.log('[TRACE:1] nextQuestion entered', {
+      questionId: current?.id || 'none', currentIndex: state.currentIndex,
+      currentQuestionsLen: state.currentQuestions.length, sessionActive: state.sessionActive,
+      generatingNext: state.generatingNext, isAnswered: state.isAnswered,
+    });
+    if (!current) {
+      console.log('[TRACE:1b] EARLY RETURN — no current question');
+      return;
+    }
+    console.log('[TRACE:2] current question found', { questionId: current.id, text: current.text?.slice(0, 50) });
     const wasCorrect = state.selectedAnswer === current.correctAnswer;
     if (state.sessionType === 'practice') {
       const nextIndex = state.currentIndex + 1;
@@ -306,6 +333,18 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       }
     }
     const covered = [...state.sessionCoveredTopics, `${current.subject}::${current.topic}`];
+
+    // Consume from prefetched if available
+    const prefetched = state.prefetchedQuestions;
+    if (prefetched.length > 0) {
+      const nextQ = prefetched.shift();
+      set({
+        currentQuestions: [nextQ], currentIndex: 0, selectedAnswer: null, isAnswered: false,
+        questionStartTime: Date.now(), sessionCoveredTopics: covered,
+      });
+      return;
+    }
+
     set({ generatingNext: true });
     const allWeak = get().getWeakSubjects(useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant']);
     const weakSubjects = state.sessionSubjects.length > 0
@@ -339,15 +378,56 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       nextSubject, nextTopic, targetExams, state.reportedQuestions,
       useUserStore.getState().locale, state.seenQuestionTexts,
     );
+    console.log('[TRACE:3] AI question generated', {
+      questionId: question?.id || 'null', text: question?.text?.slice(0, 50) || 'null',
+      source: question?.source || 'none', hasReport: !!report,
+    });
     if (question) {
+      console.log('[TRACE:4] set({...}) called', { questionId: question.id });
       set({
         currentQuestions: [question], currentIndex: 0, selectedAnswer: null, isAnswered: false,
         questionStartTime: Date.now(), sessionCoveredTopics: covered, generatingNext: false,
         adaptiveState: state.adaptiveState, alignmentReport: report,
         showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
       });
+      const after = get();
+      console.log('[TRACE:5] Zustand state after set', {
+        questionId: after.currentQuestions[0]?.id || 'none',
+        currentIndex: after.currentIndex, currentQuestionsLen: after.currentQuestions.length,
+        sessionActive: after.sessionActive, generatingNext: after.generatingNext,
+        isAnswered: after.isAnswered,
+      });
+      // Trigger prefetch for subsequent questions
+      setTimeout(() => get().triggerPrefetch?.(), 100);
     } else {
       set({ generatingNext: false, sessionReduced: true, questionsSkipped: state.questionsSkipped + 1 });
+    }
+  },
+
+  triggerPrefetch: async () => {
+    const state = get();
+    if (state.prefetchedQuestions.length >= state.prefetchDepth) return;
+    if (!state.sessionActive) return;
+    const current = state.currentQuestions[state.currentIndex];
+    if (!current) return;
+    const allWeak = get().getWeakSubjects(useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant']);
+    const weakSubjects = state.sessionSubjects.length > 0 ? state.sessionSubjects : allWeak;
+    const covered = state.sessionCoveredTopics;
+    const targetExams = useUserStore.getState().targetExams || ['LDC', 'Secretariat Assistant'];
+    const { question } = await resolveValidQuestion(
+      weakSubjects, covered, state.score.correct, state.score.total,
+      state.currentDifficulty, state.adaptiveState,
+      usePerformanceStore.getState().interactionSignals, true,
+      state.recommendedSubject, state.recommendedTopic, targetExams,
+      state.reportedQuestions, useUserStore.getState().locale,
+      state.seenQuestionTexts, { priority: 'low' },
+    );
+    if (question) {
+      const updated = [...get().prefetchedQuestions, question];
+      set({ prefetchedQuestions: updated });
+      if (updated.length < get().prefetchDepth) {
+        setTimeout(() => get().triggerPrefetch(), 100);
+      }
     }
   },
 
@@ -415,6 +495,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       sessionSignals: [], sessionCoveredTopics: [], sessionReduced: false, questionsSkipped: 0,
       sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 },
       difficultySessionState: makeInitialDifficultyState(), currentDifficulty: 'medium',
+      prefetchedQuestions: [], prefetchDepth: 3,
     }),
 
   startOrchestratedSession: async (config) => {
@@ -447,6 +528,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         alignmentReport: report, showAlignmentFallback: report ? report.alignmentScore < 0.80 : false,
         recommendationActionId: actionId,
       });
+      setTimeout(() => get().triggerPrefetch?.(), 100);
     } else {
       set({ isGenerating: false, generationProgress: null, sessionReduced: true });
     }
@@ -478,5 +560,6 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     currentDifficulty: 'easy', difficultySessionState: makeInitialDifficultyState(),
     generatingNext: false, adaptiveState: makeAdaptiveState(), sessionSubjects: [],
     recommendationActionId: undefined,
+    prefetchedQuestions: [], prefetchDepth: 3,
   }),
 });

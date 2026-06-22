@@ -18,6 +18,9 @@ interface PersistedState {
 
 let cache: PersistedState | null = null;
 
+// Eager load on module init so getBlueprintBoost() has data on first call
+load();
+
 async function load(): Promise<PersistedState> {
   if (cache) return cache;
   try {
@@ -95,7 +98,7 @@ export function getBlueprintBoost(
   subject: string,
   topic: string | undefined,
 ): number {
-  if (!cache || cache.totalGenerated < MIN_RECORDS_BOOST) return 1.5;
+  if (!cache || cache.totalGenerated < MIN_RECORDS_BOOST) return 1.0;
 
   const targetExams = useUserStore.getState().targetExams || ['LDC'];
   const targetWeights = getTargetWeights(targetExams);

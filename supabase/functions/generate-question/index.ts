@@ -295,7 +295,8 @@ serve(async (req) => {
     }
 
     let lastError: string | null = null;
-    for (const model of modelsToTry) {
+    for (let mi = 0; mi < modelsToTry.length; mi++) {
+      const model = modelsToTry[mi];
       console.log('[GENERATE] trying model:', model);
       const response = await fetch(AI_API_URL, {
         method: 'POST',
@@ -315,6 +316,9 @@ serve(async (req) => {
         const errText = await response.text();
         lastError = `AI API error (${model}): ${response.status} ${errText}`;
         console.log('[GENERATE] model failed:', model, response.status);
+        const backoffMs = response.status === 429 ? Math.min(2000 * Math.pow(2, mi), 8000) : 500;
+        console.log('[GENERATE] backing off', backoffMs, 'ms before next model');
+        await new Promise((r) => setTimeout(r, backoffMs));
         continue;
       }
 
@@ -358,6 +362,9 @@ serve(async (req) => {
       };
       return corsResponse(responseBody);
     }
+
+    // Backoff before fallback provider
+    await new Promise((r) => setTimeout(r, 1000));
 
     // Fallback provider (e.g., Groq) if all primary models failed
     if (FALLBACK_API_KEY && FALLBACK_API_URL) {
@@ -407,6 +414,9 @@ serve(async (req) => {
       const errText = await fallbackResponse.text().catch(() => '');
       lastError = `All providers failed. Last error: ${errText.substring(0, 200)}`;
     }
+
+    // Backoff before Gemini
+    await new Promise((r) => setTimeout(r, 1000));
 
     // Gemini provider (Google AI Studio free tier: 1,500 req/day)
     if (GEMINI_API_KEY) {

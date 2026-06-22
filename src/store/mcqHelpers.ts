@@ -23,6 +23,8 @@ import { getQuestionPoolSize } from '../services/aiMCQGenerator';
 import { makeInitialDifficultyState, recordSessionAnswer } from '../services/sessionDifficultyAdapter';
 import { makeAdaptiveState, recordAnswer } from '../services/infinityEngine';
 import type { SubjectProgress } from '../data/mockData';
+import { getFallbackQuestion } from '../services/questionFallback';
+import { getRepositoryQuestion } from '../services/repositoryService';
 import type { GapRecord, GapStatus } from './cognitiveTwinStore';
 import type { QuestionSkipRecord } from '../services/skipAuditService';
 import type { SessionOutcome } from './performanceStore';
@@ -123,6 +125,7 @@ export async function resolveValidQuestion(
   reportedQuestions: string[],
   locale: 'en' | 'ml',
   seenQuestionTexts: string[] = [],
+  options?: { priority?: 'high' | 'low'; signal?: AbortSignal },
 ): Promise<{
   question: any | null;
   report: any | null;
@@ -146,9 +149,37 @@ export async function resolveValidQuestion(
   if (useMCQStore.getState().sessionType === 'practice') {
     return { question: null, report: null, source: 'none' };
   }
+  // Phase 1: Repository-first lookup
+  if (activeSubject) {
+    const repoResult = await getRepositoryQuestion({
+      subject: activeSubject,
+      topic: activeTopic,
+      difficulty,
+      examTypes: targetExams,
+      language: locale,
+    });
+    if (repoResult.found && repoResult.question) {
+      const q = repoResult.question;
+      const integrity = validateQuestionIntegrity(q);
+      if (integrity.valid && q.text) {
+        const match = getTopicMatch(q.subject, q.topic, activeSubject, activeTopic);
+        recordGeneration(q);
+        recordAcceptance(q);
+        recordAcceptedQuestion(q);
+        lastReport = {
+          recommendedSubject: activeSubject, recommendedTopic: activeTopic, alignmentScore: match.score,
+          integrityPassed: true, integrityFailures: 0,
+          confidenceScore: integrity.result.confidenceScore, sessionAccepted: true, retryCount: 0,
+          questionLogs: [{ questionTopic: q.topic, questionSubject: q.subject, score: match.score, matchLabel: match.label, generationSource: 'repository' }],
+        };
+        return { question: q, report: lastReport, source: 'cache' };
+      }
+    }
+  }
   for (let retry = 0; retry < 3; retry++) {
     const result = await generateNextAdaptiveQuestion(
       weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
+      { priority: options?.priority },
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);
     if (!result?.question) break;
@@ -204,7 +235,21 @@ export async function resolveValidQuestion(
     }
     return { question: result.question, report: lastReport, source: 'ai' };
   }
-  return { question: null, report: lastReport, source: 'none' };
+  // AI generation failed — use fallback chain
+  const fallback = getFallbackQuestion(
+    weakSubjects, difficulty, targetExams, locale, activeSubject, activeTopic,
+  );
+  recordAcceptance(fallback.question);
+  recordAcceptedQuestion(fallback.question);
+  const integrity = validateQuestionIntegrity(fallback.question);
+  const match = getTopicMatch(fallback.question.subject, fallback.question.topic, activeSubject, activeTopic);
+  lastReport = {
+    recommendedSubject: activeSubject, recommendedTopic: activeTopic, alignmentScore: match.score,
+    integrityPassed: integrity.valid, integrityFailures: 0,
+    confidenceScore: integrity.result.confidenceScore, sessionAccepted: true, retryCount: 3,
+    questionLogs: [{ questionTopic: fallback.question.topic, questionSubject: fallback.question.subject, score: match.score, matchLabel: match.label, generationSource: fallback.question.source }],
+  };
+  return { question: fallback.question, report: lastReport, source: 'template' };
 }
 
 export function getLastResortQuestion(
