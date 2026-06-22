@@ -153,8 +153,10 @@ export async function resolveValidQuestion(
   if (useMCQStore.getState().sessionType === 'practice') {
     return { question: null, report: null, source: 'none' };
   }
-  // Phase 1: Repository-first lookup
-  if (activeSubject) {
+  // Phase 1: Repository-first lookup — only if the inventory fallback kept the same subject
+  // If the fallback changed the subject, the repository would return off-topic questions;
+  // AI generation with originalSubject/originalTopic handles that correctly.
+  if (activeSubject && activeSubject === originalSubject) {
     // Force English for all subjects
     const language = 'en';
     const repoResult = await getRepositoryQuestion({
