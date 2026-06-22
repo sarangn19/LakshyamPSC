@@ -10,6 +10,8 @@ import { useTranslation } from '../i18n/useTranslation';
 import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
 import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
+import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
+import { ActionChips } from '../components/ActionChips';
 
 const INPUT_CONTAINER_GAP = 4;
 const INPUT_ROW_HEIGHT = 44;
@@ -300,11 +302,25 @@ export function ChatbotScreen({ navigation }: any) {
                 ]}
               >
                 <View style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.aiBubble]}>
-                  <Text style={msg.role === 'user' ? styles.userBubbleText : styles.bubbleText}>{sanitizeText(msg.text)}</Text>
-                  {msg.role === 'ai' && (
-                    <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
-                      <Text style={styles.saveNoteText}>{t('chatbot.saveAsNote')}</Text>
-                    </TouchableOpacity>
+                  {msg.role === 'ai' ? (
+                    <>
+                      <AnswerRenderer text={plainTextToSections(msg.text)} />
+                      <TouchableOpacity style={styles.saveNoteBtn} onPress={() => handleSaveNote(msg.text)}>
+                        <Text style={styles.saveNoteText}>{t('chatbot.saveAsNote')}</Text>
+                      </TouchableOpacity>
+                      <ActionChips onAction={(action) => {
+                        const prompts: Record<string, string> = {
+                          generate_mcq: `Generate a multiple choice question about this topic for Kerala PSC exam. Include question, 4 options, answer, and explanation.`,
+                          explain_simpler: `Explain the previous response in simpler terms for exam preparation.`,
+                          give_pyqs: `List previous year questions from Kerala PSC exams related to this topic.`,
+                          related_topic: `Suggest a related topic from Kerala PSC syllabus that I should study next.`,
+                          create_flashcard: `Create a flashcard summary of this response for quick revision. Format as: Front: ... Back: ...`,
+                        };
+                        handleSend(prompts[action] || action);
+                      }} />
+                    </>
+                  ) : (
+                    <Text style={styles.userBubbleText}>{msg.text}</Text>
                   )}
                 </View>
               </View>
@@ -618,12 +634,13 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   aiBubble: {
-    maxWidth: '82%',
+    maxWidth: '85%',
     backgroundColor: '#F0F2F5',
     borderTopLeftRadius: 0,
     borderTopRightRadius: 14,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
+    padding: 10,
   },
   userBubble: {
     borderRadius: 14,

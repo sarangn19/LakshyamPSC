@@ -7,6 +7,8 @@ import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
 import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
+import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
+import { ActionChips } from '../components/ActionChips';
 
 const EXAM_ICONS: Record<string, string> = {
   'LDC': '📋',
@@ -160,16 +162,30 @@ export function AITutorScreen({ route, navigation }: any) {
               </View>
             )}
             <View style={[styles.msgContent, msg.role === 'user' ? styles.msgContentUser : styles.msgContentBot]}>
-              <Text style={[styles.msgText, msg.role === 'user' && styles.msgTextUser]}>{msg.text}</Text>
-              {msg.role === 'ai' && (
-                <TouchableOpacity
-                  style={styles.saveBtn}
-                  onPress={() => handleSaveAsNote(msg)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={{ fontSize: 12, marginRight: 4 }}>+</Text>
-                  <Text style={styles.saveBtnText}>Save as Note</Text>
-                </TouchableOpacity>
+              {msg.role === 'ai' ? (
+                <>
+                  <AnswerRenderer text={plainTextToSections(msg.text)} />
+                  <TouchableOpacity
+                    style={styles.saveBtn}
+                    onPress={() => handleSaveAsNote(msg)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 12, marginRight: 4 }}>+</Text>
+                    <Text style={styles.saveBtnText}>Save as Note</Text>
+                  </TouchableOpacity>
+                  <ActionChips onAction={(action) => {
+                    const prompts: Record<string, string> = {
+                      generate_mcq: `Generate a multiple choice question about this topic for ${examContext} exam. Include question, 4 options, answer, and explanation.`,
+                      explain_simpler: `Explain the previous response in simpler terms for ${examContext} exam preparation.`,
+                      give_pyqs: `List previous year questions from ${examContext} exams related to this topic.`,
+                      related_topic: `Suggest a related topic from ${examContext} syllabus that I should study next.`,
+                      create_flashcard: `Create a flashcard summary of this response for quick revision. Format as: Front: ... Back: ...`,
+                    };
+                    sendMessage(prompts[action] || action);
+                  }} />
+                </>
+              ) : (
+                <Text style={[styles.msgText, msg.role === 'user' && styles.msgTextUser]}>{msg.text}</Text>
               )}
             </View>
           </View>
@@ -279,7 +295,7 @@ const styles = StyleSheet.create({
   // Chat
   chatArea: { flex: 1 },
   chatContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
-  msgRow: { flexDirection: 'row', marginBottom: spacing.md, alignItems: 'flex-end' },
+  msgRow: { flexDirection: 'row', marginBottom: spacing.lg, alignItems: 'flex-end' },
   msgRowUser: { justifyContent: 'flex-end' },
   botAvatar: {
     width: 32,
@@ -300,6 +316,7 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     borderTopLeftRadius: 4,
     padding: spacing.md,
+    paddingBottom: spacing.sm,
   },
   msgContentUser: {
     backgroundColor: '#6366f1',
