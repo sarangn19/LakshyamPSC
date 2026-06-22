@@ -1,17 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal, Animated, Keyboard, Platform, Easing, Alert } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
 import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
-import { BottomNav } from '../components/BottomNav';
+import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
+
+const INPUT_CONTAINER_GAP = 4;
+const INPUT_ROW_HEIGHT = 44;
+const ACTION_ROW_HEIGHT = 56;
+const INPUT_CONTAINER_TOP_PADDING = 16;
+const COMPOSER_VISUAL_MARGIN = 4;
 
 export function ChatbotScreen({ navigation }: any) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const suggestions = [
     { text: t('chatbot.suggestion1') },
     { text: t('chatbot.suggestion2') },
@@ -29,12 +37,28 @@ export function ChatbotScreen({ navigation }: any) {
   const [tagInput, setTagInput] = useState('');
   const scrollRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const keyboardOffset = useRef(new Animated.Value(100)).current;
   const greetingOpacity = useRef(new Animated.Value(1)).current;
   const greetingSlide = useRef(new Animated.Value(0)).current;
   const chatOpacity = useRef(new Animated.Value(0)).current;
   const greetingAnim = useRef(new Animated.Value(0)).current;
   const chipAnims = useRef(suggestions.map(() => new Animated.Value(0))).current;
+
+  const composerHeight = useMemo(
+    () => INPUT_CONTAINER_TOP_PADDING + INPUT_ROW_HEIGHT + INPUT_CONTAINER_GAP + ACTION_ROW_HEIGHT,
+    [],
+  );
+  const composerClearance = useMemo(
+    () => TAB_BAR_TOTAL_HEIGHT + insets.bottom + COMPOSER_VISUAL_MARGIN,
+    [insets.bottom],
+  );
+  const scrollBottomPadding = useMemo(
+    () => composerClearance + composerHeight + COMPOSER_VISUAL_MARGIN,
+    [composerClearance],
+  );
+  const clearanceRef = useRef(composerClearance);
+  clearanceRef.current = composerClearance;
+
+  const keyboardOffset = useRef(new Animated.Value(composerClearance)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -47,10 +71,10 @@ export function ChatbotScreen({ navigation }: any) {
 
   useEffect(() => {
     const showSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => {
-      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height + 100, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: e.endCoordinates.height + clearanceRef.current, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     const hideSub = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => {
-      Animated.timing(keyboardOffset, { toValue: 100, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+      Animated.timing(keyboardOffset, { toValue: clearanceRef.current, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
     });
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
@@ -262,7 +286,7 @@ export function ChatbotScreen({ navigation }: any) {
         <Animated.View style={[styles.overlay, { opacity: chatOpacity, pointerEvents: chatStarted ? 'auto' : 'none' }]}>
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={styles.chatContent}
+            contentContainerStyle={[styles.chatContent, { paddingBottom: scrollBottomPadding }]}
             showsVerticalScrollIndicator={false}
           >
             {messages.map((msg, i) => {
@@ -303,7 +327,7 @@ export function ChatbotScreen({ navigation }: any) {
             transform: [{ translateY: greetingSlide.interpolate({ inputRange: [0, 1], outputRange: [0, -60] }) }],
             pointerEvents: chatStarted ? 'none' : 'auto',
           }]}>
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollBottomPadding }]} showsVerticalScrollIndicator={false}>
               <Animated.Text style={[styles.greeting, { opacity: greetingAnim, transform: [{ translateY: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }] }]}>{t('chatbot.greeting')}</Animated.Text>
               <View style={styles.chipsContainer}>
                 {suggestions.map((item, i) => (

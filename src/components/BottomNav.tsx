@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, useWindowDimensions, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeIcon, LearnIcon, AIIcon, ProfileIcon } from './Icons';
 
 export type TabName = 'Home' | 'Learn' | 'AITutor' | 'Profile';
@@ -22,9 +23,14 @@ const TABS: TabConfig[] = [
   { name: 'Profile', label: 'Profile', icon: (c) => <ProfileIcon width={18} height={20} color={c} /> },
 ];
 
+export const BOTTOM_NAV_HEIGHT = 72;
+export const BOTTOM_NAV_BOTTOM_OFFSET = 24;
+export const TAB_BAR_TOTAL_HEIGHT = BOTTOM_NAV_HEIGHT + BOTTOM_NAV_BOTTOM_OFFSET;
+
 export function BottomNav({ activeTab }: Props) {
   const navigation = useNavigation<any>();
   const { width: screenW } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const navWidth = screenW - 48;
   const tabCount = TABS.length;
 
@@ -34,7 +40,7 @@ export function BottomNav({ activeTab }: Props) {
   };
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, { bottom: BOTTOM_NAV_BOTTOM_OFFSET + insets.bottom }]}>
       <View style={styles.navItems}>
         {TABS.map((tab, i) => {
           const isActive = tab.name === activeTab;

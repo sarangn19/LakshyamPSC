@@ -52,6 +52,17 @@ function LoadingScreen() {
 }
 
 export default function App() {
+  return (
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <AppContent />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+}
+
+function AppContent() {
   const [fontsLoaded] = useFonts({
     'SFProDisplay-Regular': require('./assets/fonts/SFProDisplay-Regular.ttf'),
     'SFProDisplay-Medium': require('./assets/fonts/SFProDisplay-Medium.ttf'),
@@ -84,7 +95,7 @@ export default function App() {
         if (added) saveNote(added);
       } else if (prev.notes.length > state.notes.length) {
         const removedId = prev.notes.find((n) => !state.notes.some((n2) => n2.id === n.id))?.id;
-        if (removedId) removeNote(removedId);
+        if (removedId) saveNote(removedId);
       } else {
         const changed = state.notes.find((n, i) => prev.notes[i] && (prev.notes[i].content !== n.content || prev.notes[i].title !== n.title));
         if (changed) saveNote(changed);
@@ -151,25 +162,11 @@ export default function App() {
   const needsAuth = supabase !== null;
 
   if (needsAuth && !isAuthenticated) {
-    return (
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <LoginScreen />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    );
+    return <LoginScreen />;
   }
 
   if (!setupDone) {
-    return (
-      <GestureHandlerRootView style={styles.root}>
-        <SafeAreaProvider>
-          <StatusBar style="dark" />
-          <SetupScreen onComplete={handleSetupComplete} />
-        </SafeAreaProvider>
-      </GestureHandlerRootView>
-    );
+    return <SetupScreen onComplete={handleSetupComplete} />;
   }
 
   return <AppNavigator />;

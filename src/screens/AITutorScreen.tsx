@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, fontFamily } from '../theme';
 import { typography } from '../theme/typography';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
-import { BottomNav } from '../components/BottomNav';
+import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage } from '../services/chatService';
 
 const EXAM_ICONS: Record<string, string> = {
@@ -55,8 +56,13 @@ function TypingDots() {
 }
 
 export function AITutorScreen({ route, navigation }: any) {
+  const insets = useSafeAreaInsets();
   const { targetExams } = useUserStore();
   const addNote = useKnowledgeStore((s) => s.addNote);
+  const bottomClearance = useMemo(
+    () => TAB_BAR_TOTAL_HEIGHT + insets.bottom + 4,
+    [insets.bottom],
+  );
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -113,7 +119,7 @@ export function AITutorScreen({ route, navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.wrapper} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[styles.wrapper, { paddingBottom: bottomClearance }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {toast && (
         <View style={styles.toast}>
           <View style={styles.toastDot} />
@@ -145,7 +151,7 @@ export function AITutorScreen({ route, navigation }: any) {
       </View>
 
       {/* Chat */}
-      <ScrollView ref={scrollRef} style={styles.chatArea} showsVerticalScrollIndicator={false} contentContainerStyle={styles.chatContent}>
+      <ScrollView ref={scrollRef} style={styles.chatArea} showsVerticalScrollIndicator={false} contentContainerStyle={[styles.chatContent, { paddingBottom: bottomClearance }]}>
         {messages.map((msg, i) => (
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'ai' && (
