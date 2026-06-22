@@ -20,9 +20,10 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const supabase = createClient(supabaseUrl, serviceKey || anonKey);
 
   try {
     const { subject, topic, difficulty, examTypes, language, avoidIds, count = 1 } = await req.json();
@@ -66,7 +67,7 @@ serve(async (req) => {
     if (questions && questions.length > 0) {
       // Repository hit — record metadata and return
       const latency = Date.now() - startTime;
-      await supabase.from('generation_metadata').insert({
+      try { await supabase.from('generation_metadata').insert({
         subject,
         topic: topic || null,
         difficulty: difficulty || null,
@@ -75,10 +76,9 @@ serve(async (req) => {
         result: 'repository_hit',
         latency_ms: latency,
         question_id: questions[0].id,
-      }).catch(() => {});
+      }); } catch {}
 
-      // Increment usage count
-      await supabase.rpc('increment_question_usage', { p_question_id: questions[0].id }).catch(() => {});
+      try { await supabase.rpc('increment_question_usage', { p_question_id: questions[0].id }); } catch {}
 
       return corsResponse({
         found: true,
@@ -127,7 +127,7 @@ serve(async (req) => {
 
     if (!genRes.ok) {
       const errText = await genRes.text().catch(() => '');
-      await supabase.from('generation_metadata').insert({
+      try { await supabase.from('generation_metadata').insert({
         subject,
         topic: topic || null,
         difficulty: difficulty || null,
@@ -136,7 +136,7 @@ serve(async (req) => {
         result: 'ai_failed',
         latency_ms: genLatency,
         error_message: `HTTP ${genRes.status}: ${errText.substring(0, 200)}`,
-      }).catch(() => {});
+      }); } catch {}
 
       return corsResponse({
         found: false,
@@ -150,7 +150,7 @@ serve(async (req) => {
     const aiData = await genRes.json();
 
     if (aiData.error) {
-      await supabase.from('generation_metadata').insert({
+      try { await supabase.from('generation_metadata').insert({
         subject,
         topic: topic || null,
         difficulty: difficulty || null,
@@ -159,7 +159,7 @@ serve(async (req) => {
         result: 'ai_failed',
         latency_ms: genLatency,
         error_message: aiData.error,
-      }).catch(() => {});
+      }); } catch {}
 
       return corsResponse({
         found: false,
@@ -220,7 +220,7 @@ serve(async (req) => {
     }
 
     // Record generation metadata
-    await supabase.from('generation_metadata').insert({
+    try { await supabase.from('generation_metadata').insert({
       subject: actualSubject,
       topic: actualTopic,
       difficulty: genBody.difficulty,
@@ -229,7 +229,7 @@ serve(async (req) => {
       result: 'ai_generated',
       latency_ms: genLatency,
       question_id: storedId,
-    }).catch(() => {});
+    }); } catch {}
 
     return corsResponse({
       found: true,
@@ -253,12 +253,13 @@ serve(async (req) => {
       latency: genLatency,
     });
   } catch (error) {
-    console.error('Error in get-repository-question:', error);
+    const msg = error instanceof Error ? error.message : 'Internal server error';
+    console.error('Error in get-repository-question:', msg);
     return corsResponse({
       found: false,
       source: 'error',
       repositoryHit: false,
-      error: 'Internal server error',
+      error: msg,
       latency: Date.now() - startTime,
     }, 500);
   }

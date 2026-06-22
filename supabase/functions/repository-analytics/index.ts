@@ -23,56 +23,55 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const url = new URL(req.url);
     const detail = url.searchParams.get('detail') === 'true';
 
-    // Total stats
-    const { data: stats } = await supabase.rpc('get_repository_stats').single().catch(() => ({ data: null }));
+    let stats = null;
+    let coverage = null;
+    let topics = null;
+    let totalGenLast7d = 0;
+    let repoHitsLast7d = 0;
+    let aiGenLast7d = 0;
 
-    // Coverage by subject+topic+difficulty
-    const { data: coverage } = await supabase.rpc('get_repository_coverage').catch(() => ({ data: null }));
+    try { const r = await supabase.rpc('get_repository_stats').single(); stats = r.data; } catch {}
+    try { const r = await supabase.rpc('get_repository_coverage'); coverage = r.data; } catch {}
+    try { const r = await supabase.rpc('get_repository_topics'); topics = r.data; } catch {}
 
-    // Topics breakdown
-    const { data: topics } = await supabase.rpc('get_repository_topics').catch(() => ({ data: null }));
-
-    // Recent generation activity (last 7 days)
     const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-    const { data: recentGen } = await supabase
-      .from('generation_metadata')
-      .select('result, count')
-      .gte('created_at', sevenDaysAgo)
-      .catch(() => ({ data: null }));
 
-    // Compute AI generation frequency
-    const { count: totalGenLast7d } = await supabase
-      .from('generation_metadata')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', sevenDaysAgo)
-      .catch(() => ({ count: 0 }));
+    try {
+      const r = await supabase
+        .from('generation_metadata')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo);
+      totalGenLast7d = (r as Record<string, unknown>).count as number || 0;
+    } catch {}
 
-    const { count: repoHitsLast7d } = await supabase
-      .from('generation_metadata')
-      .select('*', { count: 'exact', head: true })
-      .eq('result', 'repository_hit')
-      .gte('created_at', sevenDaysAgo)
-      .catch(() => ({ count: 0 }));
+    try {
+      const r = await supabase
+        .from('generation_metadata')
+        .select('*', { count: 'exact', head: true })
+        .eq('result', 'repository_hit')
+        .gte('created_at', sevenDaysAgo);
+      repoHitsLast7d = (r as Record<string, unknown>).count as number || 0;
+    } catch {}
 
-    const { count: aiGenLast7d } = await supabase
-      .from('generation_metadata')
-      .select('*', { count: 'exact', head: true })
-      .eq('result', 'ai_generated')
-      .gte('created_at', sevenDaysAgo)
-      .catch(() => ({ count: 0 }));
+    try {
+      const r = await supabase
+        .from('generation_metadata')
+        .select('*', { count: 'exact', head: true })
+        .eq('result', 'ai_generated')
+        .gte('created_at', sevenDaysAgo);
+      aiGenLast7d = (r as Record<string, unknown>).count as number || 0;
+    } catch {}
 
-    const totalLast7d = totalGenLast7d || 0;
-    const hitRate = totalLast7d > 0 ? ((repoHitsLast7d || 0) / totalLast7d) * 100 : 0;
-    const aiFreq = totalLast7d > 0 ? ((aiGenLast7d || 0) / totalLast7d) * 100 : 0;
+    const hitRate = totalGenLast7d > 0 ? (repoHitsLast7d / totalGenLast7d) * 100 : 0;
+    const aiFreq = totalGenLast7d > 0 ? (aiGenLast7d / totalGenLast7d) * 100 : 0;
 
-    // Build response
     const response: Record<string, unknown> = {
       success: true,
       timestamp: new Date().toISOString(),
@@ -86,9 +85,9 @@ serve(async (req) => {
       },
       coverage: coverage || [],
       hitRate: {
-        last7Days: totalLast7d,
-        repositoryHits: repoHitsLast7d || 0,
-        aiGenerations: aiGenLast7d || 0,
+        last7Days: totalGenLast7d,
+        repositoryHits: repoHitsLast7d,
+        aiGenerations: aiGenLast7d,
         databaseHitRate: `${hitRate.toFixed(1)}%`,
         aiGenerationFrequency: `${aiFreq.toFixed(1)}%`,
       },
