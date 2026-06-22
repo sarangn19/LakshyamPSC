@@ -196,10 +196,10 @@ export async function resolveValidQuestion(
       trackIntegrity({ failCount: useMCQStore.getState().integrityMetrics.failCount + 1, regenerationCount: retry > 0 ? useMCQStore.getState().integrityMetrics.regenerationCount + 1 : useMCQStore.getState().integrityMetrics.regenerationCount });
       continue;
     }
-    if (weakSubjects.length > 0 && !weakSubjects.includes(result.question.subject)) {
+    if ((weakSubjects.length > 0 && !weakSubjects.includes(result.question.subject)) || (activeSubject && result.question.subject !== activeSubject)) {
       seenQuestionTexts.push(result.question.text);
       recordRejection(result.question);
-      recordQuestionSkip(result.question, activeSubject, activeTopic, 'subject_mismatch', `Expected subject in [${weakSubjects.join(', ')}], got ${result.question.subject}`, retry);
+      recordQuestionSkip(result.question, activeSubject, activeTopic, 'subject_mismatch', `Expected subject in [${weakSubjects.join(', ')}] or activeSubject=${activeSubject}, got ${result.question.subject}`, retry);
       trackIntegrity({ failCount: useMCQStore.getState().integrityMetrics.failCount + 1, regenerationCount: retry > 0 ? useMCQStore.getState().integrityMetrics.regenerationCount + 1 : useMCQStore.getState().integrityMetrics.regenerationCount });
       continue;
     }
