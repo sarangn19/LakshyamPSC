@@ -135,6 +135,10 @@ export async function resolveValidQuestion(
   let lastReport: any | null = null;
   let activeSubject = recommendedSubject;
   let activeTopic = recommendedTopic;
+  // Keep the original subject and topic for AI generation even if the repository
+  // fallback jumps to a different subject/topic
+  const originalTopic = recommendedTopic;
+  const originalSubject = recommendedSubject;
   if (activeTopic) {
     const inventoryOk = hasSufficientInventory(activeSubject, activeTopic);
     const breadthOk = isTopicReadyForRecommendation(activeSubject, activeTopic);
@@ -181,7 +185,7 @@ export async function resolveValidQuestion(
   for (let retry = 0; retry < 3; retry++) {
     const result = await generateNextAdaptiveQuestion(
       weakSubjects, covered, correct, total, difficulty, adaptiveState, recentSignals, wasIncorrect, seenQuestionTexts,
-      activeTopic,
+      originalTopic,
       { priority: options?.priority },
     );
     if (result) useMCQStore.getState().recordAlignmentAttempt(result.aligned);
@@ -199,7 +203,7 @@ export async function resolveValidQuestion(
       trackIntegrity({ failCount: useMCQStore.getState().integrityMetrics.failCount + 1, regenerationCount: retry > 0 ? useMCQStore.getState().integrityMetrics.regenerationCount + 1 : useMCQStore.getState().integrityMetrics.regenerationCount });
       continue;
     }
-    if ((weakSubjects.length > 0 && !weakSubjects.includes(result.question.subject)) || (activeSubject && result.question.subject !== activeSubject)) {
+    if ((weakSubjects.length > 0 && !weakSubjects.includes(result.question.subject)) || (originalSubject && result.question.subject !== originalSubject)) {
       seenQuestionTexts.push(result.question.text);
       recordRejection(result.question);
       recordQuestionSkip(result.question, activeSubject, activeTopic, 'subject_mismatch', `Expected subject in [${weakSubjects.join(', ')}] or activeSubject=${activeSubject}, got ${result.question.subject}`, retry);
