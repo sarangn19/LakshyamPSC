@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Image, Linking } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../services/supabase';
 import { colors, spacing, borderRadius } from '../theme';
@@ -66,13 +66,18 @@ function StatsCard({ subject, category, total, accuracy }: { subject: string; ca
 }
 
 function CACard({ item }: { item: CurrentAffair }) {
+  const hasImage = !!item.image_url;
   return (
-    <View style={styles.caCard}>
-      <View style={styles.caImagePlaceholder} />
+    <TouchableOpacity style={styles.caCard} onPress={() => item.url ? Linking.openURL(item.url) : null} activeOpacity={0.7}>
+      {hasImage ? (
+        <Image source={{ uri: item.image_url }} style={styles.caImage} />
+      ) : (
+        <View style={styles.caImagePlaceholder} />
+      )}
       <View style={styles.caTextCol}>
         <Text style={styles.caTitle} numberOfLines={3}>{item.title}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -352,6 +357,11 @@ const styles = StyleSheet.create({
     width: 119,
     height: 119,
     backgroundColor: '#ECECEC',
+    borderRadius: borderRadius.sm,
+  },
+  caImage: {
+    width: 119,
+    height: 119,
     borderRadius: borderRadius.sm,
   },
   caTextCol: {
