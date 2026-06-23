@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../services/supabase';
 import { colors, spacing, borderRadius } from '../theme';
@@ -12,7 +12,9 @@ import type { CurrentAffair } from '../data/mockData';
 import { seedPSCFrequency } from '../services/pscFrequencyBoost';
 import { computeExamOutlook } from '../services/examOutlookEngine';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 12;
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2);
 
 const FALLBACK_CA: CurrentAffair[] = [
   { id: 'fa1', title: 'Kerala Leads in Education Development Index', summary: 'Kerala has topped the Education Development Index for the sixth consecutive year, showcasing its commitment to quality education and literacy.', category: 'national', date: '2026-06-20', source: 'PIB', isImportant: true, url: '', image_url: '' },
@@ -69,7 +71,6 @@ function CACard({ item }: { item: CurrentAffair }) {
       <View style={styles.caImagePlaceholder} />
       <View style={styles.caTextCol}>
         <Text style={styles.caTitle} numberOfLines={3}>{item.title}</Text>
-        <Text style={styles.caDesc} numberOfLines={4}>{item.summary}</Text>
       </View>
     </View>
   );
@@ -363,12 +364,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: '#000000',
   },
-  caDesc: {
-    fontSize: 12,
-    fontWeight: '300',
-    lineHeight: 14,
-    color: '#000000',
-  },
   last7Label: {
     fontSize: 14,
     fontWeight: '400',
@@ -377,11 +372,11 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    flexWrap: 'wrap',
     gap: GRID_GAP,
   },
   statsCard: {
-    flex: 1,
+    width: CARD_WIDTH,
     height: 232,
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
