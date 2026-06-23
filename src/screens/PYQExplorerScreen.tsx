@@ -59,7 +59,7 @@ export function PYQExplorerScreen({ navigation }: any) {
             renderItem={({ item, index }) => (
               <TouchableOpacity style={styles.topicCard} onPress={() => { setSelectedSubject(item.subject); setSelectedTopic(item.topic); setMode('questions'); }}>
                 <View style={[styles.rankCircle, { backgroundColor: index < 3 ? colors.primary : colors.surface }]}>
-                  <Text style={[styles.rankText, { color: index < 3 ? '#fff' : colors.text }]}>{index + 1}</Text>
+                  <Text style={[styles.rankText, { color: index < 3 ? colors.white : colors.text }]}>{index + 1}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.topicName}>{item.topic}</Text>
@@ -140,16 +140,16 @@ const styles = StyleSheet.create({
   searchRow: { flexDirection: 'row', paddingHorizontal: spacing.md, marginVertical: spacing.sm },
   searchInput: { flex: 1, backgroundColor: colors.surface, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: 14, color: colors.text, marginRight: spacing.sm },
   searchBtn: { backgroundColor: colors.primary, borderRadius: borderRadius.md, paddingHorizontal: spacing.md, justifyContent: 'center' },
-  searchBtnText: { color: '#fff', fontWeight: '600' },
+  searchBtnText: { color: colors.white, fontWeight: '600' },
   filterToggle: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginHorizontal: spacing.md, backgroundColor: colors.surface, borderRadius: borderRadius.md, marginBottom: spacing.xs },
   filterToggleText: { color: colors.text, fontWeight: '500' },
   filterPanel: { paddingHorizontal: spacing.md, marginBottom: spacing.sm },
   filterLabel: { fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', marginTop: spacing.sm, marginBottom: spacing.xs },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
-  chip: { backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: '#ddd' },
+  chip: { backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: colors.border },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   chipText: { fontSize: 12, color: colors.text },
-  chipTextActive: { color: '#fff' },
+  chipTextActive: { color: colors.white },
   topicCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, marginHorizontal: spacing.md, marginBottom: spacing.sm, borderRadius: borderRadius.md, padding: spacing.md },
   rankCircle: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: spacing.sm },
   rankText: { fontSize: 14, fontWeight: '700' },
@@ -157,11 +157,11 @@ const styles = StyleSheet.create({
   topicSubject: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   arrow: { color: colors.textMuted, fontSize: 18, marginLeft: spacing.sm },
   exploreBtn: { backgroundColor: colors.primary, margin: spacing.md, padding: spacing.md, borderRadius: borderRadius.md, alignItems: 'center' },
-  exploreBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  exploreBtnText: { color: colors.white, fontWeight: '700', fontSize: 15 },
   qCard: { backgroundColor: colors.surface, marginHorizontal: spacing.md, marginBottom: spacing.sm, borderRadius: borderRadius.md, padding: spacing.md },
   qMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   qExam: { fontSize: 11, color: colors.textMuted },
-  readyBadge: { fontSize: 10, backgroundColor: '#e8f5e9', color: '#2e7d32', paddingHorizontal: 4, borderRadius: 4, overflow: 'hidden' },
+  readyBadge: { fontSize: 10, backgroundColor: colors.success + '20', color: colors.success, paddingHorizontal: 4, borderRadius: 4, overflow: 'hidden' },
   qText: { fontSize: 14, color: colors.text, lineHeight: 20 },
   qTopic: { fontSize: 11, color: colors.primary, marginTop: 4 },
   empty: { textAlign: 'center', color: colors.textMuted, padding: spacing.xl },

@@ -45,10 +45,10 @@ export function TopicIntelligenceScreen({ navigation }: any) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'strong': return '#4CAF50';
-      case 'good': return '#2196F3';
-      case 'weak': return '#FF9800';
-      case 'poor': return '#F44336';
+      case 'strong': return colors.success;
+      case 'good': return colors.primary;
+      case 'weak': return colors.warning;
+      case 'poor': return colors.error;
       default: return colors.textMuted;
     }
   };

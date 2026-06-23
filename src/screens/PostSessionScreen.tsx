@@ -262,7 +262,7 @@ const s = StyleSheet.create({
   blockerTopic: { fontSize: 16, fontWeight: '700', color: colors.text },
   blockerReason: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
   blockerAction: { marginTop: spacing.md, backgroundColor: colors.primary, borderRadius: 12, paddingVertical: spacing.sm + 2, alignItems: 'center' },
-  blockerActionText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  blockerActionText: { fontSize: 14, fontWeight: '700', color: colors.white },
 
   profileRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border },
   profileLabel: { fontSize: 13, color: colors.textSecondary },
@@ -270,7 +270,7 @@ const s = StyleSheet.create({
 
   actionsSection: { marginTop: spacing.xl, gap: spacing.sm },
   primaryAction: { backgroundColor: colors.primary, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center' },
-  primaryActionText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  primaryActionText: { fontSize: 15, fontWeight: '700', color: colors.white },
   secondaryAction: { backgroundColor: colors.surface, borderRadius: 16, height: 48, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   secondaryActionText: { fontSize: 15, fontWeight: '600', color: colors.textSecondary },
 });

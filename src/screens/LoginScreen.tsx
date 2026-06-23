@@ -4,7 +4,7 @@ import { useAuthStore, USER_SCOPED_STORAGE_KEYS } from '../store/authStore';
 import { useUserStore } from '../store/userStore';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, spacing, fontFamily } from '../theme';
+import { colors, spacing, fontFamily, radius } from '../theme';
 import { supabase } from '../services/supabase';
 import { useTranslation } from '../i18n/useTranslation';
 import { fetchUserProfile, fetchNotes } from '../services/dataSync';
@@ -211,7 +211,7 @@ export function LoginScreen() {
 
           <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.submitText}>{isSignup ? t('login.createAccount') : t('login.logIn')}</Text>
             )}
@@ -229,33 +229,33 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FAFAF8' },
-  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 56 : 28, paddingBottom: 32, justifyContent: 'center' },
+  container: { flex: 1, backgroundColor: colors.background },
+  scrollContent: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: Platform.OS === 'ios' ? 56 : 28, paddingBottom: spacing.xl, justifyContent: 'center' },
 
   /* Top Row */
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   logoWrap: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  badge: { backgroundColor: '#F7B11A20', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
-  badgeText: { fontSize: 11, fontWeight: '600', color: '#F7B11A', fontFamily: fontFamily.bodyMedium },
+  badge: { backgroundColor: colors.warning + '20', paddingHorizontal: spacing.sm + 4, paddingVertical: spacing.xs + 1, borderRadius: radius.full },
+  badgeText: { fontSize: 11, fontWeight: '600', color: colors.warning, fontFamily: fontFamily.bodyMedium },
 
   /* Hero */
   hero: { marginBottom: 28 },
-  heroTitle: { fontSize: 28, fontWeight: '700', lineHeight: 35, color: '#000000', fontFamily: fontFamily.bodySemiBold, marginBottom: 8 },
-  heroSub: { fontSize: 15, lineHeight: 21, color: 'rgba(0,0,0,0.5)', fontFamily: fontFamily.body, marginBottom: 20 },
+  heroTitle: { fontSize: 28, fontWeight: '700', lineHeight: 35, color: colors.text, fontFamily: fontFamily.bodySemiBold, marginBottom: 8 },
+  heroSub: { fontSize: 15, lineHeight: 21, color: colors.textSecondary, fontFamily: fontFamily.body, marginBottom: spacing.lg - 4 },
 
   /* Feature Pills */
   featureRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  featurePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)' },
+  featurePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.surface, paddingHorizontal: spacing.sm + 4, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border },
   featurePillIcon: { fontSize: 15 },
-  featurePillLabel: { fontSize: 12, fontWeight: '500', color: 'rgba(0,0,0,0.7)', fontFamily: fontFamily.bodyMedium },
+  featurePillLabel: { fontSize: 12, fontWeight: '500', color: colors.textSecondary, fontFamily: fontFamily.bodyMedium },
 
   /* Auth Form */
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, borderWidth: 1, borderColor: 'rgba(0,0,0,0.06)', gap: 14 },
-  formTitle: { fontSize: 18, fontWeight: '700', color: '#000000', fontFamily: fontFamily.bodySemiBold, textAlign: 'center', marginBottom: 2 },
-  input: { height: 48, borderWidth: 1, borderColor: 'rgba(0,0,0,0.1)', borderRadius: 12, paddingHorizontal: 16, fontSize: 15, fontFamily: fontFamily.body, color: '#000000', backgroundColor: '#FAFAF8' },
-  error: { fontSize: 13, color: '#E53935', fontFamily: fontFamily.body, textAlign: 'center' },
-  submitBtn: { height: 48, backgroundColor: '#F7B11A', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  submitText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF', fontFamily: fontFamily.bodyMedium },
-  switchText: { fontSize: 14, color: 'rgba(0,0,0,0.5)', textAlign: 'center', fontFamily: fontFamily.body, marginTop: 4 },
-  switchTextBold: { color: '#F7B11A', fontWeight: '600', fontFamily: fontFamily.bodyMedium },
+  formCard: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: spacing.lg, borderWidth: 1, borderColor: colors.border, gap: 14 },
+  formTitle: { fontSize: 18, fontWeight: '700', color: colors.text, fontFamily: fontFamily.bodySemiBold, textAlign: 'center', marginBottom: 2 },
+  input: { height: 48, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, fontSize: 15, fontFamily: fontFamily.body, color: colors.text, backgroundColor: colors.bgInput },
+  error: { fontSize: 13, color: colors.error, fontFamily: fontFamily.body, textAlign: 'center' },
+  submitBtn: { height: 48, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
+  submitText: { fontSize: 16, fontWeight: '600', color: colors.white, fontFamily: fontFamily.bodyMedium },
+  switchText: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', fontFamily: fontFamily.body, marginTop: 4 },
+  switchTextBold: { color: colors.primary, fontWeight: '600', fontFamily: fontFamily.bodyMedium },
 });

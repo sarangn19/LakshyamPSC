@@ -60,9 +60,9 @@ const WrenchIcon = () => (
 
 const LogoutIcon = () => (
   <Svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <Path d="M8 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H8" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" />
-    <Path d="M13 14L17 10L13 6" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M17 10H8" stroke="#E53935" strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M8 17H4C3.44772 17 3 16.5523 3 16V4C3 3.44772 3.44772 3 4 3H8" stroke={colors.error} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M13 14L17 10L13 6" stroke={colors.error} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M17 10H8" stroke={colors.error} strokeWidth="1.5" strokeLinecap="round" />
   </Svg>
 );
 
@@ -194,7 +194,7 @@ export function ProfileScreen({ navigation }: any) {
                 if (ok) navigation.navigate(role === 'superadmin' ? 'SuperAdminPortal' : 'AdminPortal');
               }}
             >
-              <Text style={[tx.bodyBold, { color: '#fff' }]}>
+              <Text style={[tx.bodyBold, { color: colors.white }]}>
                 {t('profile.loginAs')} {role}
               </Text>
             </TouchableOpacity>
@@ -203,7 +203,7 @@ export function ProfileScreen({ navigation }: any) {
               style={styles.adminLoginBtn}
               onPress={() => navigation.navigate(role === 'superadmin' ? 'SuperAdminPortal' : 'AdminPortal')}
             >
-              <Text style={[tx.bodyBold, { color: '#fff' }]}>
+              <Text style={[tx.bodyBold, { color: colors.white }]}>
                 {t('profile.openPortal')}
               </Text>
             </TouchableOpacity>
@@ -258,8 +258,8 @@ export function ProfileScreen({ navigation }: any) {
           <View style={styles.section}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
               <Text style={[tx.h3, { color: colors.text }]}>Learning Profile</Text>
-              <View style={{ backgroundColor: '#E8EDF5', borderRadius: 999, paddingHorizontal: 10, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ fontSize: 10, fontWeight: '600', color: '#4D5F81', letterSpacing: 0.5, textTransform: 'capitalize' }}>{lp.stage}</Text>
+              <View style={{ backgroundColor: colors.primaryLight, borderRadius: 999, paddingHorizontal: 10, height: 22, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ fontSize: 10, fontWeight: '600', color: colors.text, letterSpacing: 0.5, textTransform: 'capitalize' }}>{lp.stage}</Text>
               </View>
             </View>
             <View style={styles.statItem}>
@@ -345,7 +345,7 @@ export function ProfileScreen({ navigation }: any) {
         useAuthStore.getState().logout();
       }}>
         <LogoutIcon />
-        <Text style={[tx.bodyBold, { color: '#E53935', marginLeft: spacing.sm }]}>Logout</Text>
+        <Text style={[tx.bodyBold, { color: colors.error, marginLeft: spacing.sm }]}>Logout</Text>
       </TouchableOpacity>
 
       <View style={{ height: spacing.huge }} />
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  logoutDanger: { borderColor: '#E5393530' },
+  logoutDanger: { borderColor: colors.error + '30' },
   langBtn: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   langBtnTextActive: {
-    color: '#fff',
+    color: colors.white,
     fontWeight: '600',
     fontFamily: fontFamily.bodyMedium,
   },

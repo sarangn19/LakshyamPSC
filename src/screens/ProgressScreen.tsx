@@ -30,10 +30,10 @@ function Sparkline({ data, height = 24, width = 60, color = colors.primary }: { 
 
 function HeatCell({ value, maxValue, label }: { value: number; maxValue: number; label: string }) {
   const intensity = maxValue > 0 ? Math.min(1, value / maxValue) : 0;
-  const color = value >= 80 ? '#22C55E' : value >= 60 ? '#EAB308' : value >= 40 ? '#F97316' : '#EF4444';
+  const color = value >= 80 ? colors.success : value >= 60 ? colors.warning : value >= 40 ? colors.warning : colors.error;
   return (
     <View style={[styles.heatCell, { backgroundColor: color + Math.round((0.2 + intensity * 0.6) * 255).toString(16).padStart(2, '0') }]}>
-      <Text style={[styles.heatCellText, { color: intensity > 0.6 ? '#fff' : colors.text }]}>{label}</Text>
+      <Text style={[styles.heatCellText, { color: intensity > 0.6 ? colors.white : colors.text }]}>{label}</Text>
     </View>
   );
 }
@@ -255,7 +255,7 @@ export function ProgressScreen({ navigation }: any) {
                 <HeatCell value={s.avg90} maxValue={maxAll} label={s.avg90 > 0 ? `${s.avg90}%` : '—'} />
                 <HeatCell value={s.currentAvg} maxValue={maxAll} label={`${s.currentAvg}%`} />
                 <View style={{ flex: 0.8, alignItems: 'center' }}>
-                  <Sparkline data={s.trend} color={s.trend.length >= 2 && s.trend[s.trend.length - 1] >= s.trend[0] ? '#22C55E' : '#EF4444'} />
+                  <Sparkline data={s.trend} color={s.trend.length >= 2 && s.trend[s.trend.length - 1] >= s.trend[0] ? colors.success : colors.error} />
                 </View>
               </View>
             ))}
@@ -306,7 +306,7 @@ export function ProgressScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, paddingBottom: 40 },
+  content: { padding: spacing.lg, paddingBottom: spacing.xxl },
   coachHeader: { marginBottom: spacing.lg },
   splitRow: { flexDirection: 'row', marginBottom: spacing.lg },
   splitCard: { backgroundColor: colors.bgCard, borderRadius: borderRadius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },

@@ -29,7 +29,7 @@ export function PracticeScreen({ navigation }: any) {
       subtitle: 'Browse 17K previous year questions from 114 exams',
       icon: '📜',
       screen: 'PYQExplorer',
-      color: colors.warning || '#E67E22',
+      color: colors.warning,
     },
     {
       id: 'high_yield',
@@ -37,7 +37,7 @@ export function PracticeScreen({ navigation }: any) {
       subtitle: '70% weak areas · 30% high-frequency PSC topics',
       icon: '🎯',
       screen: 'HighYieldPractice',
-      color: '#FF5722',
+      color: colors.error,
     },
     {
       id: 'topic_intel',
@@ -53,7 +53,7 @@ export function PracticeScreen({ navigation }: any) {
       subtitle: 'How recommendations improve your learning outcomes',
       icon: '📊',
       screen: 'ImpactDashboard',
-      color: '#9C27B0',
+      color: colors.secondary,
     },
     {
       id: 'corpus_health',
@@ -116,7 +116,7 @@ export function PracticeScreen({ navigation }: any) {
               </View>
               {card.count !== undefined && card.count > 0 && (
                 <View style={[styles.countBadge, { backgroundColor: card.color }]}>
-                  <Text style={[typography.tiny, { color: '#fff', fontWeight: '700' }]}>{card.count}</Text>
+                  <Text style={[typography.tiny, { color: colors.white, fontWeight: '700' }]}>{card.count}</Text>
                 </View>
               )}
             </View>

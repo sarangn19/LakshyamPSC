@@ -124,7 +124,7 @@ export function SubscriptionScreen({ navigation }: any) {
 function FeatureItem({ text, included, dimmed }: { text: string; included: boolean; dimmed?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 3 }}>
-      <Text style={{ fontSize: 12, color: included ? '#22C55E' : colors.textMuted }}>
+      <Text style={{ fontSize: 12, color: included ? colors.success : colors.textMuted }}>
         {included ? '✓' : '—'}
       </Text>
       <Text style={[typography.tiny, { color: dimmed ? colors.textMuted : colors.text, textDecorationLine: dimmed ? 'line-through' : 'none' }]}>

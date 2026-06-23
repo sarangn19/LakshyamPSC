@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { spacing, fontFamily } from '../theme';
+import { colors, spacing, radius, fontFamily } from '../theme';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
 import { BottomNav, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
@@ -41,7 +41,7 @@ function TypingDots() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: spacing.sm }}>
       {[opacity1, opacity2, opacity3].map((op, i) => (
-        <Animated.View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#6366f1', opacity: op }} />
+        <Animated.View key={i} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, opacity: op }} />
       ))}
     </View>
   );
@@ -303,13 +303,13 @@ Difficulty: Easy/Medium/Hard`,
         <TextInput
           style={styles.input}
           placeholder={`Ask about ${examContext}...`}
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.textTertiary}
           value={inputText}
           onChangeText={setInputText}
           multiline
         />
         <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage(inputText, 'tutor')} activeOpacity={0.8}>
-          <Text style={{ fontSize: 16, color: '#fff', transform: [{ rotate: '45deg' }], marginLeft: 2 }}>➤</Text>
+          <Text style={{ fontSize: 16, color: colors.white, transform: [{ rotate: '45deg' }], marginLeft: 2 }}>➤</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -317,7 +317,7 @@ Difficulty: Easy/Medium/Hard`,
 }
 
 const styles = StyleSheet.create({
-  wrapper: { flex: 1, backgroundColor: '#F4F0EF' },
+  wrapper: { flex: 1, backgroundColor: colors.background },
 
   // Toast
   toast: {
@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
     top: 60,
     left: 32,
     right: 32,
-    backgroundColor: '#0f172a',
-    borderRadius: 100,
+    backgroundColor: colors.text,
+    borderRadius: radius.full,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     flexDirection: 'row',
@@ -334,10 +334,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     zIndex: 100,
     borderWidth: 1,
-    borderColor: '#1e293b',
+    borderColor: colors.border,
   },
-  toastDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#34d399' },
-  toastText: { fontSize: 12, fontWeight: '700', color: '#fff', fontFamily: fontFamily.bodyBold },
+  toastDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
+  toastText: { fontSize: 12, fontWeight: '700', color: colors.white, fontFamily: fontFamily.bodyBold },
 
   // Header
   header: {
@@ -345,9 +345,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
+    borderBottomColor: colors.border,
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   avatarWrap: { position: 'relative' },
@@ -358,17 +358,17 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#10B981',
+    backgroundColor: colors.success,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: colors.white,
   },
-  headerTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a', fontFamily: fontFamily.bodyBold },
-  headerStatus: { fontSize: 11, fontWeight: '700', color: '#059669', marginTop: 1, fontFamily: fontFamily.bodyBold },
+  headerTitle: { fontSize: 16, fontWeight: '800', color: colors.text, fontFamily: fontFamily.bodyBold },
+  headerStatus: { fontSize: 11, fontWeight: '700', color: colors.success, marginTop: 1, fontFamily: fontFamily.bodyBold },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   headerAction: {
     padding: spacing.xs,
-    borderRadius: 12,
-    backgroundColor: '#f8fafc',
+    borderRadius: radius.md,
+    backgroundColor: colors.bgInput,
   },
   examStack: { flexDirection: 'row', gap: 2, marginLeft: 2 },
 
@@ -380,35 +380,35 @@ const styles = StyleSheet.create({
   botAvatar: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#f1f5f9',
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.border,
     marginRight: spacing.sm,
     marginBottom: spacing.sm,
   },
-  msgContent: { maxWidth: '85%', borderRadius: 20 },
+  msgContent: { maxWidth: '85%', borderRadius: radius.xl },
   msgContentBot: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.border,
     borderTopLeftRadius: 4,
     padding: spacing.sm + 2,
     paddingBottom: spacing.xs,
   },
   msgContentUser: {
-    backgroundColor: '#6366f1',
+    backgroundColor: colors.primary,
     borderBottomRightRadius: 4,
     padding: spacing.md,
   },
-  msgText: { fontSize: 13, fontWeight: '600', color: '#1e293b', lineHeight: 20, fontFamily: fontFamily.bodyMedium },
-  msgTextUser: { color: '#fff' },
+  msgText: { fontSize: 13, fontWeight: '600', color: colors.text, lineHeight: 20, fontFamily: fontFamily.bodyMedium },
+  msgTextUser: { color: colors.white },
   botLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.xs + 2 },
-  botLabelText: { fontSize: 10, fontWeight: '700', color: '#6366f1', fontFamily: fontFamily.bodyBold, textTransform: 'uppercase', letterSpacing: 0.5 },
-  botLabelDot: { fontSize: 10, color: '#cbd5e1' },
-  botLabelTime: { fontSize: 9, color: '#94a3b8', fontFamily: fontFamily.body },
+  botLabelText: { fontSize: 10, fontWeight: '700', color: colors.primary, fontFamily: fontFamily.bodyBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  botLabelDot: { fontSize: 10, color: colors.border },
+  botLabelTime: { fontSize: 9, color: colors.textTertiary, fontFamily: fontFamily.body },
 
   // Save button
   saveBtn: {
@@ -418,13 +418,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.border,
   },
-  saveBtnSaved: { borderColor: '#a7f3d0', backgroundColor: '#ecfdf5' },
-  saveBtnText: { fontSize: 10, fontWeight: '700', color: '#64748b', fontFamily: fontFamily.bodyBold },
+  saveBtnSaved: { borderColor: `${colors.success}30`, backgroundColor: `${colors.success}15` },
+  saveBtnText: { fontSize: 10, fontWeight: '700', color: colors.textSecondary, fontFamily: fontFamily.bodyBold },
 
   // Typing
   typingRow: { flexDirection: 'row', marginBottom: spacing.md, alignItems: 'flex-end' },
@@ -436,30 +436,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
-    backgroundColor: '#fff',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    borderTopColor: colors.border,
     gap: spacing.xs + 2,
   },
   input: {
     flex: 1,
-    backgroundColor: '#f8fafc',
-    borderRadius: 12,
+    backgroundColor: colors.bgInput,
+    borderRadius: radius.md,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     fontSize: 12,
     fontWeight: '700',
-    color: '#0f172a',
+    color: colors.text,
     fontFamily: fontFamily.bodyBold,
     maxHeight: 80,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: colors.border,
   },
   sendBtn: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#6366f1',
+    borderRadius: radius.xxl - 2,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
   },

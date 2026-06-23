@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fontFamily } from '../theme';
+import { colors, spacing, radius, fontFamily } from '../theme';
 import { useMCQStore, useUserStore, usePerformanceStore } from '../store';
 import { reportQuestionToBackend } from '../services/adminDataService';
 import { LoadingAnimation } from '../components/common/LoadingAnimation';
@@ -119,27 +119,27 @@ export function MCQEngineScreen({ route, navigation }: any) {
             <Text style={styles.endLink}>{t('mcqEngine.endPractice')}</Text>
           </TouchableOpacity>
         </LinearGradient>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-          <Text style={{ fontSize: 19, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 8 }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.lg }}>
+          <Text style={{ fontSize: 19, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: spacing.sm }}>
             {mode === 'practice' ? t('mcqEngine.noQuestions') : t('mcqEngine.aiNotAvailable')}
           </Text>
-          <Text style={{ fontSize: 14, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 24, opacity: 0.7 }}>
+          <Text style={{ fontSize: 14, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: spacing.lg, opacity: 0.7 }}>
             {mode === 'practice' ? t('mcqEngine.noQuestionsSub') : t('mcqEngine.couldNotGenerate')}
           </Text>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <View style={{ flexDirection: 'row', gap: spacing.md - 4 }}>
             {mode === 'daily' && (
               <TouchableOpacity
                 onPress={() => { useMCQStore.getState().resetSession(); startDailyDrill(targetExams); }}
-                style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
+                style={{ backgroundColor: colors.primary, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm + 4, borderRadius: radius.sm }}
               >
-                <Text style={{ color: '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.retry')}</Text>
+                <Text style={{ color: colors.white, fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.retry')}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity
               onPress={() => { endSession(); navigation.goBack(); }}
-              style={{ backgroundColor: mode === 'daily' ? colors.bgCard : colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8, borderWidth: mode === 'daily' ? 1 : 0, borderColor: colors.border }}
+              style={{ backgroundColor: mode === 'daily' ? colors.bgCard : colors.primary, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm + 4, borderRadius: radius.sm, borderWidth: mode === 'daily' ? 1 : 0, borderColor: colors.border }}
             >
-              <Text style={{ color: mode === 'daily' ? colors.text : '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.goBack')}</Text>
+              <Text style={{ color: mode === 'daily' ? colors.text : colors.white, fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.goBack')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -175,13 +175,13 @@ export function MCQEngineScreen({ route, navigation }: any) {
         style={styles.topBar}
       >
         <Text style={styles.topBarCounter}>Q{score.total + 1}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md - 4 }}>
           {current && (
             <>
               <TouchableOpacity
                 onPress={() => useMCQStore.getState().toggleBookmark(current.id)}
                 activeOpacity={0.6}
-                style={{ padding: 4 }}
+                style={{ padding: spacing.xs }}
               >
                 <Text style={{ fontSize: 14, fontWeight: '600', color: colors.primary }}>{useMCQStore.getState().bookmarkedQuestions.includes(current.id) ? t('mcqEngine.saved') : t('mcqEngine.save')}</Text>
               </TouchableOpacity>
@@ -196,7 +196,7 @@ export function MCQEngineScreen({ route, navigation }: any) {
                 ]);
               }}
               activeOpacity={0.6}
-              style={{ padding: 4 }}
+              style={{ padding: spacing.xs }}
             >
               <View style={{ opacity: reported === current?.id ? 0.4 : 1 }}><FlagIcon /></View>
             </TouchableOpacity>
@@ -321,9 +321,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.lg,
     paddingTop: 56,
-    paddingBottom: 12,
+    paddingBottom: spacing.sm + 4,
     backgroundColor: colors.background,
   },
   topBarCounter: { fontSize: 13, fontWeight: '700', color: colors.textTertiary, fontFamily: fontFamily.bodyBold },
@@ -332,23 +332,23 @@ const styles = StyleSheet.create({
   focusBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
     backgroundColor: colors.primaryLight + '20',
-    gap: 8,
+    gap: spacing.sm,
   },
   focusLabel: { fontSize: 11, fontWeight: '700', color: colors.textTertiary, fontFamily: fontFamily.bodyBold, letterSpacing: 0.3, textTransform: 'uppercase' },
   focusValue: { fontSize: 13, fontWeight: '600', color: colors.primary, fontFamily: fontFamily.bodyMedium },
 
   fallbackBanner: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    backgroundColor: '#FFF3CD',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.warning + '20',
   },
-  fallbackText: { fontSize: 12, color: '#856404', fontFamily: fontFamily.body, lineHeight: 16 },
+  fallbackText: { fontSize: 12, color: colors.warning, fontFamily: fontFamily.body, lineHeight: 16 },
 
   scrollArea: { flex: 1 },
-  scroll: { paddingHorizontal: 24, paddingBottom: 24 },
+  scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
 
   question: {
     fontSize: 18,
@@ -356,77 +356,77 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bodyMedium,
     color: colors.text,
     lineHeight: 26,
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: spacing.lg - 4,
+    marginBottom: spacing.lg - 4,
   },
 
-  optionsList: { gap: 8 },
+  optionsList: { gap: spacing.sm },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 16,
+    padding: spacing.md,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    gap: 12,
+    gap: spacing.md - 4,
   },
   optionSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight + '40' },
-  optionCorrect: { borderColor: colors.success, backgroundColor: '#F0FDF4' },
-  optionWrong: { borderColor: colors.error, backgroundColor: '#FEF2F2' },
+  optionCorrect: { borderColor: colors.success, backgroundColor: `${colors.success}15` },
+  optionWrong: { borderColor: colors.error, backgroundColor: `${colors.error}15` },
   optionMuted: { opacity: 0.4 },
   optionLetter: { fontSize: 14, fontWeight: '800', fontFamily: fontFamily.bodyBold, width: 20, textAlign: 'center' },
   optionText: { fontSize: 15, fontWeight: '500', fontFamily: fontFamily.body, lineHeight: 22, flex: 1 },
 
   explanationCard: {
-    marginTop: 16,
-    padding: 24,
-    borderRadius: 20,
+    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.xl,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
   explanationStatus: { fontSize: 14, fontWeight: '700', fontFamily: fontFamily.bodyBold },
-  explanationText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20, marginTop: 8 },
+  explanationText: { fontSize: 13, color: colors.textSecondary, lineHeight: 20, marginTop: spacing.sm },
 
   bottomBar: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    paddingBottom: 32,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm + 4,
+    paddingBottom: spacing.xl,
     backgroundColor: colors.background,
   },
   nextBtn: {
     backgroundColor: colors.primary,
-    borderRadius: 14,
+    borderRadius: radius.md + 2,
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
   },
   nextBtnText: { fontSize: 14, fontWeight: '700', color: colors.white, fontFamily: fontFamily.bodyBold },
 
-  reportBtn: { marginTop: 16, paddingVertical: 8, alignSelf: 'flex-start' },
+  reportBtn: { marginTop: spacing.md, paddingVertical: spacing.sm, alignSelf: 'flex-start' },
   reportBtnText: { fontSize: 12, fontWeight: '500', color: colors.error, fontFamily: fontFamily.body, textDecorationLine: 'underline' },
   reportBtnDone: { color: colors.textTertiary, textDecorationLine: 'none' },
 
   confidenceSection: {
-    marginTop: 16,
-    paddingHorizontal: 4,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   confidenceLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary,
     fontFamily: fontFamily.bodyMedium,
-    marginBottom: 8,
+    marginBottom: spacing.sm,
   },
   confidenceRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing.sm,
   },
   confidenceBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: spacing.xs + 6,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',

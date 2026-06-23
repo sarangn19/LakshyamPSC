@@ -67,11 +67,11 @@ export function LeaderboardScreen({ navigation }: any) {
             </Text>
             <View style={styles.scoreBreakdown}>
               <View style={styles.scoreItem}>
-                <Text style={[tx.h4, { color: '#22C55E' }]}>{monthly.correct}</Text>
+                <Text style={[tx.h4, { color: colors.success }]}>{monthly.correct}</Text>
                 <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.correct')}</Text>
               </View>
               <View style={styles.scoreItem}>
-                <Text style={[tx.h4, { color: '#EF4444' }]}>{monthly.wrong}</Text>
+                <Text style={[tx.h4, { color: colors.error }]}>{monthly.wrong}</Text>
                 <Text style={[tx.tiny, { color: colors.textMuted }]}>{t('leaderboard.wrong')}</Text>
               </View>
               <View style={styles.scoreItem}>

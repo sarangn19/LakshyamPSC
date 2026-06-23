@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, Modal,
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { fontFamily } from '../theme';
+import { colors, spacing, radius, fontFamily } from '../theme';
 import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
@@ -337,7 +337,8 @@ export function ChatbotScreen({ navigation }: any) {
                 </View>
               </View>
               </Animated.View>
-            );})}
+              );
+            })}
             {isLoading && (
               <View style={[styles.messageRow, styles.aiRow]}>
                 <View style={[styles.bubble, styles.aiBubble, styles.typingBubble]}>
@@ -409,7 +410,7 @@ export function ChatbotScreen({ navigation }: any) {
                     <TextInput
                       style={styles.tagInputField}
                       placeholder={t('chatbot.tagsPlaceholder')}
-                      placeholderTextColor="rgba(0,0,0,0.3)"
+                      placeholderTextColor={colors.textTertiary}
                       value={tagInput}
                       onChangeText={setTagInput}
                       onSubmitEditing={handleAddTag}
@@ -462,7 +463,7 @@ export function ChatbotScreen({ navigation }: any) {
           <TextInput
             style={styles.textInput}
             placeholder="Ask about...."
-            placeholderTextColor="rgba(0,0,0,0.75)"
+            placeholderTextColor={colors.text}
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={() => handleSend(inputText)}
@@ -491,11 +492,11 @@ export function ChatbotScreen({ navigation }: any) {
             <View style={styles.attachHandle} />
             <Text style={styles.attachSheetTitle}>{t('chatbot.attach')}</Text>
             <TouchableOpacity style={styles.attachOption} onPress={handlePickImage}>
-              <View style={[styles.attachOptionIcon, { backgroundColor: '#F59E0B15' }]}>
+              <View style={[styles.attachOptionIcon, { backgroundColor: colors.warning + '15' }]}>
                 <Svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-                  <Rect x="1" y="1" width="20" height="20" rx="3" stroke="#F59E0B" strokeWidth="1.5"/>
-                  <Circle cx="7" cy="7" r="2" stroke="#F59E0B" strokeWidth="1.5"/>
-                  <Path d="M1 16L6 11L11 16L16 11L21 16" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <Rect x="1" y="1" width="20" height="20" rx="3" stroke={colors.warning} strokeWidth="1.5"/>
+                  <Circle cx="7" cy="7" r="2" stroke={colors.warning} strokeWidth="1.5"/>
+                  <Path d="M1 16L6 11L11 16L16 11L21 16" stroke={colors.warning} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
@@ -504,10 +505,10 @@ export function ChatbotScreen({ navigation }: any) {
               </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.attachOption} onPress={handleCaptureImage}>
-              <View style={[styles.attachOptionIcon, { backgroundColor: '#DC262615' }]}>
+              <View style={[styles.attachOptionIcon, { backgroundColor: colors.error + '15' }]}>
                 <Svg width="18" height="18" viewBox="0 0 22 22" fill="none">
-                  <Path d="M2 7C2 5.89543 2.89543 5 4 5H5.38197C5.70515 5 5.99277 4.78929 6.09202 4.48683L6.61732 2.80428C6.79354 2.27572 7.29613 1.91603 7.8541 1.91603H14.1459C14.7039 1.91603 15.2065 2.27572 15.3827 2.80428L15.908 4.48683C16.0072 4.78929 16.2948 5 16.618 5H18C19.1046 5 20 5.89543 20 7V17C20 18.1046 19.1046 19 18 19H4C2.89543 19 2 18.1046 2 17V7Z" stroke="#DC2626" strokeWidth="1.5"/>
-                  <Circle cx="11" cy="12" r="4" stroke="#DC2626" strokeWidth="1.5"/>
+                  <Path d="M2 7C2 5.89543 2.89543 5 4 5H5.38197C5.70515 5 5.99277 4.78929 6.09202 4.48683L6.61732 2.80428C6.79354 2.27572 7.29613 1.91603 7.8541 1.91603H14.1459C14.7039 1.91603 15.2065 2.27572 15.3827 2.80428L15.908 4.48683C16.0072 4.78929 16.2948 5 16.618 5H18C19.1046 5 20 5.89543 20 7V17C20 18.1046 19.1046 19 18 19H4C2.89543 19 2 18.1046 2 17V7Z" stroke={colors.error} strokeWidth="1.5"/>
+                  <Circle cx="11" cy="12" r="4" stroke={colors.error} strokeWidth="1.5"/>
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
@@ -528,7 +529,7 @@ export function ChatbotScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4F0EF',
+    backgroundColor: colors.background,
   },
   contentArea: {
     flex: 1,
@@ -549,9 +550,9 @@ const styles = StyleSheet.create({
     height: 102,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    gap: 12,
+    paddingHorizontal: spacing.lg - 4,
+    paddingTop: spacing.sm,
+    gap: spacing.md - 4,
     backgroundColor: 'transparent',
     zIndex: 2,
   },
@@ -560,32 +561,32 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 0.5,
-    borderColor: 'rgba(0, 0, 0, 0.1)',
-    borderRadius: 999,
+    borderColor: colors.border,
+    borderRadius: radius.full,
   },
   headerInfo: {
-    paddingTop: 4,
+    paddingTop: spacing.xs,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
     fontFamily: fontFamily.bodySemiBold,
-    color: '#111827',
+    color: colors.text,
     lineHeight: 22,
   },
   headerSubtitle: {
     fontSize: 12,
     fontWeight: '400',
     fontFamily: fontFamily.body,
-    color: '#9CA3AF',
+    color: colors.textTertiary,
     lineHeight: 16,
   },
   scrollContent: {
     paddingTop: 100,
     paddingBottom: 310,
-    gap: 32,
+    gap: spacing.xl,
     alignItems: 'center',
   },
   greeting: {
@@ -594,25 +595,25 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontFamily: fontFamily.body,
     textAlign: 'center',
-    color: '#111827',
-    paddingHorizontal: 32,
+    color: colors.text,
+    paddingHorizontal: spacing.xl,
   },
   chipsContainer: {
     flexDirection: 'column',
     alignItems: 'center',
     paddingHorizontal: 0,
-    gap: 10,
+    gap: spacing.xs + 6,
   },
   chip: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg - 6,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 999,
+    borderColor: colors.border,
+    borderRadius: radius.full,
     alignSelf: 'center',
   },
   chipText: {
@@ -621,13 +622,13 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontFamily: fontFamily.body,
     textAlign: 'center',
-    color: '#374151',
+    color: colors.text,
   },
   chatContent: {
     paddingTop: 100,
     paddingBottom: 310,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingHorizontal: spacing.md,
+    gap: spacing.md - 4,
   },
   messageRow: {
     flexDirection: 'row',
@@ -643,21 +644,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   bubble: {
-    padding: 12,
+    padding: spacing.sm + 4,
   },
   aiBubble: {
     maxWidth: '85%',
-    backgroundColor: '#F0F2F5',
+    backgroundColor: colors.surfaceSecondary,
     borderTopLeftRadius: 0,
-    borderTopRightRadius: 14,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
-    padding: 10,
+    borderTopRightRadius: radius.md + 2,
+    borderBottomLeftRadius: radius.md + 2,
+    borderBottomRightRadius: radius.md + 2,
+    padding: spacing.xs + 6,
   },
   userBubble: {
-    borderRadius: 14,
+    borderRadius: radius.md + 2,
     borderBottomRightRadius: 0,
-    backgroundColor: '#F7B11A',
+    backgroundColor: colors.primary,
     maxWidth: '78%',
   },
   bubbleText: {
@@ -665,48 +666,48 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 21,
     fontFamily: fontFamily.body,
-    color: '#111827',
+    color: colors.text,
   },
   userBubbleText: {
     fontSize: 14,
     fontWeight: '400',
     lineHeight: 21,
     fontFamily: fontFamily.body,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   saveNoteBtn: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs,
     backgroundColor: 'transparent',
     borderWidth: 0.5,
-    borderColor: '#D1D5DB',
+    borderColor: colors.border,
     borderRadius: 6,
     alignSelf: 'flex-start',
     height: 26,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   saveNoteText: {
     fontSize: 11,
     fontWeight: '500',
     lineHeight: 15,
     fontFamily: fontFamily.bodyMedium,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
   inputContainer: {
     position: 'absolute',
     left: 0,
     right: 0,
-    paddingTop: 16,
-    paddingHorizontal: 24,
-    gap: 4,
-    backgroundColor: '#FFFFFF',
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.xs,
+    backgroundColor: colors.surface,
     borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderColor: colors.border,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
     zIndex: 15,
     ...Platform.select({
       web: { boxShadow: '7px 0px 98.5px rgba(0,0,0,0.12)' },
@@ -717,11 +718,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     height: 44,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
   },
   textInput: {
     flex: 1,
@@ -729,19 +730,19 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 17,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
     opacity: 0.75,
   },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 4,
-    gap: 4,
+    padding: spacing.xs,
+    gap: spacing.xs,
     height: 56,
     borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 16,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
   },
   noteIconBtn: {
     width: 31.43,
@@ -754,13 +755,13 @@ const styles = StyleSheet.create({
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
   sendButton: {
     width: 44,
     height: 44,
-    borderRadius: 16,
-    backgroundColor: '#080500',
+    borderRadius: radius.lg,
+    backgroundColor: colors.black,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({
@@ -771,7 +772,7 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: colors.overlay,
   },
   modalCardOuterScroll: {
     flex: 1,
@@ -779,16 +780,16 @@ const styles = StyleSheet.create({
   modalCardScrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 32,
+    padding: spacing.xl,
   },
   modalCard: {
     width: '100%',
-    backgroundColor: '#F6F6F6',
+    backgroundColor: colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-    borderRadius: 12,
-    padding: 24,
-    gap: 24,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    gap: spacing.lg,
     boxShadow: '0px 0px 16px rgba(0,0,0,0.12)',
     elevation: 8,
   },
@@ -796,20 +797,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 24,
+    gap: spacing.lg,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '500',
     lineHeight: 27,
     fontFamily: fontFamily.bodyMedium,
-    color: '#000000',
+    color: colors.text,
   },
   modalClose: {
     width: 24,
     height: 24,
-    borderRadius: 12,
-    backgroundColor: '#9D9D9D',
+    borderRadius: radius.md,
+    backgroundColor: colors.textTertiary,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -821,40 +822,40 @@ const styles = StyleSheet.create({
   },
   modalCloseX: {
     fontSize: 14,
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '700',
     fontFamily: fontFamily.bodyBold,
   },
   modalField: {
-    gap: 8,
+    gap: spacing.sm,
   },
   modalLabel: {
     fontSize: 14,
     fontWeight: '400',
     lineHeight: 19,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
   },
   modalInput: {
     height: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
     fontSize: 14,
     fontWeight: '400',
     lineHeight: 19,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
   },
   tagInputRow: {
     height: 48,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
     justifyContent: 'center',
   },
   tagScrollContent: {
@@ -864,12 +865,12 @@ const styles = StyleSheet.create({
   tagChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7B11A',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginRight: 8,
-    gap: 4,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm + 4,
+    paddingVertical: spacing.xs,
+    marginRight: spacing.sm,
+    gap: spacing.xs,
     height: 24,
   },
   tagChipText: {
@@ -877,11 +878,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
     fontFamily: fontFamily.bodyBold,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   tagChipClose: {
     fontSize: 10,
-    color: '#FFFFFF',
+    color: colors.white,
     fontWeight: '700',
     fontFamily: fontFamily.bodyBold,
   },
@@ -890,18 +891,18 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 19,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
     padding: 0,
     minWidth: 60,
   },
   modalContentArea: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 12,
-    paddingLeft: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingLeft: spacing.md,
+    paddingTop: spacing.sm + 4,
+    paddingBottom: spacing.sm + 4,
     height: 200,
   },
   modalContentScroll: {
@@ -913,21 +914,21 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 19,
     fontFamily: fontFamily.body,
-    color: '#000000',
+    color: colors.text,
   },
   modalFooter: {
-    paddingTop: 12,
+    paddingTop: spacing.sm + 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.1)',
-    marginHorizontal: -24,
-    marginBottom: -24,
-    paddingHorizontal: 24,
-    paddingBottom: 12,
+    borderTopColor: colors.border,
+    marginHorizontal: -(spacing.lg),
+    marginBottom: -(spacing.lg),
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm + 4,
   },
   modalSaveBtn: {
     height: 48,
-    backgroundColor: '#F7B11A',
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -936,78 +937,78 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 19,
     fontFamily: fontFamily.bodyBold,
-    color: '#FFFFFF',
+    color: colors.white,
     textAlign: 'center',
   },
   typingBubble: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.xs + 6,
+    paddingHorizontal: spacing.md,
   },
   typingDots: {
     fontSize: 18,
     fontWeight: '400',
     fontFamily: fontFamily.body,
-    color: '#6B7280',
+    color: colors.textSecondary,
     lineHeight: 20,
     letterSpacing: 2,
   },
 
   attachOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   attachSheet: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    padding: spacing.lg,
+    paddingBottom: Platform.OS === 'ios' ? 40 : spacing.lg,
+    gap: spacing.md - 4,
   },
   attachHandle: {
-    width: 36, height: 4, borderRadius: 2, backgroundColor: '#E5E7EB',
-    alignSelf: 'center', marginBottom: 4,
+    width: 36, height: 4, borderRadius: 2, backgroundColor: colors.border,
+    alignSelf: 'center', marginBottom: spacing.xs,
   },
   attachSheetTitle: {
     fontSize: 17, fontWeight: '600', fontFamily: fontFamily.bodySemiBold,
-    color: '#111827', textAlign: 'center', marginBottom: 4,
+    color: colors.text, textAlign: 'center', marginBottom: spacing.xs,
   },
   attachOption: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
-    backgroundColor: '#F6F6F4', borderRadius: 12, gap: 16,
+    flexDirection: 'row', alignItems: 'center', padding: spacing.md,
+    backgroundColor: colors.surfaceSecondary, borderRadius: radius.md, gap: spacing.md,
   },
   attachOptionIcon: {
-    width: 44, height: 44, borderRadius: 12,
+    width: 44, height: 44, borderRadius: radius.md,
     justifyContent: 'center', alignItems: 'center',
   },
   attachOptionTitle: {
     fontSize: 14, fontWeight: '600', fontFamily: fontFamily.bodyMedium,
-    color: '#111827',
+    color: colors.text,
   },
   attachOptionSub: {
     fontSize: 12, fontWeight: '400', fontFamily: fontFamily.body,
-    color: '#6B7280', marginTop: 2,
+    color: colors.textSecondary, marginTop: 2,
   },
   attachCancel: {
-    alignItems: 'center', paddingVertical: 12, marginTop: 4,
+    alignItems: 'center', paddingVertical: spacing.sm + 4, marginTop: spacing.xs,
   },
   attachCancelText: {
     fontSize: 14, fontWeight: '500', fontFamily: fontFamily.bodyMedium,
-    color: '#6B7280',
+    color: colors.textSecondary,
   },
 
   recordingBanner: {
     position: 'absolute', top: 108, left: 16, right: 16,
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: '#DC2626', borderRadius: 12, zIndex: 20,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 6,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 6,
+    backgroundColor: colors.error, borderRadius: radius.md, zIndex: 20,
     ...Platform.select({ web: { boxShadow: '0 4px 16px rgba(220,38,38,0.25)' }, default: { elevation: 6 } }),
   },
-  recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FFFFFF' },
+  recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.white },
   recordingBannerText: {
     fontSize: 13, fontWeight: '600', fontFamily: fontFamily.bodyMedium,
-    color: '#FFFFFF', flex: 1,
+    color: colors.white, flex: 1,
   },
 
 });

@@ -79,10 +79,10 @@ export function CorpusHealthScreen({ navigation }: any) {
             {/* Coverage cards */}
             <View style={styles.coverRow}>
               {[
-                { label: 'Answers', value: `${health.answer_coverage_pct}%`, color: colors.success || '#4CAF50' },
+                { label: 'Answers', value: `${health.answer_coverage_pct}%`, color: colors.success },
                 { label: 'Options', value: `${health.option_coverage_pct}%`, color: colors.primary },
                 { label: 'All-4', value: `${health.all_four_options_pct}%`, color: colors.accent },
-                { label: 'Topics', value: `${health.topic_coverage_pct}%`, color: '#FF9800' },
+                { label: 'Topics', value: `${health.topic_coverage_pct}%`, color: colors.warning },
               ].map(c => (
                 <View key={c.label} style={styles.coverCard}>
                   <Text style={[styles.coverValue, { color: c.color }]}>{c.value}</Text>

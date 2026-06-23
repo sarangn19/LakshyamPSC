@@ -30,7 +30,7 @@ const VoiceIcon = () => (
   </Svg>
 );
 
-const BRAND_YELLOW = '#F7B11A';
+const BRAND_YELLOW = colors.primary;
 
 const EmptyNotesIcon = () => (
   <Svg width="80" height="80" viewBox="0 0 80 80" fill="none">

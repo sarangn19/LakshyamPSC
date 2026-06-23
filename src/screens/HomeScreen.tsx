@@ -15,15 +15,15 @@ import type { CurrentAffair } from '../data/mockData';
 import { seedPSCFrequency } from '../services/pscFrequencyBoost';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  kerala: '#F7B11A',
-  national: '#4A90D9',
-  appointments: '#7C4DFF',
-  schemes: '#4CAF50',
-  awards: '#FF7043',
+  kerala: colors.warning,
+  national: colors.primary,
+  appointments: colors.secondary,
+  schemes: colors.success,
+  awards: colors.error,
 };
 
 function categoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] || '#999';
+  return CATEGORY_COLORS[cat] || colors.textTertiary;
 }
 
 function StreakBadge({ current, longest }: { current: number; longest: number }) {
@@ -32,8 +32,8 @@ function StreakBadge({ current, longest }: { current: number; longest: number })
       <View style={styles.streakRow}>
         <View style={styles.streakFlame}>
           <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
-            <Path d="M10 0C10 0 5 6 5 11C5 15 7 17 10 17C13 17 15 15 15 11C15 6 10 0 10 0Z" fill="#F59E0B" />
-            <Path d="M10 24C13 24 15 22 15 20C15 18 13 17 10 17C7 17 5 18 5 20C5 22 7 24 10 24Z" fill="#F59E0B" opacity="0.6" />
+            <Path d="M10 0C10 0 5 6 5 11C5 15 7 17 10 17C13 17 15 15 15 11C15 6 10 0 10 0Z" fill={colors.warning} />
+            <Path d="M10 24C13 24 15 22 15 20C15 18 13 17 10 17C7 17 5 18 5 20C5 22 7 24 10 24Z" fill={colors.warning} opacity="0.6" />
           </Svg>
         </View>
         <View style={styles.streakInfo}>
