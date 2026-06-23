@@ -29,10 +29,8 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
     ? blockingTopics.map(t => ({ name: t.topic, subject: t.subject, score: weakSubjects.find(s => s.name === t.subject)?.score ?? 30, isTopic: true }))
     : weakSubjects.map(s => ({ name: s.name, subject: s.name, score: s.score, isTopic: false }));
 
-  if (__DEV__) {
-    console.log('[WeakAreasCard] weakAreas:', JSON.stringify(weakAreas));
-    console.log('[WeakAreasCard] path:', blockingTopics.length > 0 ? 'blockingTopics' : 'weakSubjects');
-  }
+  console.log('[WeakAreasCard] weakAreas:', JSON.stringify(weakAreas));
+  console.log('[WeakAreasCard] path:', blockingTopics.length > 0 ? 'blockingTopics' : 'weakSubjects');
 
   if (weakAreas.length === 0) {
     return (

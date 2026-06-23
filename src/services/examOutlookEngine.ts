@@ -174,9 +174,7 @@ function computeSubjectSummaries(): SubjectSummary[] {
       ? subjectRetentionRecords.reduce((s, r) => s + (r.retentionRate || 0), 0) / subjectRetentionRecords.length
       : 0;
 
-    if (__DEV__) {
-      console.log(`[computeSubjectSummaries] ${name}: mastery=${mastery.toFixed(3)}, accuracy_raw=${accuracy}, retention=${retention.toFixed(3)}, count=${g.count}, accuracyCount=${g.accuracyCount}`);
-    }
+    console.log(`[computeSubjectSummaries] ${name}: mastery=${mastery.toFixed(3)}, accuracy_raw=${accuracy}, retention=${retention.toFixed(3)}, count=${g.count}, accuracyCount=${g.accuracyCount}`);
 
     summaries.push({
       name,
