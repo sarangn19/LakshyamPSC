@@ -141,7 +141,7 @@ export function AITutorScreen({ route, navigation }: any) {
       )}
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.xs, paddingBottom: spacing.xs }]}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarWrap}>
             <Text style={{ fontSize: 24 }}>🤖</Text>
@@ -275,8 +275,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.huge + spacing.md,
-    paddingBottom: spacing.md,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
