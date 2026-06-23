@@ -257,6 +257,9 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       attemptNumber: 1, selectedOption: index, correctTopic: current.topic,
     });
     useBKTStore.getState().updateTopic(current.subject, current.topic, isCorrect, current.subtopic);
+    useCognitiveTwinStore.getState().updateMasteryForQuestion(
+      current.subject, current.topic, current.subtopic, isCorrect, Math.min(1, timeToAnswer / 30000)
+    );
     if (current.subtopic) {
       const twin = useCognitiveTwinStore.getState();
       const subtopicNode = getNodeByName(current.subtopic, 'subtopic');
