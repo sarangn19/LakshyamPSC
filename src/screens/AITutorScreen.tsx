@@ -224,10 +224,12 @@ Difficulty: Easy/Medium/Hard`,
       )}
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.xs, paddingBottom: spacing.xs - 2 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm, paddingBottom: spacing.xs - 2 }]}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarWrap}>
-            <Text style={{ fontSize: 22 }}>🤖</Text>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarLetter}>AI</Text>
+            </View>
             <View style={styles.onlineDot} />
           </View>
           <View>
@@ -252,7 +254,7 @@ Difficulty: Easy/Medium/Hard`,
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'ai' && (
               <View style={styles.botAvatar}>
-                <Text style={{ fontSize: 13 }}>🤖</Text>
+                <Text style={styles.botAvatarText}>AI</Text>
               </View>
             )}
             <View style={[styles.msgContent, msg.role === 'user' ? styles.msgContentUser : styles.msgContentBot]}>
@@ -287,7 +289,7 @@ Difficulty: Easy/Medium/Hard`,
         {isLoading && (
           <View style={styles.typingRow}>
             <View style={styles.botAvatar}>
-              <Text style={{ fontSize: 14 }}>🤖</Text>
+              <Text style={styles.botAvatarText}>AI</Text>
             </View>
             <View style={[styles.msgContentBot, styles.typingBubble]}>
               <TypingDots />
@@ -377,6 +379,13 @@ const styles = StyleSheet.create({
   chatContent: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.lg },
   msgRow: { flexDirection: 'row', marginBottom: spacing.lg, alignItems: 'flex-end' },
   msgRowUser: { justifyContent: 'flex-end' },
+  avatarCircle: {
+    width: 40, height: 40, borderRadius: radius.full,
+    backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center',
+  },
+  avatarLetter: {
+    fontSize: 14, fontWeight: '700', color: '#FFFFFF',
+  },
   botAvatar: {
     width: 32,
     height: 32,
@@ -388,6 +397,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     marginRight: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  botAvatarText: {
+    fontSize: 10, fontWeight: '700', color: colors.textSecondary,
   },
   msgContent: { maxWidth: '85%', borderRadius: radius.xl },
   msgContentBot: {
