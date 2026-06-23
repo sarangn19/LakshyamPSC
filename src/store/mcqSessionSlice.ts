@@ -571,14 +571,15 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     set({ isGenerating: true, generationProgress: { current: 0, total: targetCount } });
 
     // Resolve note/pasted content for content-based generation
-    const focusInstruction = config.sourceType === 'note' && config.noteId
+    const isContentMode = config.sourceType === 'note' || config.sourceType === 'paste';
+    const focusInstruction = isContentMode && config.sourceType === 'note' && config.noteId
       ? (() => {
           const note = useKnowledgeStore.getState().notes.find((n) => n.id === config.noteId);
           return note?.content && note.content.length >= 10
             ? `CONTENT-BASED: ${note.content.substring(0, 3000)}`
             : undefined;
         })()
-      : config.sourceType === 'paste' && config.pastedContent && config.pastedContent.length >= 10
+      : isContentMode && config.sourceType === 'paste' && config.pastedContent && config.pastedContent.length >= 10
         ? `CONTENT-BASED: ${config.pastedContent.substring(0, 3000)}`
         : undefined;
 
@@ -586,56 +587,85 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       ? subjects
       : syllabus.map((s) => s.name);
 
-    // AI first: generate via edge function for requested count
-    for (let i = 0; i < targetCount * 2 && allValidated.length < targetCount; i++) {
-      const s = poolSubjects[i % poolSubjects.length];
-      const subjectEntry = syllabus.find((x) => x.name === s);
-      const topic = subjectEntry && subjectEntry.topics.length > 0
-        ? subjectEntry.topics[Math.floor(Math.random() * subjectEntry.topics.length)].name
-        : undefined;
-      const result = await generateAIQuestion({
-        subject: s,
-        topic: topic || s,
-        difficulty: (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
-        examType: config.examType || 'LDC',
-        language: lang as 'en' | 'ml',
-        avoidTexts: [...seenTexts],
-        focusInstruction,
-      });
-      if (result.question && validateQuestionIntegrity(result.question).valid) {
-        seenTexts.add(result.question.text);
-        allValidated.push(result.question);
-      }
-      set({ generationProgress: { current: allValidated.length, total: targetCount } });
-    }
-    // Template fallback: fill remaining slots with hand-crafted questions (skip for note/paste)
-    if (allValidated.length < targetCount && !focusInstruction) {
-      for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
-        const raw = generateMCQs({
-          difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
-          count: targetCount * 2, subjects,
-          avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
-          language: lang,
+    // AI first: generate via edge function
+    if (isContentMode) {
+      // Note/paste mode: content quality determines yield, not a target count
+      // Try a few times max, accept whatever valid questions come through
+      const maxNoteAttempts = Math.min(5, targetCount * 2);
+      for (let i = 0; i < maxNoteAttempts && allValidated.length < targetCount; i++) {
+        const s = poolSubjects[i % poolSubjects.length];
+        const subjectEntry = syllabus.find((x) => x.name === s);
+        const topic = subjectEntry && subjectEntry.topics.length > 0
+          ? subjectEntry.topics[Math.floor(Math.random() * subjectEntry.topics.length)].name
+          : undefined;
+        const result = await generateAIQuestion({
+          subject: s,
+          topic: topic || s,
+          difficulty: (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+          examType: config.examType || 'LDC',
+          language: lang as 'en' | 'ml',
+          avoidTexts: [...seenTexts],
+          focusInstruction,
         });
-        for (const q of raw) {
-          if (allValidated.length >= targetCount) break;
-          if (seenTexts.has(q.text)) continue;
-          if (validateQuestionIntegrity(q).valid) {
-            seenTexts.add(q.text);
-            allValidated.push(q);
-          }
+        if (result.question && validateQuestionIntegrity(result.question).valid) {
+          seenTexts.add(result.question.text);
+          allValidated.push(result.question);
         }
-        if (raw.length === 0) break;
+        set({ generationProgress: { current: allValidated.length, total: targetCount } });
       }
-    }
-    // Last resort fallback: use fallback chain (always available)
-    if (allValidated.length === 0) {
-      const fallback = getFallbackQuestion(
-        subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
-        [config.examType || 'LDC'], lang, subjects?.[0],
-      );
-      if (fallback.question && validateQuestionIntegrity(fallback.question).valid) {
-        allValidated.push(fallback.question);
+      // If no questions from note content, surface empty session so user sees error message
+      // Don't fall back to templates (irrelevant for content-based mode)
+    } else {
+      // Syllabus/chapter mode: generate up to targetCount with aggressive attempts
+      for (let i = 0; i < targetCount * 2 && allValidated.length < targetCount; i++) {
+        const s = poolSubjects[i % poolSubjects.length];
+        const subjectEntry = syllabus.find((x) => x.name === s);
+        const topic = subjectEntry && subjectEntry.topics.length > 0
+          ? subjectEntry.topics[Math.floor(Math.random() * subjectEntry.topics.length)].name
+          : undefined;
+        const result = await generateAIQuestion({
+          subject: s,
+          topic: topic || s,
+          difficulty: (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+          examType: config.examType || 'LDC',
+          language: lang as 'en' | 'ml',
+          avoidTexts: [...seenTexts],
+        });
+        if (result.question && validateQuestionIntegrity(result.question).valid) {
+          seenTexts.add(result.question.text);
+          allValidated.push(result.question);
+        }
+        set({ generationProgress: { current: allValidated.length, total: targetCount } });
+      }
+      // Template fallback: fill remaining slots with hand-crafted questions
+      if (allValidated.length < targetCount) {
+        for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
+          const raw = generateMCQs({
+            difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
+            count: targetCount * 2, subjects,
+            avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
+            language: lang,
+          });
+          for (const q of raw) {
+            if (allValidated.length >= targetCount) break;
+            if (seenTexts.has(q.text)) continue;
+            if (validateQuestionIntegrity(q).valid) {
+              seenTexts.add(q.text);
+              allValidated.push(q);
+            }
+          }
+          if (raw.length === 0) break;
+        }
+      }
+      // Last resort fallback: use fallback chain
+      if (allValidated.length === 0) {
+        const fallback = getFallbackQuestion(
+          subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+          [config.examType || 'LDC'], lang, subjects?.[0],
+        );
+        if (fallback.question && validateQuestionIntegrity(fallback.question).valid) {
+          allValidated.push(fallback.question);
+        }
       }
     }
     const skipped = targetCount - allValidated.length;
