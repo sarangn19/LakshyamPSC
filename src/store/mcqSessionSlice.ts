@@ -18,6 +18,8 @@ import { makeInitialDifficultyState, recordSessionAnswer } from '../services/ses
 import { getRecommendedSubjectAndTopic } from '../services/learningRecommendationEngine';
 import { buildEmptySubjectProgress, trackIntegrity, resolveValidQuestion, buildSessionOutcome } from './mcqHelpers';
 import { getFallbackQuestion } from '../services/questionFallback';
+import { generateAIQuestion } from '../services/aiQuestionGenerator';
+import { syllabus } from '../data/syllabus';
 import type { GapRecord, GapStatus, GapLifecycle } from './cognitiveTwinStore';
 
 export interface SessionSlice {
@@ -566,24 +568,50 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const seenTexts = new Set<string>();
     const allValidated: any[] = [];
     const avoidIds = [...get().reportedQuestions, ...get().disabledQuestions];
-    for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
-      const raw = generateMCQs({
-        difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
-        count: targetCount * 2, subjects,
-        avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
-        language: lang,
+    const poolSubjects = subjects && subjects.length > 0
+      ? subjects
+      : syllabus.map((s) => s.name);
+    // AI first: generate via edge function for requested count
+    for (let i = 0; i < targetCount * 2 && allValidated.length < targetCount; i++) {
+      const s = poolSubjects[i % poolSubjects.length];
+      const subjectEntry = syllabus.find((x) => x.name === s);
+      const topic = subjectEntry && subjectEntry.topics.length > 0
+        ? subjectEntry.topics[Math.floor(Math.random() * subjectEntry.topics.length)].name
+        : undefined;
+      const result = await generateAIQuestion({
+        subject: s,
+        topic: topic || s,
+        difficulty: (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+        examType: config.examType || 'LDC',
+        language: lang as 'en' | 'ml',
+        avoidTexts: [...seenTexts],
       });
-      for (const q of raw) {
-        if (allValidated.length >= targetCount) break;
-        if (seenTexts.has(q.text)) continue;
-        if (validateQuestionIntegrity(q).valid) {
-          seenTexts.add(q.text);
-          allValidated.push(q);
-        }
+      if (result.question && validateQuestionIntegrity(result.question).valid) {
+        seenTexts.add(result.question.text);
+        allValidated.push(result.question);
       }
-      if (raw.length === 0) break;
     }
-    // Fallback: if no template questions matched, use the fallback chain to get at least one
+    // Template fallback: fill remaining slots with hand-crafted questions
+    if (allValidated.length < targetCount) {
+      for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
+        const raw = generateMCQs({
+          difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
+          count: targetCount * 2, subjects,
+          avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
+          language: lang,
+        });
+        for (const q of raw) {
+          if (allValidated.length >= targetCount) break;
+          if (seenTexts.has(q.text)) continue;
+          if (validateQuestionIntegrity(q).valid) {
+            seenTexts.add(q.text);
+            allValidated.push(q);
+          }
+        }
+        if (raw.length === 0) break;
+      }
+    }
+    // Last resort fallback: use fallback chain
     if (allValidated.length === 0) {
       const fallback = getFallbackQuestion(
         subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
