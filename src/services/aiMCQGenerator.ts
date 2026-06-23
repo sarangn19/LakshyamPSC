@@ -863,9 +863,10 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
 
     // If no templates match, broaden: drop difficulty filter first, then subject filter
     if (pool.length === 0 && attempt < 5) {
+      // Broaden within subject: drop difficulty, keep subject filter
       pool = TEMPLATES.filter((t) => subjectFilter.length === 0 || subjectFilter.includes(t.subject));
       if (pool.length === 0) {
-        pool = TEMPLATES; // last resort: any template
+        break; // no templates for this subject — stop rather than giving unrelated questions
       }
     }
     if (pool.length === 0) break;

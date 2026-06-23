@@ -58,6 +58,7 @@ export function LearnScreen({ navigation }: any) {
   const animateOut = (anim: Animated.Value, cb: () => void) => Animated.timing(anim, { toValue: 300, duration: 250, useNativeDriver: true }).start(cb);
 
   const handleSourceSelect = (source: string) => {
+    setShowSourceModal(false);
     setSelectedChapter(null); setSelectedNote(null); setPasteContent('');
     if (source === 'Chaptewise') { setChapterSearch(''); animateIn(chapterSlideAnim); setShowChapterModal(true); }
     else if (source === 'Saved note') { setNoteSearch(''); animateIn(noteSlideAnim); setShowNoteModal(true); }
