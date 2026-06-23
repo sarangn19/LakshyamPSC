@@ -876,10 +876,11 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
     if (seenTexts.has(text)) continue;
     seenTexts.add(text);
 
-    if (request.avoidQuestionIds?.some((id) => text === id)) continue;
+    const qId = `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    if (request.avoidQuestionIds?.includes(qId)) continue;
 
     results.push({
-      id: `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      id: qId,
       text,
       options,
       correctAnswer,
