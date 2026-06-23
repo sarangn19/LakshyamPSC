@@ -70,6 +70,12 @@ interface AdminState {
   revisionAdherenceRate: number;
   averageAccuracy: number;
   recommendationsAccepted: number;
+  cognitiveTwinConfig: {
+    weaknessWeight: number;
+    forgettingWeight: number;
+    confusionWeight: number;
+    coverageWeight: number;
+  };
 
   setFlaggedQuestions: (q: FlaggedQuestion[]) => void;
   updateFlaggedStatus: (id: string, status: FlaggedQuestion['status'], notes?: string) => void;
@@ -110,6 +116,12 @@ export const useAdminStore = create<AdminState>()(
       revisionAdherenceRate: 0,
       averageAccuracy: 0,
       recommendationsAccepted: 0,
+      cognitiveTwinConfig: {
+        weaknessWeight: 30,
+        forgettingWeight: 30,
+        confusionWeight: 20,
+        coverageWeight: 20,
+      },
 
       setFlaggedQuestions: (q) => set({ flaggedQuestions: q }),
       updateFlaggedStatus: (id, status, notes) =>
