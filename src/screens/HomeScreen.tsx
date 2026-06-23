@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../services/supabase';
 import { colors, spacing, borderRadius } from '../theme';
@@ -12,9 +12,7 @@ import type { CurrentAffair } from '../data/mockData';
 import { seedPSCFrequency } from '../services/pscFrequencyBoost';
 import { computeExamOutlook } from '../services/examOutlookEngine';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GRID_GAP = 12;
-const CARD_WIDTH = Math.floor((SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2);
 
 const FALLBACK_CA: CurrentAffair[] = [
   { id: 'fa1', title: 'Kerala Leads in Education Development Index', summary: 'Kerala has topped the Education Development Index for the sixth consecutive year, showcasing its commitment to quality education and literacy.', category: 'national', date: '2026-06-20', source: 'PIB', isImportant: true, url: '', image_url: '' },
@@ -40,17 +38,19 @@ function StatsCard({ subject, category, total, accuracy }: { subject: string; ca
   const pct = `${Math.round(accuracy * 100)}%`;
 
   return (
-    <View style={[styles.statsCard, { width: CARD_WIDTH }]}>
-      <Text style={styles.statsSubject} numberOfLines={1}>{subject}</Text>
-      {category ? <Text style={styles.statsCategory} numberOfLines={1}>{category}</Text> : null}
+    <View style={styles.statsCard}>
+      <View style={styles.statsHeader}>
+        <Text style={styles.statsSubject} numberOfLines={1}>{subject}</Text>
+        {category ? <Text style={styles.statsCategory} numberOfLines={1}>{category}</Text> : null}
+      </View>
       <View style={styles.statsDivider} />
       <View style={styles.statsRow}>
         <View style={styles.statsLeft}>
-          <View>
+          <View style={styles.statsMetricBlock}>
             <Text style={styles.statsLabel}>Total Questions Attempted</Text>
             <Text style={styles.statsValue}>{total.toLocaleString()}</Text>
           </View>
-          <View>
+          <View style={styles.statsMetricBlock}>
             <Text style={styles.statsLabel}>Accuracy</Text>
             <Text style={styles.statsPct}>{pct}</Text>
           </View>
@@ -378,10 +378,11 @@ const styles = StyleSheet.create({
   },
   statsGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: GRID_GAP,
   },
   statsCard: {
+    flex: 1,
     height: 232,
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
@@ -390,6 +391,10 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.1)',
     overflow: 'hidden',
+  },
+  statsHeader: {
+    alignSelf: 'stretch',
+    gap: 4,
   },
   statsSubject: {
     fontSize: 16,
@@ -400,7 +405,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '400',
     color: '#000000',
-    marginTop: -8,
   },
   statsDivider: {
     borderWidth: 0.5,
@@ -415,19 +419,25 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 24,
   },
+  statsMetricBlock: {
+    alignSelf: 'stretch',
+  },
   statsLabel: {
     fontSize: 12,
     fontWeight: '300',
+    lineHeight: 14,
     color: '#000000',
   },
   statsValue: {
     fontSize: 32,
     fontWeight: '400',
+    lineHeight: 43,
     color: '#000000',
   },
   statsPct: {
     fontSize: 24,
     fontWeight: '400',
+    lineHeight: 32,
     color: '#000000',
   },
   barContainer: {
