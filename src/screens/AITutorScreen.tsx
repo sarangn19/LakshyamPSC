@@ -27,8 +27,8 @@ function TypingDots() {
       Animated.loop(
         Animated.sequence([
           Animated.delay(delay),
-          Animated.timing(anim, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(anim, { toValue: 0.3, duration: 400, useNativeDriver: true }),
+          Animated.timing(anim, { toValue: 1, duration: 400, useNativeDriver: false }),
+          Animated.timing(anim, { toValue: 0.3, duration: 400, useNativeDriver: false }),
         ]),
         { iterations: -1 },
       ).start();
@@ -104,9 +104,9 @@ export function AITutorScreen({ route, navigation }: any) {
     create_flashcard: 'flashcard',
   };
 
-  const sendMessage = async (text: string, mode?: ResponseMode) => {
+  const sendMessage = async (text: string, mode?: ResponseMode, displayText?: string) => {
     if (!text.trim() || isLoading) return;
-    const userMsg: ChatMessage = { role: 'user', text: text.trim(), responseMode: mode };
+    const userMsg: ChatMessage = { role: 'user', text: displayText || text.trim(), responseMode: mode };
     setMessages((prev) => [...prev, userMsg]);
     setInputText('');
     setIsLoading(true);
@@ -118,6 +118,100 @@ export function AITutorScreen({ route, navigation }: any) {
     setMessages((prev) => [...prev, { role: 'ai', text: result.reply, responseMode: aiMode }]);
     setIsLoading(false);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 200);
+  };
+
+  const ACTION_LABELS: Record<string, string> = {
+    generate_mcq: '📝 Generate MCQ',
+    explain_simpler: '🔍 Explain Simply',
+    give_pyqs: '📜 Previous Year Questions',
+    related_topic: '🔗 Related Topic',
+    create_flashcard: '📇 Create Flashcard',
+  };
+
+  const ACTION_PROMPTS: Record<string, string> = {
+    generate_mcq: `You are a Kerala PSC exam tutor. Generate a multiple choice question about the previous topic for ${examContext} exam. Return the response in this exact structure:
+
+❓ Question
+[the question text]
+
+A. [option A]
+B. [option B]
+C. [option C]
+D. [option D]
+
+✅ Answer
+[correct option letter and text]
+
+📝 Explanation
+[detailed explanation]
+
+📘 Topic
+[subject area]
+
+🎯 PSC Tip
+[exam-specific memory aid or shortcut]
+
+Difficulty: Easy/Medium/Hard
+Weightage: High/Medium/Low`,
+    explain_simpler: `You are a Kerala PSC exam tutor. Explain the previous response in simpler terms for ${examContext} exam preparation. Return the response in this exact structure:
+
+📚 Simple Explanation
+[clear, plain-language explanation]
+
+🧠 Key Points
+• [point 1]
+• [point 2]
+• [point 3]
+
+📖 Example
+[concrete example if applicable]
+
+🎯 PSC Shortcut
+[memory aid or mnemonic]
+
+Difficulty: Easy/Medium/Hard`,
+    give_pyqs: `You are a Kerala PSC exam tutor. List previous year questions from ${examContext} exams related to the previous topic. Return the response in this exact structure:
+
+📜 Previous Year Questions
+[year] • [exam name]: [question]
+
+✅ Answers
+[answer explanations]
+
+📊 Trend
+[how often this topic appears]
+
+Difficulty: Easy/Medium/Hard`,
+    related_topic: `You are a Kerala PSC exam tutor. Suggest a related topic from ${examContext} syllabus that the student should study next, based on the previous topic. Return in this structure:
+
+🔗 Related Topic
+[topic name]
+
+🤔 Why Related
+[connection explanation]
+
+📌 Key Facts
+• [fact 1]
+• [fact 2]
+
+📖 Suggested Follow-up
+[what to study next]
+
+Difficulty: Easy/Medium/Hard`,
+    create_flashcard: `You are a Kerala PSC exam tutor. Create a flashcard summary of the previous response for quick revision. Return in this structure:
+
+📇 Flashcard
+
+Front:
+[key concept or question]
+
+Back:
+[answer or explanation]
+
+📂 Subject
+[subject name]
+
+Difficulty: Easy/Medium/Hard`,
   };
 
   return (
@@ -172,14 +266,7 @@ export function AITutorScreen({ route, navigation }: any) {
                   <ResponseModeRenderer mode={msg.responseMode || 'tutor'} text={msg.text} />
                   <ActionChips onAction={(action) => {
                     const mode = MODE_MAP[action] || 'tutor';
-                    const prompts: Record<string, string> = {
-                      generate_mcq: `Generate a multiple choice question about this topic for ${examContext} exam. Include question, 4 options, answer, and explanation.`,
-                      explain_simpler: `Explain the previous response in simpler terms for ${examContext} exam preparation.`,
-                      give_pyqs: `List previous year questions from ${examContext} exams related to this topic.`,
-                      related_topic: `Suggest a related topic from ${examContext} syllabus that I should study next.`,
-                      create_flashcard: `Create a flashcard summary of this response for quick revision. Format as: Front: ... Back: ...`,
-                    };
-                    sendMessage(prompts[action] || action, mode);
+                    sendMessage(ACTION_PROMPTS[action] || action, mode, ACTION_LABELS[action]);
                   }} />
                   <TouchableOpacity
                     style={styles.saveBtn}
