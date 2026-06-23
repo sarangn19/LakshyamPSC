@@ -17,8 +17,12 @@ type EnrichedArea = {
   name: string;
   score: number;
   isTopic: boolean;
+  weaknessScore: number;
   reason: string;
-  sortKey: [number, number, number, number];
+  impact: string;
+  detailMastery: number | null;
+  detailAccuracy: number | null;
+  detailRetention: number | null;
 };
 
 function daysSince(isoOrEpoch: string | number | null | undefined): number {
@@ -28,108 +32,138 @@ function daysSince(isoOrEpoch: string | number | null | undefined): number {
   return Math.floor((Date.now() - ts) / 86400000);
 }
 
-function generateReason(
-  pMastered: number | null,
-  totalAttempts: number | null,
-  lastCorrect: boolean | null,
-  consecutiveCorrect: number | null,
-  accuracy: number | null,
-  trend: string | null,
-  hesitationScore: number | null,
-  lastAttempted: string | number | null,
-): string {
-  if (totalAttempts !== null && totalAttempts === 0) {
-    return 'No questions attempted yet';
-  }
-  if (lastCorrect === false && consecutiveCorrect === 0) {
-    return 'Incorrect on last attempt';
-  }
-  if (accuracy !== null && accuracy < 30 && (totalAttempts ?? 0) >= 2) {
-    return `Accuracy below ${accuracy}%`;
-  }
-  if (trend === 'declining') {
-    return 'Accuracy dropping — review needed';
-  }
-  if (hesitationScore !== null && hesitationScore > 0.6) {
-    return 'High uncertainty on this topic';
-  }
-  if (pMastered !== null && pMastered < 0.1 && (totalAttempts ?? 0) >= 2) {
-    return 'Critical — needs immediate practice';
-  }
-  if (lastAttempted !== null) {
-    const d = daysSince(lastAttempted);
-    if (d >= 14) return `Not practiced in ${d} days`;
-    if (d >= 7) return `Not practiced in ${d} days`;
-  }
-  return 'Frequently missed topic';
-}
+type TopicFactors = {
+  mastery: number | null;
+  accuracy: number | null;
+  retention: number | null;
+  totalAttempts: number | null;
+  lastCorrect: boolean | null;
+  consecutiveCorrect: number | null;
+  trend: string | null;
+  hesitationScore: number | null;
+  lastAttempted: string | number | null;
+};
 
-function enrichArea(
-  area: { subject: string; topic?: string; reason: string; score: number; name: string; isTopic: boolean },
+function collectFactors(
+  area: { subject: string; topic?: string; score: number; name: string },
   topicMap: Record<string, any>,
   masteryMap: Record<string, any>,
-): EnrichedArea {
-  let pMastered: number | null = null;
+  retentionRecords: { subject: string; topic: string; retentionRate: number }[],
+): TopicFactors {
+  let mastery: number | null = null;
   let totalAttempts: number | null = null;
   let lastCorrect: boolean | null = null;
   let consecutiveCorrect: number | null = null;
   let lastAttempted: string | number | null = null;
+  let accuracy: number | null = null;
+  let trend: string | null = null;
+  let hesitationScore: number | null = null;
+  let retention: number | null = null;
 
-  // Look up BKT data
   const bktKey = getKey(area.subject, area.topic || area.name);
   const bkt = topicMap[bktKey];
   if (bkt) {
-    pMastered = bkt.pMastered ?? null;
+    mastery = bkt.pMastered ?? null;
     totalAttempts = bkt.totalAttempts ?? null;
     lastCorrect = bkt.lastCorrect ?? null;
     consecutiveCorrect = bkt.consecutiveCorrect ?? null;
     lastAttempted = bkt.lastAttempted ?? null;
   }
 
-  // Look up cognitive twin data
-  let accuracy: number | null = null;
-  let trend: string | null = null;
-  let hesitationScore: number | null = null;
   const ctNode = getNodeByName(area.topic || area.name, 'topic');
   if (ctNode) {
-    const mastery = masteryMap[ctNode.id];
-    if (mastery) {
-      accuracy = mastery.accuracy ?? null;
-      trend = mastery.trend ?? null;
-      hesitationScore = mastery.hesitationScore ?? null;
-      if (!lastAttempted && mastery.lastPracticed) {
-        lastAttempted = mastery.lastPracticed;
-      }
-      if (totalAttempts === null || totalAttempts === 0) {
-        totalAttempts = mastery.attempts ?? null;
-      }
+    const m = masteryMap[ctNode.id];
+    if (m) {
+      accuracy = m.accuracy ?? null;
+      trend = m.trend ?? null;
+      hesitationScore = m.hesitationScore ?? null;
+      if (!lastAttempted && m.lastPracticed) lastAttempted = m.lastPracticed;
+      if (totalAttempts === null || totalAttempts === 0) totalAttempts = m.attempts ?? null;
     }
   }
 
-  const reason = generateReason(
-    pMastered, totalAttempts, lastCorrect, consecutiveCorrect,
-    accuracy, trend, hesitationScore, lastAttempted,
+  const matching = retentionRecords.filter(
+    r => r.topic === area.name || r.subject === area.name,
   );
+  if (matching.length > 0) {
+    retention = Math.round(matching.reduce((sum, r) => sum + r.retentionRate, 0) / matching.length);
+  }
 
-  // Sort key: lower proficiency first, then fewer attempts, then older lastAttempted, then alpha
-  const pScore = pMastered !== null ? Math.round(pMastered * 100) : area.score;
-  const attScore = totalAttempts ?? 0;
-  const recencyScore = lastAttempted ? -daysSince(lastAttempted) : -999;
-  const tieBreaker = area.name.charCodeAt(0) || 0;
+  return { mastery, accuracy, retention, totalAttempts, lastCorrect, consecutiveCorrect, trend, hesitationScore, lastAttempted };
+}
+
+function computeWeaknessScore(factors: TopicFactors): number {
+  const m = factors.mastery !== null ? factors.mastery : 0.3;
+  const a = factors.accuracy !== null ? factors.accuracy / 100 : 0.4;
+  const r = factors.retention !== null ? factors.retention / 100 : 0.5;
+  return Math.round(((1 - m) * 0.5 + (1 - a) * 0.3 + (1 - r) * 0.2) * 100);
+}
+
+function topFactorLabel(factors: TopicFactors): string {
+  const m = factors.mastery !== null ? (1 - factors.mastery) * 0.5 : 0.35;
+  const a = factors.accuracy !== null ? (1 - factors.accuracy / 100) * 0.3 : 0.18;
+  const r = factors.retention !== null ? (1 - factors.retention / 100) * 0.2 : 0.1;
+  if (m >= a && m >= r) return 'Weak mastery';
+  if (a >= m && a >= r) return 'Low accuracy';
+  return 'Low retention';
+}
+
+function generateReason(factors: TopicFactors): string {
+  const { totalAttempts, lastCorrect, consecutiveCorrect, accuracy, trend, hesitationScore, lastAttempted } = factors;
+
+  if (totalAttempts !== null && totalAttempts === 0) return 'No questions attempted yet';
+  if (lastCorrect === false && consecutiveCorrect === 0) return 'Incorrect on last attempt';
+  if (accuracy !== null && accuracy < 30 && (totalAttempts ?? 0) >= 2) return `Accuracy below ${accuracy}%`;
+  if (trend === 'declining') return 'Accuracy dropping — review needed';
+  if (hesitationScore !== null && hesitationScore > 0.6) return 'High uncertainty on this topic';
+  if (totalAttempts !== null && totalAttempts >= 4) {
+    const wrong = factors.accuracy !== null ? Math.round(totalAttempts * (1 - factors.accuracy / 100)) : 0;
+    if (wrong >= 3) return `Missed ${wrong} of ${totalAttempts} questions`;
+  }
+  if (lastAttempted !== null) {
+    const d = daysSince(lastAttempted);
+    if (d >= 14) return `Not practiced in ${d} days`;
+    if (d >= 7) return `Not practiced in ${d} days`;
+  }
+  return topFactorLabel(factors);
+}
+
+function impactLabel(weaknessScore: number): string {
+  if (weaknessScore >= 70) return 'Could improve score by 3–5 marks';
+  if (weaknessScore >= 50) return 'Could improve score by 2–3 marks';
+  if (weaknessScore >= 30) return 'Could improve score by 1–2 marks';
+  return 'Small improvement possible';
+}
+
+function enrichArea(
+  area: { subject: string; topic?: string; reason: string; score: number; name: string; isTopic: boolean },
+  topicMap: Record<string, any>,
+  masteryMap: Record<string, any>,
+  retentionRecords: { subject: string; topic: string; retentionRate: number }[],
+): EnrichedArea {
+  const factors = collectFactors(area, topicMap, masteryMap, retentionRecords);
+  const weaknessScore = computeWeaknessScore(factors);
+  const reason = generateReason(factors);
+  const impact = impactLabel(weaknessScore);
 
   return {
     subject: area.subject,
     name: area.name,
     score: area.score,
     isTopic: area.isTopic,
+    weaknessScore,
     reason,
-    sortKey: [pScore, attScore, recencyScore, tieBreaker],
+    impact,
+    detailMastery: factors.mastery !== null ? Math.round(factors.mastery * 100) : null,
+    detailAccuracy: factors.accuracy,
+    detailRetention: factors.retention,
   };
 }
 
 export function WeakAreasCard({ onPracticeSubject }: Props) {
   const topicMap = useBKTStore(s => s.topicMap);
   const masteryMap = useCognitiveTwinStore(s => s.masteryMap);
+  const retentionRecords = useCognitiveTwinStore(s => s.retentionRecords);
   usePerformanceStore(s => s.interactionSignals?.length);
 
   const outlook = computeExamOutlook();
@@ -142,48 +176,67 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
       : weakSubjects.map(s => ({ name: s.name, subject: s.name, score: s.score, isTopic: false, reason: 'Weak subject' }));
 
   const enriched = rawAreas
-    .map(a => enrichArea(a, topicMap, masteryMap))
-    .sort((a, b) => {
-      for (let i = 0; i < 4; i++) {
-        if (a.sortKey[i] !== b.sortKey[i]) return a.sortKey[i] - b.sortKey[i];
-      }
-      return 0;
-    });
+    .map(a => enrichArea(a, topicMap, masteryMap, retentionRecords))
+    .sort((a, b) => b.weaknessScore - a.weaknessScore || a.name.localeCompare(b.name));
 
   if (enriched.length === 0) {
     return (
       <View style={styles.card}>
-        <Text style={styles.overline}>Top Weak Areas</Text>
-        <Text style={styles.emptyText}>Keep practicing — your weak areas will appear here as you learn.</Text>
+        <Text style={styles.overline}>Priority Topics</Text>
+        <Text style={styles.emptyText}>Keep practicing — your priority topics will appear here as you learn.</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.card}>
-      <Text style={styles.overline}>Top Weak Areas</Text>
-      <Text style={styles.subtitle}>Focus on these to improve your score</Text>
+      <Text style={styles.overline}>Priority Topics</Text>
+      <Text style={styles.subtitle}>Focus on these to improve your PSC score</Text>
 
-      {enriched.map((area) => (
-        <View key={`${area.subject}::${area.name}`} style={styles.weakItem}>
-          <View style={styles.weakContent}>
-            <Text style={styles.weakName}>{area.name}</Text>
-            {area.isTopic && <Text style={styles.subjectLabel}>{area.subject}</Text>}
-            <Text style={styles.reasonText}>{area.reason}</Text>
-            <View style={styles.scoreRow}>
-              <View style={[styles.scoreBar, { width: `${area.score}%`, backgroundColor: area.score < 30 ? colors.error : colors.warning }]} />
+      {enriched.map((area) => {
+        const barColor =
+          area.score < 10 ? colors.error :
+          area.score < 30 ? colors.warning :
+          colors.success;
+
+        return (
+          <View key={`${area.subject}::${area.name}`} style={styles.weakItem}>
+            <View style={styles.weakContent}>
+              <Text style={styles.weakName}>{area.name}</Text>
+              {area.isTopic && <Text style={styles.subjectLabel}>{area.subject}</Text>}
+
+              <View style={styles.metaRow}>
+                <View style={styles.scoreRow}>
+                  <View style={[styles.scoreBar, { width: `${area.score}%`, backgroundColor: barColor }]} />
+                </View>
+                <Text style={styles.weakScore}>{area.score}%</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                {area.detailMastery !== null && (
+                  <Text style={styles.detailChip}>Mastery {area.detailMastery}%</Text>
+                )}
+                {area.detailAccuracy !== null && (
+                  <Text style={styles.detailChip}>Acc {area.detailAccuracy}%</Text>
+                )}
+                {area.detailRetention !== null && (
+                  <Text style={styles.detailChip}>Retention {area.detailRetention}%</Text>
+                )}
+              </View>
+
+              <Text style={styles.reasonText}>{area.reason}</Text>
+              <Text style={styles.impactText}>{area.impact}</Text>
             </View>
-            <Text style={styles.weakScore}>{area.score}% proficiency</Text>
+            <TouchableOpacity
+              style={styles.practiceBtn}
+              onPress={() => onPracticeSubject(area.subject, area.isTopic ? area.name : undefined)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.practiceBtnText}>Practice</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.practiceBtn}
-            onPress={() => onPracticeSubject(area.subject, area.isTopic ? area.name : undefined)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.practiceBtnText}>Practice</Text>
-          </TouchableOpacity>
-        </View>
-      ))}
+        );
+      })}
     </View>
   );
 }
@@ -237,24 +290,51 @@ const styles = StyleSheet.create({
     marginTop: 1,
     fontFamily: typography.tiny.fontFamily,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: 2,
+    flexWrap: 'wrap',
+  },
+  detailChip: {
+    fontSize: 9,
+    color: colors.textTertiary,
+    backgroundColor: colors.border + '40',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    overflow: 'hidden',
+    fontFamily: typography.tiny.fontFamily,
+  },
   reasonText: {
-    fontSize: 11,
-    color: colors.warning,
+    fontSize: 10,
+    color: colors.textSecondary,
     marginTop: 2,
     fontFamily: typography.caption.fontFamily,
   },
+  impactText: {
+    fontSize: 9,
+    color: colors.success,
+    marginTop: 1,
+    fontFamily: typography.tiny.fontFamily,
+  },
   scoreRow: {
     height: 3,
+    flex: 1,
     backgroundColor: colors.border,
     borderRadius: 2,
-    marginTop: spacing.xs,
     overflow: 'hidden',
   },
   scoreBar: { height: '100%', borderRadius: 2 },
   weakScore: {
     fontSize: 10,
     color: colors.textTertiary,
-    marginTop: 1,
     fontFamily: typography.tiny.fontFamily,
   },
   practiceBtn: {
