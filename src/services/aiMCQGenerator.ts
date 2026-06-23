@@ -839,7 +839,8 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
   const subjectFilter = request.subjects || [];
   const topicFilter = request.topics || [];
 
-  for (let attempt = 0; attempt < 60 && results.length < request.count; attempt++) {
+  const maxAttempts = Math.max(60, request.count * 2);
+  for (let attempt = 0; attempt < maxAttempts && results.length < request.count; attempt++) {
     let pool = TEMPLATES;
 
     if (subjectFilter.length > 0) {
