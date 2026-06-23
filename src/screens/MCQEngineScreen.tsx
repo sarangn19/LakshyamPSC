@@ -121,17 +121,27 @@ export function MCQEngineScreen({ route, navigation }: any) {
         </LinearGradient>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <Text style={{ fontSize: 19, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 8 }}>
-            {t('mcqEngine.aiNotAvailable')}
+            {mode === 'practice' ? t('mcqEngine.noQuestions') : t('mcqEngine.aiNotAvailable')}
           </Text>
           <Text style={{ fontSize: 14, color: colors.textSecondary, fontFamily: fontFamily.body, textAlign: 'center', marginBottom: 24, opacity: 0.7 }}>
-            {t('mcqEngine.couldNotGenerate')}
+            {mode === 'practice' ? t('mcqEngine.noQuestionsSub') : t('mcqEngine.couldNotGenerate')}
           </Text>
-          <TouchableOpacity
-            onPress={() => { endSession(); navigation.goBack(); }}
-            style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
-          >
-            <Text style={{ color: '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.goBack')}</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {mode === 'daily' && (
+              <TouchableOpacity
+                onPress={() => { useMCQStore.getState().resetSession(); startDailyDrill(targetExams); }}
+                style={{ backgroundColor: colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8 }}
+              >
+                <Text style={{ color: '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.retry')}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              onPress={() => { endSession(); navigation.goBack(); }}
+              style={{ backgroundColor: mode === 'daily' ? colors.bgCard : colors.primary, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 8, borderWidth: mode === 'daily' ? 1 : 0, borderColor: colors.border }}
+            >
+              <Text style={{ color: mode === 'daily' ? colors.text : '#fff', fontFamily: fontFamily.body, fontSize: 15 }}>{t('mcqEngine.goBack')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );

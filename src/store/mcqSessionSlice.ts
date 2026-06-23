@@ -17,6 +17,7 @@ import { makeAdaptiveState, recordAnswer } from '../services/infinityEngine';
 import { makeInitialDifficultyState, recordSessionAnswer } from '../services/sessionDifficultyAdapter';
 import { getRecommendedSubjectAndTopic } from '../services/learningRecommendationEngine';
 import { buildEmptySubjectProgress, trackIntegrity, resolveValidQuestion, buildSessionOutcome } from './mcqHelpers';
+import { getFallbackQuestion } from '../services/questionFallback';
 import type { GapRecord, GapStatus, GapLifecycle } from './cognitiveTwinStore';
 
 export interface SessionSlice {
@@ -562,12 +563,22 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const lang = useUserStore.getState().locale;
     const subjects = config.subjects || ['General'];
     const avoidIds = [...get().reportedQuestions, ...get().disabledQuestions];
-    const raw = generateMCQs({
+    let raw = generateMCQs({
       difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
       count: config.count || 10, subjects, sourceNotes: useKnowledgeStore.getState().notes,
       avoidQuestionIds: avoidIds, language: lang,
     });
-    const validated = raw.filter((q) => validateQuestionIntegrity(q).valid);
+    let validated = raw.filter((q) => validateQuestionIntegrity(q).valid);
+    // Fallback: if no template questions matched, use the fallback chain to get at least one
+    if (validated.length === 0) {
+      const fallback = getFallbackQuestion(
+        subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
+        [config.examType || 'LDC'], 'en', subjects[0],
+      );
+      if (fallback.question && validateQuestionIntegrity(fallback.question).valid) {
+        validated = [fallback.question];
+      }
+    }
     const skipped = raw.length - validated.length;
     set({ currentQuestions: validated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSubjects: config.subjects || [], sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: skipped, questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
   },

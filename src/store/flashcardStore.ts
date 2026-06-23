@@ -3,7 +3,9 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FlashCard } from '../data/mockData';
 import { generateFlashcardsFromNote, generateFlashcardsForSubject } from '../services/aiFlashcardGenerator';
+import { generateMCQs } from '../services/aiMCQGenerator';
 import { useKnowledgeStore } from './knowledgeStore';
+import { useUserStore } from './userStore';
 import { storeGeneratedFlashcardsBatch } from '../services/questionBankStorage';
 
 interface FlashcardState {
@@ -176,6 +178,29 @@ export const useFlashcardStore = create<FlashcardState>()(
           // Generate more cards than needed to allow for randomization
           const cards = await generateFlashcardsForSubject(subject, count * 2);
           newCards.push(...cards);
+        }
+
+        // Fallback: if AI generated no cards, use template MCQs as flashcards
+        if (newCards.length === 0 && sourceType === 'chapter' && subjects && subjects.length > 0) {
+          const mCtx = useUserStore.getState().locale;
+          const mcqs = generateMCQs({
+            subjects, difficulty: 'easy', examType: 'LDC', count, language: mCtx,
+          });
+          for (const q of mcqs) {
+            newCards.push({
+              id: `fc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              front: q.text,
+              back: q.explanation,
+              subject: q.subject,
+              topic: q.topic,
+              difficulty: q.difficulty,
+              easeFactor: 2.5,
+              interval: 0,
+              nextReviewDate: new Date().toISOString(),
+              repetitions: 0,
+              mastered: false,
+            });
+          }
         }
 
         // Shuffle cards to avoid getting the same ones each time
