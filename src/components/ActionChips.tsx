@@ -28,7 +28,9 @@ export function ActionChips({ onAction }: ActionChipsProps) {
         flexDirection: 'row',
         gap: 8,
         paddingVertical: 8,
-        paddingHorizontal: 2,
+        paddingHorizontal: 12,
+        paddingStart: 8,
+        paddingEnd: 16,
       }}
     >
       {ACTIONS.map((act) => (

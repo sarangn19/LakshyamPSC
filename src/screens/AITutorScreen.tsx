@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, fontFamily } from '../theme';
-import { typography } from '../theme/typography';
+import { spacing, fontFamily } from '../theme';
 import { useUserStore, useKnowledgeStore } from '../store';
 import { useTranslation } from '../i18n/useTranslation';
-import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
+import { BottomNav, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage, ResponseMode, logRenderer } from '../services/chatService';
-import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
 import { ActionChips } from '../components/ActionChips';
 import { ResponseModeRenderer } from '../components/renderers/ResponseModeRenderer';
 
@@ -18,15 +16,6 @@ const EXAM_ICONS: Record<string, string> = {
   'Police Constable': '🛡️',
   'Degree Level': '📚',
 };
-
-const getSuggestions = (t: (key: string, params?: Record<string, string | number>) => string) => [
-  t('aiTutor.suggestion1'),
-  t('aiTutor.suggestion2'),
-  t('aiTutor.suggestion3'),
-  t('aiTutor.malayalamPrompt'),
-  t('aiTutor.suggestion4'),
-  t('aiTutor.suggestion5'),
-];
 
 function TypingDots() {
   const opacity1 = useRef(new Animated.Value(0.3)).current;
@@ -141,23 +130,23 @@ export function AITutorScreen({ route, navigation }: any) {
       )}
 
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + spacing.xs, paddingBottom: spacing.xs }]}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.xs, paddingBottom: spacing.xs - 2 }]}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarWrap}>
-            <Text style={{ fontSize: 24 }}>🤖</Text>
+            <Text style={{ fontSize: 22 }}>🤖</Text>
             <View style={styles.onlineDot} />
           </View>
           <View>
             <Text style={styles.headerTitle}>{t('aiTutor.title')}</Text>
             <Text style={styles.headerStatus}>
-              Online <Text style={{ opacity: 0.4 }}>•</Text> Lakshyam PSC
+              Online · Lakshyam PSC
             </Text>
           </View>
         </View>
         <View style={styles.examStack}>
           {targetExams.slice(0, 2).map((exam) => (
             <View key={exam} style={styles.headerAction}>
-              <Text style={{ fontSize: 12 }}>{EXAM_ICONS[exam] || '📋'}</Text>
+              <Text style={{ fontSize: 11 }}>{EXAM_ICONS[exam] || '📋'}</Text>
             </View>
           ))}
         </View>
@@ -169,21 +158,18 @@ export function AITutorScreen({ route, navigation }: any) {
           <View key={i} style={[styles.msgRow, msg.role === 'user' && styles.msgRowUser]}>
             {msg.role === 'ai' && (
               <View style={styles.botAvatar}>
-                <Text style={{ fontSize: 14 }}>🤖</Text>
+                <Text style={{ fontSize: 13 }}>🤖</Text>
               </View>
             )}
             <View style={[styles.msgContent, msg.role === 'user' ? styles.msgContentUser : styles.msgContentBot]}>
               {msg.role === 'ai' ? (
                 <>
+                  <View style={styles.botLabel}>
+                    <Text style={styles.botLabelText}>Lakshyam AI</Text>
+                    <Text style={styles.botLabelDot}>·</Text>
+                    <Text style={styles.botLabelTime}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  </View>
                   <ResponseModeRenderer mode={msg.responseMode || 'tutor'} text={msg.text} />
-                  <TouchableOpacity
-                    style={styles.saveBtn}
-                    onPress={() => handleSaveAsNote(msg)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ fontSize: 12, marginRight: 4 }}>+</Text>
-                    <Text style={styles.saveBtnText}>Save as Note</Text>
-                  </TouchableOpacity>
                   <ActionChips onAction={(action) => {
                     const mode = MODE_MAP[action] || 'tutor';
                     const prompts: Record<string, string> = {
@@ -195,6 +181,14 @@ export function AITutorScreen({ route, navigation }: any) {
                     };
                     sendMessage(prompts[action] || action, mode);
                   }} />
+                  <TouchableOpacity
+                    style={styles.saveBtn}
+                    onPress={() => handleSaveAsNote(msg)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 11, marginRight: 3, opacity: 0.6 }}>+</Text>
+                    <Text style={styles.saveBtnText}>Save</Text>
+                  </TouchableOpacity>
                 </>
               ) : (
                 <Text style={[styles.msgText, msg.role === 'user' && styles.msgTextUser]}>{msg.text}</Text>
@@ -214,17 +208,6 @@ export function AITutorScreen({ route, navigation }: any) {
           </View>
         )}
       </ScrollView>
-
-      {/* Quick action chips */}
-      <View style={styles.chipsRow}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContent}>
-          {getSuggestions(t).map((s, i) => (
-            <TouchableOpacity key={i} style={styles.chip} onPress={() => sendMessage(s, 'tutor')} activeOpacity={0.7}>
-              <Text style={styles.chipText}>{s}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
 
       <BottomNav activeTab="AITutor" />
 
@@ -325,8 +308,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e2e8f0',
     borderTopLeftRadius: 4,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
+    padding: spacing.sm + 2,
+    paddingBottom: spacing.xs,
   },
   msgContentUser: {
     backgroundColor: '#6366f1',
@@ -335,6 +318,10 @@ const styles = StyleSheet.create({
   },
   msgText: { fontSize: 13, fontWeight: '600', color: '#1e293b', lineHeight: 20, fontFamily: fontFamily.bodyMedium },
   msgTextUser: { color: '#fff' },
+  botLabel: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: spacing.xs + 2 },
+  botLabelText: { fontSize: 10, fontWeight: '700', color: '#6366f1', fontFamily: fontFamily.bodyBold, textTransform: 'uppercase', letterSpacing: 0.5 },
+  botLabelDot: { fontSize: 10, color: '#cbd5e1' },
+  botLabelTime: { fontSize: 9, color: '#94a3b8', fontFamily: fontFamily.body },
 
   // Save button
   saveBtn: {
@@ -356,51 +343,35 @@ const styles = StyleSheet.create({
   typingRow: { flexDirection: 'row', marginBottom: spacing.md, alignItems: 'flex-end' },
   typingBubble: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, minWidth: 60 },
 
-  // Chips
-  chipsRow: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    backgroundColor: '#f1f5f9',
-  },
-  chipsContent: { gap: spacing.sm },
-  chip: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm + 2,
-    borderRadius: 100,
-  },
-  chipText: { fontSize: 11, fontWeight: '700', color: '#475569', fontFamily: fontFamily.bodyBold },
-
   // Input
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e2e8f0',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   input: {
     flex: 1,
     backgroundColor: '#f8fafc',
-    borderRadius: 16,
-    padding: spacing.md,
+    borderRadius: 12,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     fontSize: 12,
     fontWeight: '700',
     color: '#0f172a',
     fontFamily: fontFamily.bodyBold,
-    maxHeight: 100,
+    maxHeight: 80,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
   sendBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: '#6366f1',
     justifyContent: 'center',
     alignItems: 'center',

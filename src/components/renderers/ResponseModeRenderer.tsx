@@ -42,6 +42,13 @@ function MCQSection({ text }: { text: string }) {
 
   return (
     <SectionCard icon="❓" heading="Practice MCQ" color="#10B981">
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 10 }}>
+        <Text style={{ fontSize: 11, color: '#6B7280' }}>4 Options</Text>
+        <Text style={{ fontSize: 11, color: '#D1D5DB' }}>•</Text>
+        <Text style={{ fontSize: 11, color: '#6B7280' }}>Instant Explanation</Text>
+        <Text style={{ fontSize: 11, color: '#D1D5DB' }}>•</Text>
+        <Text style={{ fontSize: 11, color: '#6B7280' }}>PSC Level</Text>
+      </View>
       {question && <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '500', color: '#1F2937', marginBottom: 8 }}>{question.content}</Text>}
       {options && options.content.split('\n').map((line, i) => {
         const trimmed = line.trim();
