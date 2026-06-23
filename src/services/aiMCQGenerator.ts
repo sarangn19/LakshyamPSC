@@ -834,12 +834,12 @@ register('Special Acts & Social Welfare', 'Gender & Child Welfare', 'medium', ()
 
 export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
   const results: GeneratedQuestion[] = [];
-  const attemptedSubtopics = new Set<string>();
+  const seenTexts = new Set<string>();
 
   const subjectFilter = request.subjects || [];
   const topicFilter = request.topics || [];
 
-  for (let attempt = 0; attempt < 50 && results.length < request.count; attempt++) {
+  for (let attempt = 0; attempt < 60 && results.length < request.count; attempt++) {
     let pool = TEMPLATES;
 
     if (subjectFilter.length > 0) {
@@ -861,23 +861,20 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
 
     pool = pool.filter((t) => depths.includes(t.difficulty));
 
-    // If no templates match, broaden: drop difficulty filter first, then subject filter
+    // If no templates match, broaden: drop difficulty filter first
     if (pool.length === 0 && attempt < 5) {
-      // Broaden within subject: drop difficulty, keep subject filter
       pool = TEMPLATES.filter((t) => subjectFilter.length === 0 || subjectFilter.includes(t.subject));
       if (pool.length === 0) {
-        break; // no templates for this subject — stop rather than giving unrelated questions
+        break; // no templates for this subject
       }
     }
     if (pool.length === 0) break;
 
     const template = pool[Math.floor(Math.random() * pool.length)];
-    const key = `${template.subject}|${template.topic}|${template.difficulty}`;
-
-    if (attemptedSubtopics.has(key) && Math.random() > 0.3) continue;
-    attemptedSubtopics.add(key);
-
     const { text, options, correctAnswer, explanation } = template.build();
+
+    if (seenTexts.has(text)) continue;
+    seenTexts.add(text);
 
     if (request.avoidQuestionIds?.some((id) => text === id)) continue;
 
