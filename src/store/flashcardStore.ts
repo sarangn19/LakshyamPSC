@@ -173,33 +173,49 @@ export const useFlashcardStore = create<FlashcardState>()(
           const cards = await generateFlashcardsFromNote(tempNote, count);
           newCards.push(...cards);
         } else if (sourceType === 'chapter' && subjects && subjects.length > 0) {
-          // Generate flashcards for the selected subject
+          // Generate flashcards for the selected subject with batch retry logic
           const subject = subjects[0];
-          // Generate more cards than needed to allow for randomization
-          const cards = await generateFlashcardsForSubject(subject, count * 2);
-          newCards.push(...cards);
+          const usedFronts = new Set<string>();
+
+          // Try up to 3 batches to reach the requested count
+          for (let batch = 0; batch < 3 && newCards.length < count; batch++) {
+            const needed = (count - newCards.length) * 2;
+            const cards = await generateFlashcardsForSubject(subject, Math.max(needed, 5));
+            for (const c of cards) {
+              if (!usedFronts.has(c.front)) {
+                usedFronts.add(c.front);
+                newCards.push(c);
+                if (newCards.length >= count) break;
+              }
+            }
+          }
         }
 
-        // Fallback: if AI generated no cards, use template MCQs as flashcards
-        if (newCards.length === 0 && sourceType === 'chapter' && subjects && subjects.length > 0) {
+        // Fallback: if AI generated too few cards, use template MCQs as flashcards
+        if (newCards.length < count && sourceType === 'chapter' && subjects && subjects.length > 0) {
           const mCtx = useUserStore.getState().locale;
+          const need = count - newCards.length;
           const mcqs = generateMCQs({
-            subjects, difficulty: 'easy', examType: 'LDC', count, language: mCtx,
+            subjects, difficulty: 'easy', examType: 'LDC', count: need, language: mCtx,
           });
+          const existingFronts = new Set(newCards.map(c => c.front));
           for (const q of mcqs) {
-            newCards.push({
-              id: `fc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-              front: q.text,
-              back: q.explanation,
-              subject: q.subject,
-              topic: q.topic,
-              difficulty: q.difficulty,
-              easeFactor: 2.5,
-              interval: 0,
-              nextReviewDate: new Date().toISOString(),
-              repetitions: 0,
-              mastered: false,
-            });
+            if (!existingFronts.has(q.text)) {
+              existingFronts.add(q.text);
+              newCards.push({
+                id: `fc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+                front: q.text,
+                back: q.explanation,
+                subject: q.subject,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                easeFactor: 2.5,
+                interval: 0,
+                nextReviewDate: new Date().toISOString(),
+                repetitions: 0,
+                mastered: false,
+              });
+            }
           }
         }
 

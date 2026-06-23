@@ -70,12 +70,17 @@ export function LearnScreen({ navigation }: any) {
     const flashcardStore = useFlashcardStore.getState();
     const subjects = selectedChapter ? [selectedChapter] : undefined;
     const count = (selectedNote || pasteContent) ? 5 : (Number(taskCount) || 10);
-    if (practiceType === 'flashcard') {
-      await flashcardStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, count });
-      setIsLoading(false); navigation.navigate('Flashcards', { mode: 'practice' });
-    } else {
-      await mcqStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, difficulty: 'medium', count });
-      setIsLoading(false); navigation.navigate('MCQ', { mode: 'practice' });
+    try {
+      if (practiceType === 'flashcard') {
+        await flashcardStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, count });
+        setIsLoading(false); navigation.navigate('Flashcards', { mode: 'practice' });
+      } else {
+        await mcqStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, difficulty: 'medium', count });
+        setIsLoading(false); navigation.navigate('MCQ', { mode: 'practice' });
+      }
+    } catch (e) {
+      console.error('[LearnScreen] startPracticeSession failed:', e);
+      setIsLoading(false);
     }
   };
 

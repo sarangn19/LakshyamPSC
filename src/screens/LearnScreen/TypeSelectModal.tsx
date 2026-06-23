@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, Animated } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { styles } from './styles';
 
 interface Props {
@@ -15,7 +15,8 @@ interface Props {
 export function TypeSelectModal({ visible, slideAnim, title, mcqLabel, flashcardLabel, onClose, onSelect }: Props) {
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.sourceModal, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.sourceModalHeader}>
             <Text style={styles.sourceModalTitle}>{title}</Text>
@@ -34,7 +35,7 @@ export function TypeSelectModal({ visible, slideAnim, title, mcqLabel, flashcard
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }

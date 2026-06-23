@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, Animated } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { styles } from './styles';
 
 interface Props {
@@ -23,7 +23,8 @@ export function TasksModal({
   const disabled = taskCount.trim().length === 0;
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.tasksModal, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.tasksModalHeader}>
             <Text style={styles.tasksModalTitle}>{title}</Text>
@@ -72,7 +73,7 @@ export function TasksModal({
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }

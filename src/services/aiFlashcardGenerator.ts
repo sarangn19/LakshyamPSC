@@ -1,5 +1,6 @@
 import { Note, FlashCard } from '../data/mockData';
 import { generateAIQuestion } from './aiQuestionGenerator';
+import { syllabus } from '../data/syllabus';
 
 interface FlashcardRequest {
   note?: Note;
@@ -63,7 +64,8 @@ async function generateAIFlashcard(subject: string, topic: string, content?: str
 export async function generateFlashcards(request: FlashcardRequest): Promise<FlashCard[]> {
   const results: FlashCard[] = [];
   const subject = request.subject || request.note?.subject || 'Kerala History';
-  const topic = request.topic || request.note?.tags[0] || 'General';
+  const subjectTopics = syllabus.find(s => s.name === subject)?.topics;
+  const topic = request.topic || request.note?.tags[0] || subjectTopics?.[0]?.name || 'General';
   const content = request.note?.content;
 
   // Track used question texts to prevent duplicates

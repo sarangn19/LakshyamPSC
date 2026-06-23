@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TextInput, TouchableOpacity, Animated } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { styles } from './styles';
 
 interface Props {
@@ -17,7 +17,8 @@ export function PasteModal({ visible, slideAnim, title, placeholder, value, onCh
   const disabled = value.trim().length === 0;
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
         <Animated.View style={[styles.selectionModal, { transform: [{ translateY: slideAnim }] }]}>
           <View style={styles.selectionModalHeader}>
             <Text style={styles.selectionModalTitle}>{title}</Text>
@@ -50,7 +51,7 @@ export function PasteModal({ visible, slideAnim, title, placeholder, value, onCh
             </TouchableOpacity>
           </View>
         </Animated.View>
-      </TouchableOpacity>
+      </View>
     </Modal>
   );
 }
