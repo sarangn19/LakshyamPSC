@@ -562,25 +562,39 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
   startPracticeSession: async (config) => {
     const lang = useUserStore.getState().locale;
     const subjects = config.subjects && config.subjects.length > 0 ? config.subjects : undefined;
+    const targetCount = config.count || 10;
+    const seenTexts = new Set<string>();
+    const allValidated: any[] = [];
     const avoidIds = [...get().reportedQuestions, ...get().disabledQuestions];
-    let raw = generateMCQs({
-      difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
-      count: config.count || 10, subjects, sourceNotes: useKnowledgeStore.getState().notes,
-      avoidQuestionIds: avoidIds, language: lang,
-    });
-    let validated = raw.filter((q) => validateQuestionIntegrity(q).valid);
+    for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
+      const raw = generateMCQs({
+        difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
+        count: targetCount * 2, subjects, sourceNotes: useKnowledgeStore.getState().notes,
+        avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
+        language: lang,
+      });
+      for (const q of raw) {
+        if (allValidated.length >= targetCount) break;
+        if (seenTexts.has(q.text)) continue;
+        if (validateQuestionIntegrity(q).valid) {
+          seenTexts.add(q.text);
+          allValidated.push(q);
+        }
+      }
+      if (raw.length === 0) break;
+    }
     // Fallback: if no template questions matched, use the fallback chain to get at least one
-    if (validated.length === 0) {
+    if (allValidated.length === 0) {
       const fallback = getFallbackQuestion(
         subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
-        [config.examType || 'LDC'], lang, subjects[0],
+        [config.examType || 'LDC'], lang, subjects?.[0],
       );
       if (fallback.question && validateQuestionIntegrity(fallback.question).valid) {
-        validated = [fallback.question];
+        allValidated.push(fallback.question);
       }
     }
-    const skipped = raw.length - validated.length;
-    set({ currentQuestions: validated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSubjects: config.subjects || [], sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: skipped, questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
+    const skipped = targetCount - allValidated.length;
+    set({ currentQuestions: allValidated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSubjects: config.subjects || [], sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: Math.max(0, skipped), questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
   },
 
   clearLastSessionOutcome: () => set({ lastSessionOutcome: null }),
