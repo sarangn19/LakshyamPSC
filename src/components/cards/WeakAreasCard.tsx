@@ -146,15 +146,17 @@ function enrichArea(
   const reason = generateReason(factors);
   const impact = impactLabel(weaknessScore);
 
+  const effectiveScore = factors.mastery !== null ? Math.round(factors.mastery * 100) : area.score;
+
   return {
     subject: area.subject,
     name: area.name,
-    score: area.score,
+    score: effectiveScore,
     isTopic: area.isTopic,
     weaknessScore,
     reason,
     impact,
-    detailMastery: factors.mastery !== null ? Math.round(factors.mastery * 100) : null,
+    detailMastery: effectiveScore,
     detailAccuracy: factors.accuracy,
     detailRetention: factors.retention,
   };
