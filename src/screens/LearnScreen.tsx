@@ -15,6 +15,8 @@ import { SourceSelectModal } from './LearnScreen/SourceSelectModal';
 import { SelectListModal } from './LearnScreen/SelectListModal';
 import { PasteModal } from './LearnScreen/PasteModal';
 import { TasksModal } from './LearnScreen/TasksModal';
+import { MockSelectModal } from './LearnScreen/MockSelectModal';
+import { MOCK_SETS } from '../data/mockTestSets';
 
 const SOURCES = ['Chaptewise', 'Saved note', 'Paste text'];
 const TASK_PRESETS = [5, 20, 50, 100];
@@ -35,6 +37,7 @@ export function LearnScreen({ navigation }: any) {
   const [taskCount, setTaskCount] = useState('');
   const [selectedTaskPreset, setSelectedTaskPreset] = useState<number | null>(null);
   const [isAdaptiveLoading, setIsAdaptiveLoading] = useState(false);
+  const [showMockModal, setShowMockModal] = useState(false);
 
   const notes = useKnowledgeStore((s) => s.notes);
   const { t } = useTranslation();
@@ -45,6 +48,7 @@ export function LearnScreen({ navigation }: any) {
   const noteSlideAnim = useRef(new Animated.Value(300)).current;
   const pasteSlideAnim = useRef(new Animated.Value(300)).current;
   const tasksSlideAnim = useRef(new Animated.Value(300)).current;
+  const mockSlideAnim = useRef(new Animated.Value(300)).current;
   const chapterScrollRef = useRef<ScrollView>(null);
   const noteScrollRef = useRef<ScrollView>(null);
   const [chapterScrollOffset, setChapterScrollOffset] = useState(0);
@@ -53,7 +57,7 @@ export function LearnScreen({ navigation }: any) {
   const [noteContentHeight, setNoteContentHeight] = useState(0);
 
   const animateIn = (anim: Animated.Value) => { anim.setValue(300); Animated.timing(anim, { toValue: 0, duration: 250, useNativeDriver: true }).start(); };
-  const animateOut = (anim: Animated.Value, cb: () => void) => Animated.timing(anim, { toValue: 300, duration: 250, useNativeDriver: true }).start(cb);
+  const animateOut = (anim: Animated.Value, cb?: () => void) => Animated.timing(anim, { toValue: 300, duration: 250, useNativeDriver: true }).start(cb ? cb : () => {});
 
   const handleSourceSelect = (source: string) => {
     setShowSourceModal(false);
@@ -78,6 +82,16 @@ export function LearnScreen({ navigation }: any) {
   };
 
   const allSubjects = syllabus.map((s) => s.name);
+  const handleMockSelect = (setId: string) => {
+    setShowMockModal(false);
+    const mcqStore = useMCQStore.getState();
+    const set = MOCK_SETS.find((s) => s.id === setId);
+    if (set) {
+      mcqStore.startCustomSession(set.questions);
+      navigation.navigate('MCQ');
+    }
+  };
+
   const filteredSubjects = allSubjects.filter((s) => s.toLowerCase().includes(chapterSearch.toLowerCase()));
   const chapterItems = [{ id: '', title: 'All Subjects' }, ...filteredSubjects.map((s) => ({ id: s, title: s }))];
   const filteredNotes = notes.filter((n) => n.title.toLowerCase().includes(noteSearch.toLowerCase()));
@@ -99,6 +113,18 @@ export function LearnScreen({ navigation }: any) {
         <AdaptiveLearningCard title={t('learn.adaptiveLearning')} onStart={async () => { setIsAdaptiveLoading(true); try { await useMCQStore.getState().startDailyDrill(); } catch (e) { console.error('[Adaptive] startDailyDrill failed:', e); } setIsAdaptiveLoading(false); navigation.navigate('MCQ'); }} />
         <ActionCardsRow notesTitle={t('learn.notes')} notesSubtitle={t('learn.viewSavedNotes')} practiceTitle={t('learn.practice')} practiceSubtitle={t('learn.practiceMCQFlashcards')} onNotesPress={() => navigation.navigate('SavedNotes')} onPracticePress={() => { animateIn(typeSlideAnim); setShowTypeModal(true); }} />
 
+        <TouchableOpacity style={styles.adaptiveCard} onPress={() => { animateIn(mockSlideAnim); setShowMockModal(true); }} activeOpacity={0.8}>
+          <View style={styles.adaptiveLeft}>
+            <Text style={styles.adaptiveTitle}>Mock Test</Text>
+            <View style={styles.adaptiveArrowBtn}>
+              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '500' }}>{'>'}</Text>
+            </View>
+          </View>
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <Text style={[styles.smallCardSubtitle, { marginTop: 4 }]}>20 questions · 15 min</Text>
+          </View>
+        </TouchableOpacity>
+
       </ScrollView>
 
       <TypeSelectModal visible={showTypeModal} slideAnim={typeSlideAnim} title={t('learn.selectType')} mcqLabel={t('learn.mcq')} flashcardLabel={t('learn.flashcard')} onClose={() => setShowTypeModal(false)} onSelect={(type) => { setPracticeType(type); setShowTypeModal(false); animateIn(sourceSlideAnim); setShowSourceModal(true); }} />
@@ -107,6 +133,7 @@ export function LearnScreen({ navigation }: any) {
       <SelectListModal visible={showNoteModal} slideAnim={noteSlideAnim} title={t('learn.selectNote')} searchPlaceholder={t('learn.search')} searchValue={noteSearch} onSearchChange={setNoteSearch} items={filteredNotes.map((n) => ({ id: n.id, title: n.title }))} selectedId={selectedNote} onSelect={setSelectedNote} onContinue={() => { setShowNoteModal(false); handleFinalContinue(); }} onClose={() => setShowNoteModal(false)} continueDisabled={selectedNote === null} scrollRef={noteScrollRef} scrollOffset={noteScrollOffset} contentHeight={noteContentHeight} onScroll={(o, h) => { setNoteScrollOffset(o); setNoteContentHeight(h); }} />
       <PasteModal visible={showPasteModal} slideAnim={pasteSlideAnim} title={t('learn.pasteContent')} placeholder={t('learn.pastePlaceholder')} value={pasteContent} onChange={setPasteContent} onContinue={() => { setShowPasteModal(false); handleFinalContinue(); }} onClose={() => setShowPasteModal(false)} />
       <TasksModal visible={showTasksModal} slideAnim={tasksSlideAnim} title={t('learn.numberOfTasks')} inputPlaceholder={t('learn.taskCountPlaceholder')} taskCount={taskCount} onTaskCountChange={(v) => { setTaskCount(v); setSelectedTaskPreset(null); }} selectedPreset={selectedTaskPreset} presets={TASK_PRESETS} onPresetSelect={(v) => { setSelectedTaskPreset(v); setTaskCount(String(v)); }} onContinue={() => { setShowTasksModal(false); handleFinalContinue(); }} onClose={() => setShowTasksModal(false)} />
+      <MockSelectModal visible={showMockModal} slideAnim={mockSlideAnim} onClose={() => setShowMockModal(false)} onSelect={handleMockSelect} />
 
       {isAdaptiveLoading && <LoadingAnimation message={t('learn.generatingAdaptiveSession')} />}
 
