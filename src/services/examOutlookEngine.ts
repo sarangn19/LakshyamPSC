@@ -20,7 +20,7 @@ export interface ExamOutlook {
   confidenceLevel: ConfidenceLevel;
   strongestSubjects: { name: string; score: number }[];
   weakestSubjects: { name: string; score: number }[];
-  blockingTopics: { subject: string; topic: string; reason: string }[];
+  blockingTopics: { subject: string; topic: string; reason: string; score: number }[];
   revisionRiskTopics: { subject: string; topic: string; daysOverdue: number }[];
   nextBestAction: string;
   outlookStatus: OutlookStatus;
@@ -186,10 +186,6 @@ function computeSubjectSummaries(): SubjectSummary[] {
     });
   }
 
-  if (__DEV__) {
-    summaries.forEach(s => console.log(`[computeSubjectSummaries] final ${s.name}: score=${Math.round((s.mastery * 0.4 + s.accuracy * 0.3 + s.retention * 0.3) * 100)}, mastery=${s.mastery.toFixed(3)}, accuracy=${s.accuracy.toFixed(3)}, retention=${s.retention.toFixed(3)}`));
-  }
-
   summaries.sort((a, b) => {
     const aScore = a.mastery * 0.4 + a.accuracy * 0.3 + a.coverage * 0.2 + a.retention * 0.1;
     const bScore = b.mastery * 0.4 + b.accuracy * 0.3 + b.coverage * 0.2 + b.retention * 0.1;
@@ -252,6 +248,7 @@ function computeBlockingTopics(): { subject: string; topic: string; reason: stri
   return scored.map((s) => ({
     subject: s.subject,
     topic: s.topic,
+    score: Math.round(s.pMastered * 100),
     reason: s.pMastered < 0.3
       ? 'Low mastery — needs focused practice'
       : s.pMastered < 0.5
@@ -294,7 +291,7 @@ function computeRevisionRiskTopics(): { subject: string; topic: string; daysOver
 
 function computeNextBestAction(
   summaries: SubjectSummary[],
-  blockingTopics: { subject: string; topic: string; reason: string }[],
+  blockingTopics: { subject: string; topic: string; reason: string; score: number }[],
   revisionRiskTopics: { subject: string; topic: string; daysOverdue: number }[],
   outlookStatus: OutlookStatus,
 ): string {

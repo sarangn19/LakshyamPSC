@@ -26,11 +26,10 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
 
   // Show blocking topics (specific weak topics) if available, otherwise show weak subjects
   const weakAreas = blockingTopics.length > 0 
-    ? blockingTopics.map(t => ({ name: t.topic, subject: t.subject, score: weakSubjects.find(s => s.name === t.subject)?.score ?? 30, isTopic: true }))
+    ? blockingTopics.map(t => ({ name: t.topic, subject: t.subject, score: t.score, isTopic: true }))
     : weakSubjects.map(s => ({ name: s.name, subject: s.name, score: s.score, isTopic: false }));
 
-  console.log('[WeakAreasCard] weakAreas:', JSON.stringify(weakAreas));
-  console.log('[WeakAreasCard] path:', blockingTopics.length > 0 ? 'blockingTopics' : 'weakSubjects');
+
 
   if (weakAreas.length === 0) {
     return (
