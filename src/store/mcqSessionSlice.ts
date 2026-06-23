@@ -568,9 +568,24 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     const seenTexts = new Set<string>();
     const allValidated: any[] = [];
     const avoidIds = [...get().reportedQuestions, ...get().disabledQuestions];
+    set({ isGenerating: true, generationProgress: { current: 0, total: targetCount } });
+
+    // Resolve note/pasted content for content-based generation
+    const focusInstruction = config.sourceType === 'note' && config.noteId
+      ? (() => {
+          const note = useKnowledgeStore.getState().notes.find((n) => n.id === config.noteId);
+          return note?.content && note.content.length >= 10
+            ? `CONTENT-BASED: ${note.content.substring(0, 3000)}`
+            : undefined;
+        })()
+      : config.sourceType === 'paste' && config.pastedContent && config.pastedContent.length >= 10
+        ? `CONTENT-BASED: ${config.pastedContent.substring(0, 3000)}`
+        : undefined;
+
     const poolSubjects = subjects && subjects.length > 0
       ? subjects
       : syllabus.map((s) => s.name);
+
     // AI first: generate via edge function for requested count
     for (let i = 0; i < targetCount * 2 && allValidated.length < targetCount; i++) {
       const s = poolSubjects[i % poolSubjects.length];
@@ -585,14 +600,16 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         examType: config.examType || 'LDC',
         language: lang as 'en' | 'ml',
         avoidTexts: [...seenTexts],
+        focusInstruction,
       });
       if (result.question && validateQuestionIntegrity(result.question).valid) {
         seenTexts.add(result.question.text);
         allValidated.push(result.question);
       }
+      set({ generationProgress: { current: allValidated.length, total: targetCount } });
     }
-    // Template fallback: fill remaining slots with hand-crafted questions
-    if (allValidated.length < targetCount) {
+    // Template fallback: fill remaining slots with hand-crafted questions (skip for note/paste)
+    if (allValidated.length < targetCount && !focusInstruction) {
       for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
         const raw = generateMCQs({
           difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
@@ -611,7 +628,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
         if (raw.length === 0) break;
       }
     }
-    // Last resort fallback: use fallback chain
+    // Last resort fallback: use fallback chain (always available)
     if (allValidated.length === 0) {
       const fallback = getFallbackQuestion(
         subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
@@ -622,7 +639,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
       }
     }
     const skipped = targetCount - allValidated.length;
-    set({ currentQuestions: allValidated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSubjects: config.subjects || [], sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: Math.max(0, skipped), questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium' });
+    set({ currentQuestions: allValidated, currentIndex: 0, selectedAnswer: null, isAnswered: false, score: { correct: 0, total: 0 }, sessionActive: true, sessionType: 'practice', sessionSubjects: config.subjects || [], sessionSignals: [], sessionCoveredTopics: [], sessionReduced: skipped > 0, questionsSkipped: Math.max(0, skipped), questionStartTime: Date.now(), sessionStartTime: Date.now(), sessionSubjectAccuracy: {}, sessionDifficultyCounts: { easy: 0, medium: 0, hard: 0 }, difficultySessionState: makeInitialDifficultyState(), currentDifficulty: config.difficulty || 'medium', isGenerating: false, generationProgress: null });
   },
 
   clearLastSessionOutcome: () => set({ lastSessionOutcome: null }),

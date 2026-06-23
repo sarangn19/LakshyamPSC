@@ -34,12 +34,10 @@ export function LearnScreen({ navigation }: any) {
   const [showTasksModal, setShowTasksModal] = useState(false);
   const [taskCount, setTaskCount] = useState('');
   const [selectedTaskPreset, setSelectedTaskPreset] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isAdaptiveLoading, setIsAdaptiveLoading] = useState(false);
 
   const notes = useKnowledgeStore((s) => s.notes);
   const { t } = useTranslation();
-  const generationProgress = useMCQStore((s) => s.generationProgress);
 
   const typeSlideAnim = useRef(new Animated.Value(300)).current;
   const sourceSlideAnim = useRef(new Animated.Value(300)).current;
@@ -65,23 +63,17 @@ export function LearnScreen({ navigation }: any) {
     else if (source === 'Paste text') { animateIn(pasteSlideAnim); setShowPasteModal(true); }
   };
 
-  const handleFinalContinue = async () => {
-    setIsLoading(true);
+  const handleFinalContinue = () => {
     const mcqStore = useMCQStore.getState();
     const flashcardStore = useFlashcardStore.getState();
     const subjects = selectedChapter ? [selectedChapter] : undefined;
     const count = (selectedNote || pasteContent) ? 5 : (Number(taskCount) || 10);
-    try {
-      if (practiceType === 'flashcard') {
-        await flashcardStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, count });
-        setIsLoading(false); navigation.navigate('Flashcards', { mode: 'practice' });
-      } else {
-        await mcqStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, difficulty: 'medium', count });
-        setIsLoading(false); navigation.navigate('MCQ', { mode: 'practice' });
-      }
-    } catch (e) {
-      console.error('[LearnScreen] startPracticeSession failed:', e);
-      setIsLoading(false);
+    if (practiceType === 'flashcard') {
+      navigation.navigate('Flashcards', { mode: 'practice' });
+      flashcardStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, count }).catch((e) => console.error('[LearnScreen] startPracticeSession failed:', e));
+    } else {
+      navigation.navigate('MCQ', { mode: 'practice' });
+      mcqStore.startPracticeSession({ subjects, sourceType: selectedNote ? 'note' : pasteContent ? 'paste' : 'chapter', noteId: selectedNote ?? undefined, pastedContent: pasteContent || undefined, difficulty: 'medium', count }).catch((e) => console.error('[LearnScreen] startPracticeSession failed:', e));
     }
   };
 
@@ -116,7 +108,6 @@ export function LearnScreen({ navigation }: any) {
       <PasteModal visible={showPasteModal} slideAnim={pasteSlideAnim} title={t('learn.pasteContent')} placeholder={t('learn.pastePlaceholder')} value={pasteContent} onChange={setPasteContent} onContinue={() => { setShowPasteModal(false); handleFinalContinue(); }} onClose={() => setShowPasteModal(false)} />
       <TasksModal visible={showTasksModal} slideAnim={tasksSlideAnim} title={t('learn.numberOfTasks')} inputPlaceholder={t('learn.taskCountPlaceholder')} taskCount={taskCount} onTaskCountChange={(v) => { setTaskCount(v); setSelectedTaskPreset(null); }} selectedPreset={selectedTaskPreset} presets={TASK_PRESETS} onPresetSelect={(v) => { setSelectedTaskPreset(v); setTaskCount(String(v)); }} onContinue={() => { setShowTasksModal(false); handleFinalContinue(); }} onClose={() => setShowTasksModal(false)} />
 
-      {isLoading && <LoadingAnimation message={generationProgress ? t('learn.generatingQuestion', { current: generationProgress.current + 1, total: generationProgress.total }) : t('learn.preparingPractice')} progress={generationProgress ?? undefined} />}
       {isAdaptiveLoading && <LoadingAnimation message={t('learn.generatingAdaptiveSession')} />}
 
       <BottomNav activeTab="Learn" />

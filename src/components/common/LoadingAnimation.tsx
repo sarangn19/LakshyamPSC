@@ -18,7 +18,7 @@ function Spinner({ size = 'large' }: { size?: 'small' | 'large' }) {
         toValue: 1,
         duration: 1200,
         easing: Easing.linear,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }),
     );
     animation.start();
@@ -56,56 +56,13 @@ const spinnerStyles = StyleSheet.create({
   },
 });
 
-function Dots() {
-  const dot1 = useRef(new Animated.Value(0)).current;
-  const dot2 = useRef(new Animated.Value(0)).current;
-  const dot3 = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const anim = (dot: Animated.Value, delay: number) =>
-      Animated.loop(
-        Animated.sequence([
-          Animated.delay(delay),
-          Animated.timing(dot, { toValue: 1, duration: 400, useNativeDriver: true }),
-          Animated.timing(dot, { toValue: 0, duration: 400, useNativeDriver: true }),
-        ]),
-      );
-
-    anim(dot1, 0).start();
-    anim(dot2, 200).start();
-    anim(dot3, 400).start();
-
-    return () => {
-      dot1.stopAnimation();
-      dot2.stopAnimation();
-      dot3.stopAnimation();
-    };
-  }, [dot1, dot2, dot3]);
-
-  const makeDotStyle = (anim: Animated.Value) => ({
-    opacity: anim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-    transform: [{ scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }) }],
-  });
-
-  return (
-    <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-      <Animated.View style={[{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#ED9200' }, makeDotStyle(dot1)]} />
-      <Animated.View style={[{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#ED9200' }, makeDotStyle(dot2)]} />
-      <Animated.View style={[{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: '#ED9200' }, makeDotStyle(dot3)]} />
-    </View>
-  );
-}
-
 export function LoadingAnimation({ message = 'Loading...', subMessage, progress, size = 'large' }: LoadingAnimationProps) {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
         <Spinner size={size} />
         <View style={styles.textGroup}>
-          <View style={styles.messageRow}>
-            <Text style={[styles.message, size === 'small' && styles.messageSmall]}>{message}</Text>
-            <Dots />
-          </View>
+          <Text style={[styles.message, size === 'small' && styles.messageSmall]}>{message}</Text>
           {subMessage && <Text style={styles.subMessage}>{subMessage}</Text>}
           {progress && (
             <View style={styles.progressRow}>
@@ -155,11 +112,6 @@ const styles = StyleSheet.create({
   textGroup: {
     flex: 1,
     gap: 4,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
   },
   message: {
     fontSize: 16,
