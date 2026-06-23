@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useMCQStore } from '../store/mcqStore';
 import { useKnowledgeStore, useFlashcardStore } from '../store';
@@ -121,7 +121,7 @@ export function LearnScreen({ navigation }: any) {
             </View>
           </View>
           <View style={{ flex: 1, justifyContent: 'center' }}>
-            <Text style={[styles.smallCardSubtitle, { marginTop: 4 }]}>20 questions · 15 min</Text>
+            <Text style={[styles.smallCardSubtitle, { marginTop: 4 }]}>3 tests · 100 Q each · 75 min</Text>
           </View>
         </TouchableOpacity>
 
