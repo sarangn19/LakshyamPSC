@@ -77,6 +77,11 @@ function CACard({ item }: { item: CurrentAffair }) {
       <View style={styles.caTextCol}>
         <Text style={styles.caTitle} numberOfLines={3}>{item.title}</Text>
       </View>
+      <View style={styles.caArrowContainer}>
+        <Svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <Path d="M9 18L15 12L9 6" stroke="#999999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -383,6 +388,11 @@ const styles = StyleSheet.create({
     width: 119,
     height: 119,
     borderRadius: borderRadius.sm,
+  },
+  caArrowContainer: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
   },
   caTextCol: {
     width: 140,
