@@ -10,9 +10,11 @@ import { useMCQStore, usePerformanceStore } from '../store';
 import { BottomNav } from '../components/BottomNav';
 import type { CurrentAffair } from '../data/mockData';
 import { seedPSCFrequency } from '../services/pscFrequencyBoost';
+import { computeExamOutlook } from '../services/examOutlookEngine';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(200, (SCREEN_WIDTH - spacing.lg * 2 - 12) / 2);
+const GRID_GAP = 12;
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - spacing.lg * 2 - GRID_GAP) / 2);
 
 const FALLBACK_CA: CurrentAffair[] = [
   { id: 'fa1', title: 'Kerala Leads in Education Development Index', summary: 'Kerala has topped the Education Development Index for the sixth consecutive year, showcasing its commitment to quality education and literacy.', category: 'national', date: '2026-06-20', source: 'PIB', isImportant: true, url: '', image_url: '' },
@@ -20,30 +22,11 @@ const FALLBACK_CA: CurrentAffair[] = [
   { id: 'fa3', title: 'New Central Scheme for Farmers Welfare Approved', summary: 'Union Cabinet approves a comprehensive scheme for farmers welfare with an outlay of Rs 50,000 crore over the next five years.', category: 'national', date: '2026-06-15', source: 'PIB', isImportant: true, url: '', image_url: '' },
 ];
 
-const DEFAULT_STATS = [
-  { subject: 'Data Interpretation', category: 'Quantitative Aptitude', total: 1234, accuracy: 0.67 },
-  { subject: 'Medieval India', category: 'Kerala History', total: 856, accuracy: 0.87 },
-  { subject: 'Articles 14-18', category: 'Constitution', total: 432, accuracy: 0.12 },
-  { subject: 'Western Ghats', category: 'Geography', total: 721, accuracy: 0.67 },
-];
-
 function getGreeting(): string {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
-}
-
-function getSubjectStats() {
-  const perf = usePerformanceStore.getState();
-  return DEFAULT_STATS.map((s) => {
-    const acc = perf.getSubjectAccuracy(s.subject);
-    return {
-      ...s,
-      total: acc.total > 0 ? acc.total : s.total,
-      accuracy: acc.total > 0 ? acc.correct / acc.total : s.accuracy,
-    };
-  });
 }
 
 function barFillColor(accuracy: number): string {
@@ -58,8 +41,8 @@ function StatsCard({ subject, category, total, accuracy }: { subject: string; ca
 
   return (
     <View style={[styles.statsCard, { width: CARD_WIDTH }]}>
-      <Text style={styles.statsSubject}>{subject}</Text>
-      <Text style={styles.statsCategory}>{category}</Text>
+      <Text style={styles.statsSubject} numberOfLines={1}>{subject}</Text>
+      {category ? <Text style={styles.statsCategory} numberOfLines={1}>{category}</Text> : null}
       <View style={styles.statsDivider} />
       <View style={styles.statsRow}>
         <View style={styles.statsLeft}>
@@ -94,7 +77,8 @@ function CACard({ item }: { item: CurrentAffair }) {
 
 export function HomeScreen({ navigation }: any) {
   const { t } = useTranslation();
-  const streak = useUserStore((s) => s.streak);
+  const streak = useUserStore((s) => s.streak?.current ?? 0);
+  const sessionOutcomes = usePerformanceStore((s) => s.sessionOutcomes);
   const [caItems, setCaItems] = useState<CurrentAffair[]>([]);
   const [loadingCA, setLoadingCA] = useState(true);
 
@@ -122,12 +106,48 @@ export function HomeScreen({ navigation }: any) {
     seedPSCFrequency();
   }, []);
 
-  const subjectStats = getSubjectStats();
+  const outlook = React.useMemo(() => {
+    try { return computeExamOutlook(); } catch { return null; }
+  }, [streak, sessionOutcomes?.length]);
+
+  const subjectStats = React.useMemo(() => {
+    const outcomes = Array.isArray(sessionOutcomes) ? sessionOutcomes : [];
+    const accums: Record<string, { total: number; correct: number }> = {};
+    for (const o of outcomes) {
+      if (!o.subjectScores) continue;
+      for (const [subject, score] of Object.entries(o.subjectScores)) {
+        if (!accums[subject]) accums[subject] = { total: 0, correct: 0 };
+        accums[subject].total += score.total;
+        accums[subject].correct += score.correct;
+      }
+    }
+    return Object.entries(accums)
+      .filter(([, v]) => v.total > 0)
+      .map(([subject, v]) => ({
+        subject,
+        category: '',
+        total: v.total,
+        accuracy: v.correct / v.total,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 4);
+  }, [sessionOutcomes]);
+
+  const statusTags: Record<string, { label: string; color: string }> = {
+    'Getting Started': { label: 'Getting Started', color: '#6B7280' },
+    'Building Foundation': { label: 'Building Foundation', color: '#D39309' },
+    'Making Progress': { label: 'Making Progress', color: '#D39309' },
+    'Competitive': { label: 'Competitive', color: '#059669' },
+    'Exam Ready': { label: 'Exam Ready', color: '#16A34A' },
+  };
+  const outlookStatus = outlook?.outlookStatus ?? 'Building Foundation';
+  const currentTag = statusTags[outlookStatus] ?? statusTags['Building Foundation'];
 
   const handleStartNow = () => {
+    const block = outlook?.blockingTopics?.[0];
     useMCQStore.getState().startOrchestratedSession({
-      subjects: ['General Studies'],
-      recommendedTopic: 'Current Affairs',
+      subjects: block ? [block.subject] : undefined,
+      recommendedTopic: block?.topic,
       sessionType: 'focused',
     });
     navigation.navigate('MCQ');
@@ -156,16 +176,16 @@ export function HomeScreen({ navigation }: any) {
         <View>
           <View style={styles.preparationHeader}>
             <Text style={styles.preparationTitle}>Preparation Outlook</Text>
-            <View style={styles.progressTag}>
-              <Text style={styles.progressTagText}>Making Progress</Text>
+            <View style={[styles.progressTag, { backgroundColor: currentTag.color }]}>
+              <Text style={styles.progressTagText}>{currentTag.label}</Text>
             </View>
           </View>
           <View style={styles.outlookCard}>
             <Text style={styles.outlookCardTitle}>Next Recommended Action</Text>
             <View style={styles.outlookRow}>
               <View style={styles.outlookTextCol}>
-                <Text style={styles.outlookDescription}>
-                  Practice 20 questions on Current Affairs to strengthen your preparation for the upcoming exam.
+                <Text style={styles.outlookDescription} numberOfLines={3}>
+                  {outlook?.nextBestAction ?? 'Start with a daily MCQ practice session.'}
                 </Text>
               </View>
               <TouchableOpacity style={styles.startNowButton} onPress={handleStartNow} activeOpacity={0.8}>
@@ -359,7 +379,7 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: GRID_GAP,
   },
   statsCard: {
     height: 232,
@@ -369,6 +389,7 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.1)',
+    overflow: 'hidden',
   },
   statsSubject: {
     fontSize: 16,
@@ -416,9 +437,10 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
     justifyContent: 'flex-end',
+    flexShrink: 0,
   },
   barFill: {
-    width: 61.67,
+    width: 39,
     alignSelf: 'center',
   },
 });
