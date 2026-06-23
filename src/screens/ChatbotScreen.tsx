@@ -8,7 +8,7 @@ import { useKnowledgeStore } from '../store/knowledgeStore';
 import type { Note } from '../data/mockData';
 import { useTranslation } from '../i18n/useTranslation';
 import { SendArrowIcon, AttachIcon, MicIcon, BackIcon } from '../components/Icons';
-import { BottomNav, BOTTOM_NAV_HEIGHT, BOTTOM_NAV_BOTTOM_OFFSET, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
+import { BottomNav, BOTTOM_NAV_HEIGHT, TAB_BAR_TOTAL_HEIGHT } from '../components/BottomNav';
 import { getAIResponse, buildHistory, ChatMessage, ResponseMode, logRenderer } from '../services/chatService';
 import { AnswerRenderer, plainTextToSections } from '../components/AnswerRenderer';
 import { ActionChips } from '../components/ActionChips';

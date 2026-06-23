@@ -90,6 +90,7 @@ export function HomeScreen({ navigation }: any) {
   const { t } = useTranslation();
   const streak = useUserStore((s) => s.streak?.current ?? 0);
   const sessionOutcomes = usePerformanceStore((s) => s.sessionOutcomes);
+  const interactionSignals = usePerformanceStore((s) => s.interactionSignals);
   const [caItems, setCaItems] = useState<CurrentAffair[]>([]);
   const [loadingCA, setLoadingCA] = useState(true);
 
@@ -122,15 +123,13 @@ export function HomeScreen({ navigation }: any) {
   }, [streak, sessionOutcomes?.length]);
 
   const subjectStats = React.useMemo(() => {
-    const outcomes = Array.isArray(sessionOutcomes) ? sessionOutcomes : [];
+    const signals = Array.isArray(interactionSignals) ? interactionSignals : [];
     const accums: Record<string, { total: number; correct: number }> = {};
-    for (const o of outcomes) {
-      if (!o.subjectScores) continue;
-      for (const [subject, score] of Object.entries(o.subjectScores)) {
-        if (!accums[subject]) accums[subject] = { total: 0, correct: 0 };
-        accums[subject].total += score.total;
-        accums[subject].correct += score.correct;
-      }
+    for (const s of signals) {
+      if (!s.subject) continue;
+      if (!accums[s.subject]) accums[s.subject] = { total: 0, correct: 0 };
+      accums[s.subject].total += 1;
+      if (s.answeredCorrect) accums[s.subject].correct += 1;
     }
     return Object.entries(accums)
       .filter(([, v]) => v.total > 0)
@@ -141,7 +140,7 @@ export function HomeScreen({ navigation }: any) {
         accuracy: v.correct / v.total,
       }))
       .sort((a, b) => a.accuracy - b.accuracy);
-  }, [sessionOutcomes]);
+  }, [interactionSignals]);
 
   const statusTags: Record<string, { label: string; color: string }> = {
     'Getting Started': { label: 'Getting Started', color: '#6B7280' },

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, useWindowDimensions, Text } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HomeIcon, LearnIcon, AIIcon } from './Icons';
+import { colors } from '../theme';
 
 export type TabName = 'Home' | 'Learn' | 'AITutor' | 'Profile';
 
@@ -22,16 +23,12 @@ const TABS: TabConfig[] = [
   { name: 'AITutor', label: 'AI Tutor', icon: (c) => <AIIcon width={20} height={20} color={c} /> },
 ];
 
-export const BOTTOM_NAV_HEIGHT = 72;
-export const BOTTOM_NAV_BOTTOM_OFFSET = 24;
-export const TAB_BAR_TOTAL_HEIGHT = BOTTOM_NAV_HEIGHT + BOTTOM_NAV_BOTTOM_OFFSET;
+export const BOTTOM_NAV_HEIGHT = 126;
+export const TAB_BAR_TOTAL_HEIGHT = BOTTOM_NAV_HEIGHT;
 
 export function BottomNav({ activeTab }: Props) {
   const navigation = useNavigation<any>();
-  const { width: screenW } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const navWidth = screenW - 48;
-  const tabCount = TABS.length;
 
   const handlePress = (tab: TabName) => {
     if (tab === activeTab) return;
@@ -39,9 +36,9 @@ export function BottomNav({ activeTab }: Props) {
   };
 
   return (
-    <View style={[styles.bottomNav, { bottom: BOTTOM_NAV_BOTTOM_OFFSET + insets.bottom }]}>
+    <View style={[styles.bottomNav, { paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }]}>
       <View style={styles.navItems}>
-        {TABS.map((tab, i) => {
+        {TABS.map((tab) => {
           const isActive = tab.name === activeTab;
           return (
             <TouchableOpacity
@@ -50,11 +47,12 @@ export function BottomNav({ activeTab }: Props) {
               onPress={() => handlePress(tab.name)}
               activeOpacity={0.7}
             >
-              {tab.icon(isActive ? '#FFFFFF' : '#8E8E93')}
-              <Text style={[styles.navLabel, { color: isActive ? '#FFFFFF' : '#8E8E93' }]}>
+              <View style={isActive ? styles.activeIconBg : styles.inactiveIconBg}>
+                {tab.icon(isActive ? colors.primary : '#999999')}
+              </View>
+              <Text style={[styles.navLabel, { color: isActive ? '#000000' : '#999999' }]}>
                 {tab.label}
               </Text>
-              {isActive && <View style={styles.activeDot} />}
             </TouchableOpacity>
           );
         })}
@@ -66,43 +64,51 @@ export function BottomNav({ activeTab }: Props) {
 const styles = StyleSheet.create({
   bottomNav: {
     position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 24,
-    height: 72,
-    backgroundColor: '#1C1C1E',
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 8,
-    justifyContent: 'center',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: BOTTOM_NAV_HEIGHT,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 115,
+    elevation: 12,
     zIndex: 10,
   },
   navItems: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 60,
   },
   navItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
-    minWidth: 52,
+  },
+  activeIconBg: {
+    width: 60.9,
+    height: 60.9,
+    borderRadius: 30.45,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  inactiveIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   navLabel: {
     fontSize: 9,
     fontWeight: '600',
     marginTop: 4,
     letterSpacing: 0.3,
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#F7B11A',
-    marginTop: 2,
   },
 });
