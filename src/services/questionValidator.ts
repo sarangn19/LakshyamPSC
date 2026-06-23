@@ -201,9 +201,11 @@ export function validateQuestion(question: GeneratedQuestion): ValidationResult 
   const allFailures: ValidationFailure[] = [
     ...validateAnswerKey(question),
     ...validateOptions(question),
-    ...validateExplanation(question),
     ...validateMalformed(question),
-    ...rejectKnownHallucinations(question.text, question.options, question.subject, question.topic),
+    ...(question.source === 'syllabus' ? [] : [
+      ...validateExplanation(question),
+      ...rejectKnownHallucinations(question.text, question.options, question.subject, question.topic),
+    ]),
   ];
 
   const passed = allFailures.length === 0;
