@@ -383,6 +383,7 @@ const styles = StyleSheet.create({
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     gap: GRID_GAP,
   },
   statsCard: {
