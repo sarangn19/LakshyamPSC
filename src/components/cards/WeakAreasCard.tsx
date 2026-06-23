@@ -4,12 +4,20 @@ import { colors, spacing, borderRadius } from '../../theme';
 import { typography } from '../../theme/typography';
 import { getCognitiveTwinSummary } from '../../services/learningRecommendationEngine';
 import { computeExamOutlook } from '../../services/examOutlookEngine';
+import { useBKTStore } from '../../store/bktStore';
+import { useCognitiveTwinStore } from '../../store/cognitiveTwinStore';
+import { usePerformanceStore } from '../../store/performanceStore';
 
 type Props = {
   onPracticeSubject: (subject: string, topic?: string) => void;
 };
 
 export function WeakAreasCard({ onPracticeSubject }: Props) {
+  // Subscribe to stores so the component re-renders when data changes
+  useBKTStore(s => s.topicMap);
+  useCognitiveTwinStore(s => s.masteryMap);
+  usePerformanceStore(s => s.interactionSignals?.length);
+
   const outlook = computeExamOutlook();
   const weakSubjects = outlook.weakestSubjects;
   const strongSubjects = outlook.strongestSubjects;

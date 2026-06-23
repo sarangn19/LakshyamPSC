@@ -172,7 +172,7 @@ function computeSubjectSummaries(): SubjectSummary[] {
     const subjectRetentionRecords = cognitiveStore.retentionRecords.filter((r) => r.subject === name);
     const retention = subjectRetentionRecords.length > 0
       ? subjectRetentionRecords.reduce((s, r) => s + (r.retentionRate || 0), 0) / subjectRetentionRecords.length
-      : 0.5;
+      : 0;
 
     summaries.push({
       name,
