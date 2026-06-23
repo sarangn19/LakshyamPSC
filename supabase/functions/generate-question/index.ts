@@ -154,6 +154,16 @@ STRICT RULES:
 - The question MUST be specifically about "${topic}" — not a related topic, not a broader topic.
 - Always generate a question — never return empty.
 
+ANTI-HALLUCINATION RULES (violations will be rejected):
+- Every factual claim MUST be verifiable and correct. Do NOT invent facts.
+- Do NOT associate animals, species, or natural features with locations where they do not exist.
+  Example: Asiatic Lions exist ONLY in Gir National Park (Gujarat), never in Kerala.
+  Example: One-horned rhinoceros exist ONLY in Assam (Kaziranga), never in Kerala.
+  Example: Coral reefs exist in Lakshadweep and Gulf of Mannar, not in Kerala backwaters.
+- Do NOT claim a person held a position or title they never held.
+- Do NOT invent dates, years, or historical events.
+- If you are uncertain about any factual claim in the question or explanation, do NOT generate it.
+
 Rules:
 - The question must be factually accurate for Kerala PSC syllabus
 - Provide 4 options (A, B, C, D)

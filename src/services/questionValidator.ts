@@ -173,12 +173,37 @@ export function validateMalformed(question: GeneratedQuestion): ValidationFailur
   return failures;
 }
 
+/// Common impossible factual associations to catch hallucinated questions.
+/// Each entry: [subject-topic prefix, pattern in question/options to reject, reason]
+const FACTUAL_TRAPS: { subjectTopicPrefix: string; rejectPattern: RegExp; reason: string }[] = [
+  // Species–location mismatches
+  { subjectTopicPrefix: 'Kerala', rejectPattern: /asiatic\s*lion/i, reason: 'Asiatic lions exist only in Gir National Park (Gujarat), not in Kerala' },
+  { subjectTopicPrefix: 'Kerala', rejectPattern: /\bone\s*horn(?:ed)?\s*rhin[oc]/i, reason: 'One-horned rhinos exist only in Assam (Kaziranga), not in Kerala' },
+  { subjectTopicPrefix: 'Kerala', rejectPattern: /\bbengal\s*tiger\b/i, reason: 'Bengal tigers are found across India but not a specific Kerala conservation subject; avoid vague association' },
+  { subjectTopicPrefix: 'Geography', rejectPattern: /\bkerala\s*has\s*(active|live|volcanic|volcano)/i, reason: 'Kerala has no active volcanoes' },
+  { subjectTopicPrefix: 'Geography', rejectPattern: /\b(gobi|sahara|thar|kalahari)\s+desert.*kerala/i, reason: 'No major deserts in Kerala' },
+  { subjectTopicPrefix: 'Kerala', rejectPattern: /\b(snow|glacier|ice\s*cap)\b.*\b(kerala|munnar)/i, reason: 'Kerala has no snow or glaciers despite Munnar cold weather' },
+];
+
+function rejectKnownHallucinations(text: string, options: string[], subject: string, topic: string): ValidationFailure[] {
+  const failures: ValidationFailure[] = [];
+  const combined = `${text} ${options.join(' ')}`;
+  const prefix = `${subject} ${topic}`;
+  for (const trap of FACTUAL_TRAPS) {
+    if (prefix.includes(trap.subjectTopicPrefix) && trap.rejectPattern.test(combined)) {
+      failures.push({ rule: 'factual_hallucination', message: trap.reason });
+    }
+  }
+  return failures;
+}
+
 export function validateQuestion(question: GeneratedQuestion): ValidationResult {
   const allFailures: ValidationFailure[] = [
     ...validateAnswerKey(question),
     ...validateOptions(question),
     ...validateExplanation(question),
     ...validateMalformed(question),
+    ...rejectKnownHallucinations(question.text, question.options, question.subject, question.topic),
   ];
 
   const passed = allFailures.length === 0;
