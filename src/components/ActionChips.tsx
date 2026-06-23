@@ -8,7 +8,6 @@ interface ChipAction {
 }
 
 const ACTIONS: ChipAction[] = [
-  { icon: '❓', label: 'Generate MCQ', action: 'generate_mcq' },
   { icon: '🔍', label: 'Explain Simpler', action: 'explain_simpler' },
   { icon: '📜', label: 'Give PYQs', action: 'give_pyqs' },
   { icon: '🔗', label: 'Related Topic', action: 'related_topic' },
