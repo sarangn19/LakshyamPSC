@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   barFill: {
-    width: 39,
+    width: 61.67,
     alignSelf: 'center',
   },
 });
