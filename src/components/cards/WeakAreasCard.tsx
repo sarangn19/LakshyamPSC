@@ -7,6 +7,8 @@ import { useBKTStore, getKey } from '../../store/bktStore';
 import { useCognitiveTwinStore } from '../../store/cognitiveTwinStore';
 import { usePerformanceStore } from '../../store/performanceStore';
 import { getNodeByName } from '../../data/knowledgeTree';
+import { getCompositeExamWeight } from '../../data/examBlueprints';
+import { useUserStore } from '../../store/userStore';
 
 type Props = {
   onPracticeSubject: (subject: string, topic?: string) => void;
@@ -20,6 +22,7 @@ type EnrichedArea = {
   weaknessScore: number;
   reason: string;
   impact: string;
+  impactTier: 'high' | 'moderate' | 'low';
   detailMastery: number | null;
   detailAccuracy: number | null;
   detailRetention: number | null;
@@ -45,7 +48,7 @@ type TopicFactors = {
 };
 
 function collectFactors(
-  area: { subject: string; topic?: string; score: number; name: string },
+  area: { subject: string; topic?: string; name: string },
   topicMap: Record<string, any>,
   masteryMap: Record<string, any>,
   retentionRecords: { subject: string; topic: string; retentionRate: number }[],
@@ -128,11 +131,24 @@ function generateReason(factors: TopicFactors): string {
   return topFactorLabel(factors);
 }
 
-function impactLabel(weaknessScore: number): string {
-  if (weaknessScore >= 70) return 'Could improve score by 3–5 marks';
-  if (weaknessScore >= 50) return 'Could improve score by 2–3 marks';
-  if (weaknessScore >= 30) return 'Could improve score by 1–2 marks';
-  return 'Small improvement possible';
+function impactLabel(weaknessScore: number, examWeight: number): { text: string; tier: 'high' | 'moderate' | 'low' } {
+  const highImpact = weaknessScore >= 55 || examWeight >= 8;
+  const moderateImpact = weaknessScore >= 35 || examWeight >= 5;
+  if (highImpact) return { text: 'High impact topic', tier: 'high' };
+  if (moderateImpact) return { text: 'Moderate impact topic', tier: 'moderate' };
+  return { text: 'Review to consolidate', tier: 'low' };
+}
+
+function severityColor(score: number): string {
+  if (score < 10) return colors.error;
+  if (score < 30) return colors.warning;
+  return colors.success;
+}
+
+function reasonSeverityColor(area: EnrichedArea): string {
+  if (area.weaknessScore >= 55) return colors.error;
+  if (area.weaknessScore >= 35) return colors.warning;
+  return colors.textSecondary;
 }
 
 function enrichArea(
@@ -140,25 +156,30 @@ function enrichArea(
   topicMap: Record<string, any>,
   masteryMap: Record<string, any>,
   retentionRecords: { subject: string; topic: string; retentionRate: number }[],
+  examNames: string[],
 ): EnrichedArea {
   const factors = collectFactors(area, topicMap, masteryMap, retentionRecords);
   const weaknessScore = computeWeaknessScore(factors);
   const reason = generateReason(factors);
-  const impact = impactLabel(weaknessScore);
+  const examWeight = getCompositeExamWeight(examNames, area.subject, area.topic || area.name);
+  const { text: impact, tier } = impactLabel(weaknessScore, examWeight);
 
-  const effectiveScore = factors.mastery !== null ? Math.round(factors.mastery * 100) : area.score;
+  const detailMastery = factors.mastery !== null ? Math.round(factors.mastery * 100) : null;
+  const detailAccuracy = factors.accuracy;
+  const detailRetention = factors.retention;
 
   return {
     subject: area.subject,
     name: area.name,
-    score: effectiveScore,
+    score: area.score,
     isTopic: area.isTopic,
     weaknessScore,
     reason,
     impact,
-    detailMastery: effectiveScore,
-    detailAccuracy: factors.accuracy,
-    detailRetention: factors.retention,
+    impactTier: tier,
+    detailMastery: detailMastery !== null && detailMastery - area.score > 30 ? null : detailMastery,
+    detailAccuracy,
+    detailRetention,
   };
 }
 
@@ -167,6 +188,9 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
   const masteryMap = useCognitiveTwinStore(s => s.masteryMap);
   const retentionRecords = useCognitiveTwinStore(s => s.retentionRecords);
   usePerformanceStore(s => s.interactionSignals?.length);
+
+  const targetExams = useUserStore(s => s.targetExams);
+  const examNames = Array.isArray(targetExams) && targetExams.length > 0 ? targetExams : ['LDC'];
 
   const outlook = computeExamOutlook();
   const weakSubjects = outlook.weakestSubjects;
@@ -178,7 +202,7 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
       : weakSubjects.map(s => ({ name: s.name, subject: s.name, score: s.score, isTopic: false, reason: 'Weak subject' }));
 
   const enriched = rawAreas
-    .map(a => enrichArea(a, topicMap, masteryMap, retentionRecords))
+    .map(a => enrichArea(a, topicMap, masteryMap, retentionRecords, examNames))
     .sort((a, b) => b.weaknessScore - a.weaknessScore || a.name.localeCompare(b.name));
 
   if (enriched.length === 0) {
@@ -196,28 +220,25 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
       <Text style={styles.subtitle}>Focus on these to improve your PSC score</Text>
 
       {enriched.map((area) => {
-        const barColor =
-          area.score < 10 ? colors.error :
-          area.score < 30 ? colors.warning :
-          colors.success;
+        const barColor = severityColor(area.score);
+        const reasonColor = reasonSeverityColor(area);
 
         return (
           <View key={`${area.subject}::${area.name}`} style={styles.weakItem}>
             <View style={styles.weakContent}>
-              <Text style={styles.weakName}>{area.name}</Text>
-              {area.isTopic && <Text style={styles.subjectLabel}>{area.subject}</Text>}
+              <View style={styles.nameRow}>
+                <Text style={styles.weakName}>{area.name}</Text>
+                {area.isTopic && <Text style={styles.subjectLabel}>{area.subject}</Text>}
+              </View>
 
               <View style={styles.metaRow}>
                 <View style={styles.scoreRow}>
                   <View style={[styles.scoreBar, { width: `${area.score}%`, backgroundColor: barColor }]} />
                 </View>
-                <Text style={styles.weakScore}>{area.score}%</Text>
+                <Text style={[styles.weakScore, { color: barColor }]}>{area.score}%</Text>
               </View>
 
               <View style={styles.detailRow}>
-                {area.detailMastery !== null && (
-                  <Text style={styles.detailChip}>Mastery {area.detailMastery}%</Text>
-                )}
                 {area.detailAccuracy !== null && (
                   <Text style={styles.detailChip}>Acc {area.detailAccuracy}%</Text>
                 )}
@@ -226,8 +247,14 @@ export function WeakAreasCard({ onPracticeSubject }: Props) {
                 )}
               </View>
 
-              <Text style={styles.reasonText}>{area.reason}</Text>
-              <Text style={styles.impactText}>{area.impact}</Text>
+              <View style={styles.reasonRow}>
+                <Text style={[styles.reasonText, { color: reasonColor }]}>{area.reason}</Text>
+                <Text style={[
+                  styles.impactText,
+                  area.impactTier === 'high' && styles.impactHigh,
+                  area.impactTier === 'moderate' && styles.impactModerate,
+                ]}>{area.impact}</Text>
+              </View>
             </View>
             <TouchableOpacity
               style={styles.practiceBtn}
@@ -280,6 +307,11 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   weakContent: { flex: 1, marginRight: spacing.sm },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
+  },
   weakName: {
     fontSize: 13,
     fontWeight: '700',
@@ -289,7 +321,6 @@ const styles = StyleSheet.create({
   subjectLabel: {
     fontSize: 10,
     color: colors.textTertiary,
-    marginTop: 1,
     fontFamily: typography.tiny.fontFamily,
   },
   metaRow: {
@@ -297,6 +328,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: spacing.xs,
+  },
+  scoreRow: {
+    height: 3,
+    flex: 1,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  scoreBar: { height: '100%', borderRadius: 2 },
+  weakScore: {
+    fontSize: 11,
+    fontWeight: '700',
+    fontFamily: typography.tiny.fontFamily,
   },
   detailRow: {
     flexDirection: 'row',
@@ -314,30 +358,27 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     fontFamily: typography.tiny.fontFamily,
   },
+  reasonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 3,
+    flexWrap: 'wrap',
+  },
   reasonText: {
     fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
     fontFamily: typography.caption.fontFamily,
   },
   impactText: {
-    fontSize: 9,
-    color: colors.success,
-    marginTop: 1,
-    fontFamily: typography.tiny.fontFamily,
-  },
-  scoreRow: {
-    height: 3,
-    flex: 1,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  scoreBar: { height: '100%', borderRadius: 2 },
-  weakScore: {
     fontSize: 10,
+    fontFamily: typography.captionBold.fontFamily,
     color: colors.textTertiary,
-    fontFamily: typography.tiny.fontFamily,
+  },
+  impactHigh: {
+    color: colors.error,
+  },
+  impactModerate: {
+    color: colors.warning,
   },
   practiceBtn: {
     backgroundColor: colors.primary + '08',
