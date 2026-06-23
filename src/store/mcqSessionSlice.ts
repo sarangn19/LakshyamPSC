@@ -561,7 +561,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
 
   startPracticeSession: async (config) => {
     const lang = useUserStore.getState().locale;
-    const subjects = config.subjects || ['General'];
+    const subjects = config.subjects && config.subjects.length > 0 ? config.subjects : undefined;
     const avoidIds = [...get().reportedQuestions, ...get().disabledQuestions];
     let raw = generateMCQs({
       difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
@@ -573,7 +573,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     if (validated.length === 0) {
       const fallback = getFallbackQuestion(
         subjects, (config.difficulty || 'medium') as 'easy' | 'medium' | 'hard',
-        [config.examType || 'LDC'], 'en', subjects[0],
+        [config.examType || 'LDC'], lang, subjects[0],
       );
       if (fallback.question && validateQuestionIntegrity(fallback.question).valid) {
         validated = [fallback.question];

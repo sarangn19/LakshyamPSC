@@ -571,6 +571,265 @@ register('Malayalam', 'Grammar', 'easy', () => {
   return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
 }, 'ml');
 
+// ─── INDIAN HISTORY & NATIONAL MOVEMENT ───
+
+register('Indian History & National Movement', 'Ancient India', 'easy', () => {
+  const qs = [
+    { t: 'The Indus Valley Civilization belonged to which age?', o: ['Bronze Age', 'Iron Age', 'Stone Age', 'Copper Age'], c: 0, e: 'The IVC (c. 2500-1900 BCE) was a Bronze Age civilization.' },
+    { t: 'Which was the largest city of the Indus Valley Civilization?', o: ['Mohenjo-Daro', 'Harappa', 'Lothal', 'Kalibangan'], c: 0, e: 'Mohenjo-Daro was the largest and most advanced IVC city.' },
+    { t: 'The Vedic period saw the composition of which sacred texts?', o: ['The Vedas', 'The Puranas', 'The Upanishads', 'The Epics'], c: 0, e: 'The four Vedas (Rig, Yajur, Sama, Atharva) were composed during the Vedic period.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian History & National Movement', 'Ancient India', 'medium', () => {
+  const qs = [
+    { t: 'The Gupta period is often called the "Golden Age" of India because of?', o: ['Advancements in science, art & literature', 'Territorial expansion', 'Religious tolerance', 'Trade with Rome'], c: 0, e: 'The Gupta period (c. 320-550 CE) saw great progress in mathematics, astronomy, art and literature.' },
+    { t: 'Which Chola ruler built the Brihadeeswarar Temple at Thanjavur?', o: ['Raja Raja Chola I', 'Rajendra Chola I', 'Kulothunga Chola I', 'Vikrama Chola'], c: 0, e: 'Raja Raja Chola I built the Brihadeeswarar Temple in 1010 CE, a UNESCO World Heritage site.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian History & National Movement', 'Medieval India', 'easy', () => {
+  const qs = [
+    { t: 'The Delhi Sultanate was established in which year?', o: ['1206', '1192', '1210', '1221'], c: 0, e: 'Qutb-ud-din Aibak established the Delhi Sultanate in 1206 after Ghori\'s death.' },
+    { t: 'The Mughal Empire reached its greatest territorial extent under which emperor?', o: ['Aurangzeb', 'Akbar', 'Shah Jahan', 'Jahangir'], c: 0, e: 'Aurangzeb expanded the Mughal Empire to its largest size by the late 17th century.' },
+    { t: 'The Vijayanagara Empire was founded by?', o: ['Harihara and Bukka Raya', 'Krishnadevaraya', 'Deva Raya', 'Saluva Narasimha'], c: 0, e: 'Harihara I and Bukka Raya I founded the Vijayanagara Empire in 1336.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian History & National Movement', 'Indian National Movement', 'easy', () => {
+  const qs = [
+    { t: 'The Indian National Congress was founded in which year?', o: ['1885', '1884', '1886', '1887'], c: 0, e: 'INC was founded in 1885 by A.O. Hume with 72 delegates in Bombay.' },
+    { t: 'Who led the Dandi March in 1930?', o: ['Mahatma Gandhi', 'Jawaharlal Nehru', 'Sardar Patel', 'Rajendra Prasad'], c: 0, e: 'Gandhi led the Dandi March (March-April 1930) to break the salt law, starting the Civil Disobedience Movement.' },
+    { t: 'Subhas Chandra Bose formed the INA (Azad Hind Fauj) in which year?', o: ['1942', '1943', '1941', '1944'], c: 0, e: 'Bose revived the INA in 1943 with Japanese support, proclaiming the Provisional Government of Free India.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian History & National Movement', 'Indian National Movement', 'medium', () => {
+  const qs = [
+    { t: 'The Partition of Bengal was annulled in which year?', o: ['1911', '1905', '1908', '1910'], c: 0, e: 'The partition was annulled in 1911 during the Delhi Durbar, shifting the capital to Delhi.' },
+    { t: 'The Quit India Movement was launched after the failure of which mission?', o: ['Cripps Mission', 'Simon Commission', 'Cabinet Mission', 'Mountbatten Plan'], c: 0, e: 'After the Cripps Mission (1942) failed, Gandhi launched the Quit India Movement on August 8, 1942.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── WORLD HISTORY ───
+
+register('World History', 'Great Revolutions', 'easy', () => {
+  const qs = [
+    { t: 'The French Revolution began in which year?', o: ['1789', '1776', '1799', '1804'], c: 0, e: 'The French Revolution began in 1789 with the storming of the Bastille on July 14.' },
+    { t: 'The American Declaration of Independence was adopted in?', o: ['1776', '1783', '1789', '1775'], c: 0, e: 'The Declaration was adopted on July 4, 1776, marking the 13 colonies\' independence.' },
+    { t: 'The Industrial Revolution began in which country?', o: ['England', 'France', 'Germany', 'America'], c: 0, e: 'The Industrial Revolution began in England in the mid-18th century.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('World History', 'World Wars & International Alliances', 'medium', () => {
+  const qs = [
+    { t: 'The First World War began with the assassination of?', o: ['Archduke Franz Ferdinand', 'King Alexander', 'Kaiser Wilhelm II', 'Tsar Nicholas II'], c: 0, e: 'The assassination of Archduke Franz Ferdinand of Austria-Hungary in Sarajevo (June 28, 1914) triggered WWI.' },
+    { t: 'The United Nations was established in which year?', o: ['1945', '1944', '1946', '1947'], c: 0, e: 'The UN was established on October 24, 1945, after WWII, with 51 founding members.' },
+    { t: 'The Non-Aligned Movement (NAM) was founded primarily by?', o: ['Nehru, Tito, Nasser', 'Nehru, Gandhi, Mandela', 'Sukarno, Nkrumah, Nasser', 'Tito, Stalin, Mao'], c: 0, e: 'NAM was founded by Jawaharlal Nehru (India), Josip Broz Tito (Yugoslavia), and Gamal Abdel Nasser (Egypt) in 1961.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── CIVICS & PUBLIC ADMINISTRATION ───
+
+register('Civics & Public Administration', 'Bureaucracy & Administrative Machinery', 'easy', () => {
+  const qs = [
+    { t: 'The Indian Civil Services are established under which Article?', o: ['Article 312', 'Article 315', 'Article 320', 'Article 310'], c: 0, e: 'Article 312 empowers Parliament to create All India Services (IAS, IPS, IFoS).' },
+    { t: 'Which is NOT an All India Service?', o: ['Indian Forest Service', 'Indian Administrative Service', 'Indian Police Service', 'Indian Foreign Service'], c: 0, e: 'IFS is a Central Service, not an All India Service. AIS includes IAS, IPS, and IFoS.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Civics & Public Administration', 'Digital Governance & E-Governance', 'medium', () => {
+  const qs = [
+    { t: 'The National E-Governance Plan (NeGP) was launched in which year?', o: ['2006', '2005', '2008', '2010'], c: 0, e: 'NeGP was launched in 2006 with 27 mission mode projects to improve government service delivery.' },
+    { t: 'DigiLocker is a flagship initiative of which ministry?', o: ['Ministry of Electronics & IT', 'Ministry of Home Affairs', 'Ministry of Finance', 'Ministry of Education'], c: 0, e: 'DigiLocker is under MeitY, providing citizens a platform for digital documents.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── INDIAN ECONOMY ───
+
+register('Indian Economy', 'Banking & Monetary Policy', 'easy', () => {
+  const qs = [
+    { t: 'The Reserve Bank of India was established in which year?', o: ['1935', '1947', '1949', '1934'], c: 0, e: 'RBI was established on April 1, 1935, under the RBI Act 1934.' },
+    { t: 'What does CRR stand for?', o: ['Cash Reserve Ratio', 'Capital Reserve Ratio', 'Credit Reserve Ratio', 'Central Reserve Rate'], c: 0, e: 'CRR is the portion of deposits banks must keep with RBI as cash.' },
+    { t: 'GST was introduced in India on?', o: ['1 July 2017', '1 April 2017', '1 January 2017', '1 October 2017'], c: 0, e: 'GST was implemented on July 1, 2017, as a unified indirect tax system.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian Economy', 'Sectors of Indian Economy', 'easy', () => {
+  const qs = [
+    { t: 'The Green Revolution was primarily associated with?', o: ['Wheat and rice production', 'Milk production', 'Fish production', 'Industrial growth'], c: 0, e: 'The Green Revolution (1960s) focused on high-yield wheat & rice varieties.' },
+    { t: 'The New Industrial Policy that liberalized the Indian economy was introduced in?', o: ['1991', '1985', '1990', '1995'], c: 0, e: 'The 1991 Industrial Policy deregulated industry, abolished licensing, and opened FDI.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Indian Economy', 'Planning & Development', 'medium', () => {
+  const qs = [
+    { t: 'NITI Aayog replaced which institution?', o: ['Planning Commission', 'Finance Commission', 'Election Commission', 'Union Public Service Commission'], c: 0, e: 'NITI Aayog replaced the Planning Commission in 2015.' },
+    { t: 'The Human Development Index (HDI) is measured by which organization?', o: ['UNDP', 'World Bank', 'IMF', 'UNESCO'], c: 0, e: 'The UNDP publishes the HDI based on health, education, and income indicators.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── KERALA ECONOMY ───
+
+register('Kerala Economy', 'Kerala Model of Development', 'easy', () => {
+  const qs = [
+    { t: 'Kerala\'s People\'s Plan Campaign was launched in which year?', o: ['1996', '1997', '1995', '1998'], c: 0, e: 'The People\'s Plan Campaign (1996) decentralized planning to local bodies.' },
+    { t: 'Kudumbashree Mission was launched in which year?', o: ['1998', '1997', '1999', '2000'], c: 0, e: 'Kudumbashree was launched in 1998 as a women empowerment and poverty eradication mission.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Kerala Economy', 'Kerala Fiscal & Industrial Landscape', 'medium', () => {
+  const qs = [
+    { t: 'Technopark Thiruvananthapuram was established in which year?', o: ['1990', '1985', '1995', '2000'], c: 0, e: 'Technopark was established in 1990, India\'s first IT park.' },
+    { t: 'Kerala\'s contribution to India\'s GDP is approximately?', o: ['4%', '6%', '3%', '5%'], c: 0, e: 'Kerala contributes about 4% to India\'s GDP despite having only 2.8% of the population.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── INFORMATION TECHNOLOGY & CYBER LAWS ───
+
+register('Information Technology & Cyber Laws', 'Computer Hardware & Architecture', 'easy', () => {
+  const qs = [
+    { t: 'Which of the following is volatile memory?', o: ['RAM', 'ROM', 'Hard Disk', 'SSD'], c: 0, e: 'RAM (Random Access Memory) is volatile — data is lost when power is turned off.' },
+    { t: 'The full form of CPU is?', o: ['Central Processing Unit', 'Computer Processing Unit', 'Central Program Unit', 'Core Processing Unit'], c: 0, e: 'CPU is the Central Processing Unit, the brain of the computer.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Information Technology & Cyber Laws', 'Networks & Internet', 'medium', () => {
+  const qs = [
+    { t: 'Which network topology connects all devices to a single central cable?', o: ['Bus Topology', 'Star Topology', 'Ring Topology', 'Mesh Topology'], c: 0, e: 'In bus topology, all devices connect to a single backbone cable.' },
+    { t: 'The OSI model has how many layers?', o: ['7', '5', '4', '6'], c: 0, e: 'The OSI model has 7 layers: Physical, Data Link, Network, Transport, Session, Presentation, Application.' },
+    { t: 'Which protocol is used for sending emails?', o: ['SMTP', 'HTTP', 'FTP', 'TCP'], c: 0, e: 'SMTP (Simple Mail Transfer Protocol) is used for sending outgoing emails.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Information Technology & Cyber Laws', 'IT Act & Legal Frameworks', 'hard', () => {
+  const qs = [
+    { t: 'The Information Technology Act 2000 was amended in which year?', o: ['2008', '2006', '2010', '2012'], c: 0, e: 'The IT Act was amended in 2008, introducing Section 66A, 66B-F dealing with cyber offences.' },
+    { t: 'Cert-In is the nodal agency for?', o: ['Cyber security incidents', 'IT product certification', 'Software patents', 'E-commerce regulation'], c: 0, e: 'Cert-In (Indian Computer Emergency Response Team) handles cyber security incidents.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── ENGLISH ───
+
+register('English', 'Grammar', 'easy', () => {
+  const qs = [
+    { t: 'Choose the correct sentence:', o: ['She goes to school daily', 'She go to school daily', 'She going to school daily', 'She gone to school daily'], c: 0, e: '"She goes" is the correct present tense third-person singular form.' },
+    { t: 'Identify the noun in: "Honesty is the best policy."', o: ['Honesty', 'Best', 'Policy', 'The'], c: 0, e: '"Honesty" is an abstract noun denoting a quality.' },
+    { t: '"He ___ been waiting for an hour." Choose the correct verb:', o: ['has', 'have', 'had', 'is'], c: 0, e: '"He has" is the correct present perfect form for third-person singular.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('English', 'Vocabulary', 'easy', () => {
+  const qs = [
+    { t: 'What is the synonym of "Abundant"?', o: ['Plentiful', 'Scarce', 'Rare', 'Limited'], c: 0, e: 'Abundant means existing in large quantities; plentiful is its synonym.' },
+    { t: 'What is the antonym of "Benevolent"?', o: ['Malevolent', 'Generous', 'Kind', 'Charitable'], c: 0, e: 'Benevolent means kind/generous; Malevolent means wishing evil.' },
+    { t: '"Break the ice" means:', o: ['To start a conversation', 'To break something frozen', 'To end a relationship', 'To cool down'], c: 0, e: '"Break the ice" means to initiate conversation in a formal/tense situation.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── ARTS, SPORTS & CULTURE ───
+
+register('Arts, Sports & Culture', 'Classical & Ritualistic Art Forms', 'easy', () => {
+  const qs = [
+    { t: 'Kathakali is a classical dance form from which state?', o: ['Kerala', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh'], c: 0, e: 'Kathakali originated in Kerala, known for its elaborate costumes and mudras.' },
+    { t: 'Theyyam is a ritual art form primarily performed in which districts?', o: ['Kannur and Kasaragod', 'Thrissur and Palakkad', 'Kottayam and Alappuzha', 'Kochi and Kollam'], c: 0, e: 'Theyyam is predominantly practiced in North Malabar (Kannur and Kasaragod).' },
+    { t: 'Koodiyattam was recognized as a UNESCO heritage in which year?', o: ['2001', '2005', '2008', '2010'], c: 0, e: 'Koodiyattam was proclaimed a Masterpiece of Oral and Intangible Heritage by UNESCO in 2001.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Arts, Sports & Culture', 'Sports & Athletics', 'easy', () => {
+  const qs = [
+    { t: 'P.T. Usha is associated with which sport?', o: ['Athletics', 'Badminton', 'Tennis', 'Swimming'], c: 0, e: 'P.T. Usha is a legendary Indian track and field athlete.' },
+    { t: 'The Nehru Trophy Boat Race (Vallam Kali) is held in which water body?', o: ['Punnamada Lake', 'Vembanad Lake', 'Ashtamudi Lake', 'Sasthamkotta Lake'], c: 0, e: 'The Nehru Trophy is held annually in Punnamada Lake, Alappuzha.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+// ─── SPECIAL ACTS & SOCIAL WELFARE ───
+
+register('Special Acts & Social Welfare', 'Transparency & Anti-Corruption', 'easy', () => {
+  const qs = [
+    { t: 'The Right to Information Act was enacted in which year?', o: ['2005', '2004', '2006', '2003'], c: 0, e: 'RTI Act was enacted in 2005 and came into effect on October 12, 2005.' },
+    { t: 'The Consumer Protection Act 2019 replaced which earlier act?', o: ['Consumer Protection Act 1986', 'Monopolies Act 1969', 'Trade Marks Act 1999', 'Standards Act 1986'], c: 0, e: 'The 2019 Act replaced the Consumer Protection Act, 1986.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
+register('Special Acts & Social Welfare', 'Gender & Child Welfare', 'medium', () => {
+  const qs = [
+    { t: 'POCSO Act was enacted in which year?', o: ['2012', '2010', '2014', '2015'], c: 0, e: 'The Protection of Children from Sexual Offences (POCSO) Act was enacted in 2012.' },
+    { t: 'The Dowry Prohibition Act was enacted in?', o: ['1961', '1956', '1965', '1970'], c: 0, e: 'The Dowry Prohibition Act was enacted in 1961, effective from July 1, 1961.' },
+    { t: 'The Protection of Women from Domestic Violence Act was enacted in?', o: ['2005', '2000', '2008', '2010'], c: 0, e: 'The Domestic Violence Act was enacted in 2005, effective from October 26, 2006.' },
+  ];
+  const q = qs[Math.floor(Math.random() * qs.length)];
+  const s = shuffleOpts(q.o[q.c], q.o.filter((_, i) => i !== q.c), q.c);
+  return { text: q.t, options: s.options, correctAnswer: s.correctAnswer, explanation: q.e };
+});
+
 // ─── MAIN GENERATOR ───
 
 export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
@@ -602,6 +861,13 @@ export function generateMCQs(request: GenerationRequest): GeneratedQuestion[] {
 
     pool = pool.filter((t) => depths.includes(t.difficulty));
 
+    // If no templates match, broaden: drop difficulty filter first, then subject filter
+    if (pool.length === 0 && attempt < 5) {
+      pool = TEMPLATES.filter((t) => subjectFilter.length === 0 || subjectFilter.includes(t.subject));
+      if (pool.length === 0) {
+        pool = TEMPLATES; // last resort: any template
+      }
+    }
     if (pool.length === 0) break;
 
     const template = pool[Math.floor(Math.random() * pool.length)];
