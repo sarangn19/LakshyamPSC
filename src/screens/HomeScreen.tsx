@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Image, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions, Image, Linking, Animated } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../services/supabase';
 import { colors, spacing, borderRadius } from '../theme';
@@ -35,12 +35,29 @@ function barFillColor(accuracy: number): string {
   return '#E43131';
 }
 
-function StatsCard({ subject, category, total, accuracy }: { subject: string; category: string; total: number; accuracy: number }) {
+function StatsCard({ subject, category, total, accuracy, index = 0 }: { subject: string; category: string; total: number; accuracy: number; index?: number }) {
   const fillHeight = 141 * accuracy;
   const pct = `${Math.round(accuracy * 100)}%`;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+  const barAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1, duration: 400, delay: index * 100, useNativeDriver: false,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0, duration: 400, delay: index * 100, useNativeDriver: false,
+      }),
+      Animated.timing(barAnim, {
+        toValue: fillHeight, duration: 500, delay: 200 + index * 100, useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
 
   return (
-    <View style={styles.statsCard}>
+    <Animated.View style={[styles.statsCard, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
       <View style={styles.statsHeader}>
         <Text style={styles.statsSubject} numberOfLines={1}>{subject}</Text>
         {category ? <Text style={styles.statsCategory} numberOfLines={1}>{category}</Text> : null}
@@ -58,10 +75,10 @@ function StatsCard({ subject, category, total, accuracy }: { subject: string; ca
           </View>
         </View>
         <View style={styles.barContainer}>
-          <View style={[styles.barFill, { height: fillHeight, backgroundColor: barFillColor(accuracy) }]} />
+          <Animated.View style={[styles.barFill, { height: barAnim, backgroundColor: barFillColor(accuracy) }]} />
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -228,8 +245,8 @@ export function HomeScreen({ navigation }: any) {
 
         {/* Section 5: Stats Cards Grid */}
         <View style={styles.statsGrid}>
-          {subjectStats.map((stat) => (
-            <StatsCard key={stat.subject} {...stat} />
+          {subjectStats.map((stat, i) => (
+            <StatsCard key={stat.subject} {...stat} index={i} />
           ))}
         </View>
 
