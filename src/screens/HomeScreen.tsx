@@ -458,8 +458,9 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   statsDivider: {
-    borderWidth: 0.5,
+    borderBottomWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.1)',
+    alignSelf: 'stretch',
   },
   statsRow: {
     flexDirection: 'row',
