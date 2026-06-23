@@ -569,7 +569,7 @@ export const createSessionSlice: StateCreator<MCQState, [], [], SessionSlice> = 
     for (let batch = 0; batch < 3 && allValidated.length < targetCount; batch++) {
       const raw = generateMCQs({
         difficulty: config.difficulty || 'medium', examType: config.examType || 'LDC',
-        count: targetCount * 2, subjects, sourceNotes: useKnowledgeStore.getState().notes,
+        count: targetCount * 2, subjects,
         avoidQuestionIds: [...avoidIds, ...allValidated.map((q) => q.id)],
         language: lang,
       });
