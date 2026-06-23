@@ -202,7 +202,12 @@ export function HomeScreen({ navigation }: any) {
 
         {/* Section 3: Current Affairs */}
         <View>
-          <Text style={styles.caSectionTitle}>Current Affairs</Text>
+          <View style={styles.caSectionHeader}>
+            <Text style={styles.caSectionTitle}>Current Affairs</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('CurrentAffairs')} activeOpacity={0.7}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
           {loadingCA ? (
             <ActivityIndicator color={colors.primary} size="small" />
           ) : (
@@ -334,11 +339,21 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
+  caSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  viewAllText: {
+    fontSize: 12,
+    fontWeight: '400',
+    color: '#666666',
+  },
   caSectionTitle: {
     fontSize: 14,
     fontWeight: '400',
     color: '#000000',
-    marginBottom: spacing.sm,
   },
   caScroll: {
     gap: spacing.md,
