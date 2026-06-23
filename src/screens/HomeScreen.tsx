@@ -129,8 +129,7 @@ export function HomeScreen({ navigation }: any) {
         total: v.total,
         accuracy: v.correct / v.total,
       }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 4);
+      .sort((a, b) => a.accuracy - b.accuracy);
   }, [sessionOutcomes]);
 
   const statusTags: Record<string, { label: string; color: string }> = {
