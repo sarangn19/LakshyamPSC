@@ -1,45 +1,92 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { supabase } from '../services/supabase';
 import { colors, spacing, borderRadius } from '../theme';
-import { typography } from '../theme/typography';
+import { fontFamily } from '../theme/typography';
 import { useTranslation } from '../i18n/useTranslation';
 import { useUserStore } from '../store/userStore';
-import { useMCQStore } from '../store';
+import { useMCQStore, usePerformanceStore } from '../store';
 import { BottomNav } from '../components/BottomNav';
-import { ExamOutlookCard } from '../components/cards/ExamOutlookCard';
-import { WeakAreasCard } from '../components/cards/WeakAreasCard';
-import { CurrentAffairsCard } from '../components/cards/CurrentAffairsCard';
 import type { CurrentAffair } from '../data/mockData';
 import { seedPSCFrequency } from '../services/pscFrequencyBoost';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  kerala: colors.warning,
-  national: colors.primary,
-  appointments: colors.secondary,
-  schemes: colors.success,
-  awards: colors.error,
-};
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = Math.min(200, (SCREEN_WIDTH - spacing.lg * 2 - 12) / 2);
 
-function categoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] || colors.textTertiary;
+const FALLBACK_CA: CurrentAffair[] = [
+  { id: 'fa1', title: 'Kerala Leads in Education Development Index', summary: 'Kerala has topped the Education Development Index for the sixth consecutive year, showcasing its commitment to quality education and literacy.', category: 'national', date: '2026-06-20', source: 'PIB', isImportant: true, url: '', image_url: '' },
+  { id: 'fa2', title: 'Supreme Court Landmark Verdict on Fundamental Rights', summary: 'The Supreme Court delivered a historic judgment expanding the scope of fundamental rights under Article 21 of the Constitution.', category: 'national', date: '2026-06-18', source: 'The Hindu', isImportant: true, url: '', image_url: '' },
+  { id: 'fa3', title: 'New Central Scheme for Farmers Welfare Approved', summary: 'Union Cabinet approves a comprehensive scheme for farmers welfare with an outlay of Rs 50,000 crore over the next five years.', category: 'national', date: '2026-06-15', source: 'PIB', isImportant: true, url: '', image_url: '' },
+];
+
+const DEFAULT_STATS = [
+  { subject: 'Data Interpretation', category: 'Quantitative Aptitude', total: 1234, accuracy: 0.67 },
+  { subject: 'Medieval India', category: 'Kerala History', total: 856, accuracy: 0.87 },
+  { subject: 'Articles 14-18', category: 'Constitution', total: 432, accuracy: 0.12 },
+  { subject: 'Western Ghats', category: 'Geography', total: 721, accuracy: 0.67 },
+];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
-function StreakBadge({ current, longest }: { current: number; longest: number }) {
+function getSubjectStats() {
+  const perf = usePerformanceStore.getState();
+  return DEFAULT_STATS.map((s) => {
+    const acc = perf.getSubjectAccuracy(s.subject);
+    return {
+      ...s,
+      total: acc.total > 0 ? acc.total : s.total,
+      accuracy: acc.total > 0 ? acc.correct / acc.total : s.accuracy,
+    };
+  });
+}
+
+function barFillColor(accuracy: number): string {
+  if (accuracy >= 0.8) return '#23C420';
+  if (accuracy >= 0.5) return '#F7B11A';
+  return '#E43131';
+}
+
+function StatsCard({ subject, category, total, accuracy }: { subject: string; category: string; total: number; accuracy: number }) {
+  const fillHeight = 141 * accuracy;
+  const pct = `${Math.round(accuracy * 100)}%`;
+
   return (
-    <View style={styles.streakCard}>
-      <View style={styles.streakRow}>
-        <View style={styles.streakFlame}>
-          <Svg width="20" height="24" viewBox="0 0 20 24" fill="none">
-            <Path d="M10 0C10 0 5 6 5 11C5 15 7 17 10 17C13 17 15 15 15 11C15 6 10 0 10 0Z" fill={colors.warning} />
-            <Path d="M10 24C13 24 15 22 15 20C15 18 13 17 10 17C7 17 5 18 5 20C5 22 7 24 10 24Z" fill={colors.warning} opacity="0.6" />
-          </Svg>
+    <View style={[styles.statsCard, { width: CARD_WIDTH }]}>
+      <Text style={styles.statsSubject}>{subject}</Text>
+      <Text style={styles.statsCategory}>{category}</Text>
+      <View style={styles.statsDivider} />
+      <View style={styles.statsRow}>
+        <View style={styles.statsLeft}>
+          <View>
+            <Text style={styles.statsLabel}>Total Questions Attempted</Text>
+            <Text style={styles.statsValue}>{total.toLocaleString()}</Text>
+          </View>
+          <View>
+            <Text style={styles.statsLabel}>Accuracy</Text>
+            <Text style={styles.statsPct}>{pct}</Text>
+          </View>
         </View>
-        <View style={styles.streakInfo}>
-          <Text style={styles.streakValue}>{current} day streak</Text>
-          <Text style={styles.streakLongest}>Best: {longest} days</Text>
+        <View style={styles.barContainer}>
+          <View style={[styles.barFill, { height: fillHeight, backgroundColor: barFillColor(accuracy) }]} />
         </View>
+      </View>
+    </View>
+  );
+}
+
+function CACard({ item }: { item: CurrentAffair }) {
+  return (
+    <View style={styles.caCard}>
+      <View style={styles.caImagePlaceholder} />
+      <View style={styles.caTextCol}>
+        <Text style={styles.caTitle} numberOfLines={3}>{item.title}</Text>
+        <Text style={styles.caDesc} numberOfLines={4}>{item.summary}</Text>
       </View>
     </View>
   );
@@ -54,7 +101,11 @@ export function HomeScreen({ navigation }: any) {
   useEffect(() => {
     if (!supabase) { setLoadingCA(false); return; }
     supabase.from('current_affairs').select('*').order('published_at', { ascending: false }).limit(5).then(({ data, error: fetchError }) => {
-      if (fetchError || !data || data.length === 0) { setLoadingCA(false); return; }
+      if (fetchError || !data || data.length === 0) {
+        setCaItems(FALLBACK_CA);
+        setLoadingCA(false);
+        return;
+      }
       setCaItems(data.map((r: any) => ({
         id: r.id,
         title: r.title,
@@ -67,35 +118,28 @@ export function HomeScreen({ navigation }: any) {
         image_url: r.image_url || '',
       })));
       setLoadingCA(false);
-    }).catch(() => setLoadingCA(false));
+    }).catch(() => { setCaItems(FALLBACK_CA); setLoadingCA(false); });
     seedPSCFrequency();
   }, []);
 
-  const hour = new Date().getHours();
-  const greetingText = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const subjectStats = getSubjectStats();
 
-  const handlePracticeSubject = (subject: string, topic?: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'focused' });
-    navigation.navigate('MCQ');
-  };
-
-  const handleExamOutlookStart = (subject: string, topic: string, recId: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'blocking_topic', recommendationId: recId });
-    navigation.navigate('MCQ');
-  };
-
-  const handleExamOutlookRevision = (subject: string, topic: string, recId: string) => {
-    useMCQStore.getState().startOrchestratedSession({ subjects: [subject], recommendedTopic: topic, sessionType: 'revision', recommendationId: recId });
+  const handleStartNow = () => {
+    useMCQStore.getState().startOrchestratedSession({
+      subjects: ['General Studies'],
+      recommendedTopic: 'Current Affairs',
+      sessionType: 'focused',
+    });
     navigation.navigate('MCQ');
   };
 
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Top Bar */}
-        <View style={styles.topBar}>
+        {/* Section 1: Header Row */}
+        <View style={styles.headerRow}>
           <View>
-            <Text style={styles.greeting}>{greetingText}</Text>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.greetingSub}>{t('home.greeting.subtitle')}</Text>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate('Profile')} activeOpacity={0.8}>
@@ -108,33 +152,52 @@ export function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {/* Section 1: Exam Outlook */}
-        <ExamOutlookCard onStartBlockingTopic={handleExamOutlookStart} onStartRevision={handleExamOutlookRevision} />
-
-        {/* Section 2: Top Weak Areas */}
-        <WeakAreasCard onPracticeSubject={handlePracticeSubject} />
+        {/* Section 2: Preparation Outlook */}
+        <View>
+          <View style={styles.preparationHeader}>
+            <Text style={styles.preparationTitle}>Preparation Outlook</Text>
+            <View style={styles.progressTag}>
+              <Text style={styles.progressTagText}>Making Progress</Text>
+            </View>
+          </View>
+          <View style={styles.outlookCard}>
+            <Text style={styles.outlookCardTitle}>Next Recommended Action</Text>
+            <View style={styles.outlookRow}>
+              <View style={styles.outlookTextCol}>
+                <Text style={styles.outlookDescription}>
+                  Practice 20 questions on Current Affairs to strengthen your preparation for the upcoming exam.
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.startNowButton} onPress={handleStartNow} activeOpacity={0.8}>
+                <Text style={styles.startNowText}>Start Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         {/* Section 3: Current Affairs */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Current Affairs</Text>
-          {caItems.length > 0 && (
-            <TouchableOpacity onPress={() => navigation.navigate('Affairs')} activeOpacity={0.7}>
-              <Text style={styles.viewAll}>View More</Text>
-            </TouchableOpacity>
+        <View>
+          <Text style={styles.caSectionTitle}>Current Affairs</Text>
+          {loadingCA ? (
+            <ActivityIndicator color={colors.primary} size="small" />
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.caScroll}>
+              {caItems.slice(0, 3).map((item) => (
+                <CACard key={item.id} item={item} />
+              ))}
+            </ScrollView>
           )}
         </View>
-        {loadingCA ? (
-          <ActivityIndicator color={colors.primary} size="small" />
-        ) : caItems.length > 0 ? (
-          <>
-            <CurrentAffairsCard items={caItems} onViewAll={() => navigation.navigate('Affairs')} />
-          </>
-        ) : (
-          <Text style={styles.emptyText}>No current affairs available</Text>
-        )}
 
-        {/* Section 4: Streak */}
-        <StreakBadge current={streak.current} longest={streak.longest} />
+        {/* Section 4: Last 7 days */}
+        <Text style={styles.last7Label}>Last 7 days</Text>
+
+        {/* Section 5: Stats Cards Grid */}
+        <View style={styles.statsGrid}>
+          {subjectStats.map((stat) => (
+            <StatsCard key={stat.subject} {...stat} />
+          ))}
+        </View>
 
         <View style={{ height: spacing.xxxl }} />
       </ScrollView>
@@ -147,98 +210,215 @@ export function HomeScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 64,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    fontFamily: typography.h2.fontFamily,
-  },
-  greetingSub: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
-    fontFamily: typography.bodySmall.fontFamily,
-  },
-  avatarCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.bgCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: colors.surfaceSecondary,
   },
   scrollContent: {
+    paddingTop: spacing.huge,
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.xxl,
     paddingBottom: 100,
-    paddingTop: spacing.sm,
   },
-  sectionHeader: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+  greeting: {
+    fontFamily: fontFamily.body,
+    fontWeight: '400',
+    fontSize: 24,
+    lineHeight: 29,
     color: colors.text,
-    fontFamily: typography.bodyBold.fontFamily,
   },
-  viewAll: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.primary,
-    fontFamily: typography.captionBold.fontFamily,
+  greetingSub: {
+    fontFamily: fontFamily.body,
+    fontWeight: '300',
+    fontSize: 14,
+    lineHeight: 17,
+    color: colors.text,
+    marginTop: 2,
   },
-  emptyText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontFamily: typography.bodySmall.fontFamily,
-    paddingVertical: spacing.md,
-  },
-  streakCard: {
-    backgroundColor: colors.warning + '10',
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.warning + '30',
-  },
-  streakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakFlame: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.warning + '20',
+  avatarCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
-  streakInfo: {},
-  streakValue: {
+  preparationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  preparationTitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  progressTag: {
+    backgroundColor: '#D39309',
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  progressTagText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-    fontFamily: typography.bodyBold.fontFamily,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
-  streakLongest: {
+  outlookCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: 10,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  outlookCardTitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  outlookRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+  },
+  outlookTextCol: {
+    flex: 1,
+  },
+  outlookDescription: {
+    fontSize: 14,
+    fontWeight: '300',
+    lineHeight: 17,
+    color: '#000000',
+  },
+  startNowButton: {
+    backgroundColor: '#F7B11A',
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  startNowText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  caSectionTitle: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
+    marginBottom: spacing.sm,
+  },
+  caScroll: {
+    gap: spacing.md,
+    paddingRight: spacing.lg,
+  },
+  caCard: {
+    width: 302,
+    height: 143,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: 12,
+    flexDirection: 'row',
+    gap: 19,
+  },
+  caImagePlaceholder: {
+    width: 119,
+    height: 119,
+    backgroundColor: '#ECECEC',
+    borderRadius: borderRadius.sm,
+  },
+  caTextCol: {
+    width: 140,
+    gap: spacing.sm,
+  },
+  caTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 17,
+    color: '#000000',
+  },
+  caDesc: {
     fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 1,
-    fontFamily: typography.caption.fontFamily,
+    fontWeight: '300',
+    lineHeight: 14,
+    color: '#000000',
+  },
+  last7Label: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: '#000000',
+    marginTop: -spacing.sm,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statsCard: {
+    height: 232,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    gap: 12,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  statsSubject: {
+    fontSize: 16,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  statsCategory: {
+    fontSize: 10,
+    fontWeight: '400',
+    color: '#000000',
+    marginTop: -8,
+  },
+  statsDivider: {
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.1)',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 24,
+  },
+  statsLeft: {
+    flex: 1,
+    gap: 24,
+  },
+  statsLabel: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: '#000000',
+  },
+  statsValue: {
+    fontSize: 32,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  statsPct: {
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#000000',
+  },
+  barContainer: {
+    width: 39,
+    height: 141,
+    backgroundColor: '#ECECEC',
+    borderRadius: 4,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  barFill: {
+    width: 61.67,
+    alignSelf: 'center',
   },
 });
