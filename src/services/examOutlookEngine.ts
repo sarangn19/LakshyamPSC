@@ -174,6 +174,10 @@ function computeSubjectSummaries(): SubjectSummary[] {
       ? subjectRetentionRecords.reduce((s, r) => s + (r.retentionRate || 0), 0) / subjectRetentionRecords.length
       : 0;
 
+    if (__DEV__) {
+      console.log(`[computeSubjectSummaries] ${name}: mastery=${mastery.toFixed(3)}, accuracy_raw=${accuracy}, retention=${retention.toFixed(3)}, count=${g.count}, accuracyCount=${g.accuracyCount}`);
+    }
+
     summaries.push({
       name,
       mastery: mastery,
@@ -182,6 +186,10 @@ function computeSubjectSummaries(): SubjectSummary[] {
       coverage,
       consistency,
     });
+  }
+
+  if (__DEV__) {
+    summaries.forEach(s => console.log(`[computeSubjectSummaries] final ${s.name}: score=${Math.round((s.mastery * 0.4 + s.accuracy * 0.3 + s.retention * 0.3) * 100)}, mastery=${s.mastery.toFixed(3)}, accuracy=${s.accuracy.toFixed(3)}, retention=${s.retention.toFixed(3)}`));
   }
 
   summaries.sort((a, b) => {
