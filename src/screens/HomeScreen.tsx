@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   preparationTitle: {
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: '600',
     color: '#000000',
   },
   progressTag: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
   },
   caSectionTitle: {
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: '600',
     color: '#000000',
   },
   caScroll: {
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
   last7Label: {
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: '600',
     color: '#000000',
     marginTop: -spacing.sm,
   },

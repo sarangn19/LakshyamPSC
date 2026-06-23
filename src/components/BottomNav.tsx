@@ -23,7 +23,7 @@ const TABS: TabConfig[] = [
   { name: 'AITutor', label: 'AI Tutor', icon: (c) => <AIIcon width={20} height={20} color={c} /> },
 ];
 
-export const BOTTOM_NAV_HEIGHT = 126;
+export const BOTTOM_NAV_HEIGHT = 80;
 export const TAB_BAR_TOTAL_HEIGHT = BOTTOM_NAV_HEIGHT;
 
 export function BottomNav({ activeTab }: Props) {
@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 60,
+    paddingTop: 8,
+    gap: 48,
   },
   navItem: {
     alignItems: 'center',

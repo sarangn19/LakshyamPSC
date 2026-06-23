@@ -121,17 +121,17 @@ export function AITutorScreen({ route, navigation }: any) {
   };
 
   const ACTION_LABELS: Record<string, string> = {
-    generate_mcq: '📝 Generate MCQ',
-    explain_simpler: '🔍 Explain Simply',
-    give_pyqs: '📜 Previous Year Questions',
-    related_topic: '🔗 Related Topic',
-    create_flashcard: '📇 Create Flashcard',
+    generate_mcq: 'Generate MCQ',
+    explain_simpler: 'Explain Simply',
+    give_pyqs: 'Previous Year Questions',
+    related_topic: 'Related Topic',
+    create_flashcard: 'Create Flashcard',
   };
 
   const ACTION_PROMPTS: Record<string, string> = {
     generate_mcq: `You are a Kerala PSC exam tutor. Generate a multiple choice question about the previous topic for ${examContext} exam. Return the response in this exact structure:
 
-❓ Question
+Question
 [the question text]
 
 A. [option A]
@@ -139,68 +139,68 @@ B. [option B]
 C. [option C]
 D. [option D]
 
-✅ Answer
+Answer
 [correct option letter and text]
 
-📝 Explanation
+Explanation
 [detailed explanation]
 
-📘 Topic
+Topic
 [subject area]
 
-🎯 PSC Tip
+PSC Tip
 [exam-specific memory aid or shortcut]
 
 Difficulty: Easy/Medium/Hard
 Weightage: High/Medium/Low`,
     explain_simpler: `You are a Kerala PSC exam tutor. Explain the previous response in simpler terms for ${examContext} exam preparation. Return the response in this exact structure:
 
-📚 Simple Explanation
+Simple Explanation
 [clear, plain-language explanation]
 
-🧠 Key Points
+Key Points
 • [point 1]
 • [point 2]
 • [point 3]
 
-📖 Example
+Example
 [concrete example if applicable]
 
-🎯 PSC Shortcut
+PSC Shortcut
 [memory aid or mnemonic]
 
 Difficulty: Easy/Medium/Hard`,
     give_pyqs: `You are a Kerala PSC exam tutor. List previous year questions from ${examContext} exams related to the previous topic. Return the response in this exact structure:
 
-📜 Previous Year Questions
+Previous Year Questions
 [year] • [exam name]: [question]
 
-✅ Answers
+Answers
 [answer explanations]
 
-📊 Trend
+Trend
 [how often this topic appears]
 
 Difficulty: Easy/Medium/Hard`,
     related_topic: `You are a Kerala PSC exam tutor. Suggest a related topic from ${examContext} syllabus that the student should study next, based on the previous topic. Return in this structure:
 
-🔗 Related Topic
+Related Topic
 [topic name]
 
-🤔 Why Related
+Why Related
 [connection explanation]
 
-📌 Key Facts
+Key Facts
 • [fact 1]
 • [fact 2]
 
-📖 Suggested Follow-up
+Suggested Follow-up
 [what to study next]
 
 Difficulty: Easy/Medium/Hard`,
     create_flashcard: `You are a Kerala PSC exam tutor. Create a flashcard summary of the previous response for quick revision. Return in this structure:
 
-📇 Flashcard
+Flashcard
 
 Front:
 [key concept or question]
@@ -208,7 +208,7 @@ Front:
 Back:
 [answer or explanation]
 
-📂 Subject
+Subject
 [subject name]
 
 Difficulty: Easy/Medium/Hard`,

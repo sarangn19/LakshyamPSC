@@ -8,10 +8,10 @@ interface ChipAction {
 }
 
 const ACTIONS: ChipAction[] = [
-  { icon: '🔍', label: 'Explain Simpler', action: 'explain_simpler' },
-  { icon: '📜', label: 'Give PYQs', action: 'give_pyqs' },
-  { icon: '🔗', label: 'Related Topic', action: 'related_topic' },
-  { icon: '📇', label: 'Create Flashcard', action: 'create_flashcard' },
+  { icon: '', label: 'Explain Simpler', action: 'explain_simpler' },
+  { icon: '', label: 'Give PYQs', action: 'give_pyqs' },
+  { icon: '', label: 'Related Topic', action: 'related_topic' },
+  { icon: '', label: 'Create Flashcard', action: 'create_flashcard' },
 ];
 
 interface ActionChipsProps {
@@ -49,8 +49,8 @@ export function ActionChips({ onAction }: ActionChipsProps) {
             gap: 6,
           }}
         >
-          <Text style={{ fontSize: 14 }}>{act.icon}</Text>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#1E293B' }}>{act.label}</Text>
+          {act.icon ? <Text style={{ fontSize: 14 }}>{act.icon}</Text> : null}
+          <Text style={{ fontSize: 13, fontWeight: '500', color: '#1E293B' }}>{act.label}</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
