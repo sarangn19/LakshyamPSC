@@ -243,7 +243,7 @@ function computeBlockingTopics(): { subject: string; topic: string; reason: stri
   const scored = Array.from(topicGroups.values())
     .filter((s) => s.blockScore > 0)
     .sort((a, b) => b.blockScore - a.blockScore)
-    .slice(0, 5);
+    .slice(0, 8);
 
   return scored.map((s) => ({
     subject: s.subject,
